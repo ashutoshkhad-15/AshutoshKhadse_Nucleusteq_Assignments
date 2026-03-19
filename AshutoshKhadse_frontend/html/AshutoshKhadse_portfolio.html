@@ -219,7 +219,75 @@
         <!-- PROJECTS Section: ordered list with article tags -->
         <section id="projects">
             <h2>Projects</h2>
-            <!-- ol with 2 projects goes here -->
+            <!--
+    I used ol here because these are listed projects, the numbering
+    gives them a clear order. Each project is wrapped in article
+    because each one is self-contained and makes sense on its own.
+  -->
+            <ol>
+
+                <li>
+                    <!-- I used article because each project is a self-contained piece
+           of work, it could stand alone without the rest of the page -->
+                    <article>
+
+                        <h3>LinkedIn Job Postings ETL Pipeline</h3>
+
+                        <p>
+                            Built an end-to-end <strong>ETL pipeline</strong> to extract, transform,
+                            and load LinkedIn job posting data for analysis using
+                            <em>Python, PostgreSQL, and Power BI</em>.
+                        </p>
+
+                        <p>
+                            Ensured data quality using <strong>Great Expectations</strong> and
+                            visualized key hiring trends and insights through interactive dashboards.
+                        </p>
+
+                        <p>
+                            <strong>Technologies Used:</strong>
+                            Python, PostgreSQL, Power BI, Great Expectations
+                        </p>
+
+                        <!-- used target="_blank" as it opens GitHub in a new tab without
+             navigating away from the portfolio page -->
+                        <a href="https://github.com/ashutoshkhad-15/Job_posting_ETL" target="_blank">
+                            View Project
+                        </a>
+
+                    </article>
+                </li>
+
+                <li>
+                    <article>
+
+                        <h3>Healthcare Data Analysis</h3>
+
+                        <p>
+                            Developed a large-scale <strong>Healthcare Data Analysis pipeline</strong>
+                            using <em>Hadoop (HDFS) and Hive</em> to process and analyze
+                            healthcare records efficiently.
+                        </p>
+
+                        <p>
+                            Designed optimized <strong>Hive queries</strong> to analyze treatment
+                            outcomes, patient trends, and success rates across large datasets.
+                        </p>
+
+                        <p>
+                            <strong>Technologies Used:</strong>
+                            Hadoop, HDFS, Hive, SQL
+                        </p>
+
+                        <a href="https://drive.google.com/file/d/1jYc325uLtkIhVkWnUGEjLmG2iqbtOSSj/view"
+                            target="_blank">
+                            View Project
+                        </a>
+
+                    </article>
+                </li>
+
+            </ol>
         </section>
 
         <hr>
