@@ -82,7 +82,74 @@
         <!-- SKILLS Section: nested unordered lists, varied bullet types -->
         <section id="skills">
             <h2>Skills</h2>
-            <!-- technical and soft skill lists go here -->
+
+            <!-- I used h3 here because this sits under the h2 Skills heading
+       keeping the hierarchy correct without skipping a level -->
+            <h3 id="technical-skills">Technical Skills</h3>
+
+            <!-- Outer ul holds the categories, inner ul holds the actual skills —
+       this nested structure also satisfies the nested list requirement -->
+            <ul type="disc">
+
+                <li>
+                    <strong>Languages</strong>
+                    <ul type="circle">
+                        <li>Python</li>
+                        <li>SQL</li>
+                        <li>Java</li>
+                        <li>C++</li>
+                        <li>C</li>
+                    </ul>
+                </li>
+
+                <li>
+                    <strong>Libraries &amp; Tools</strong>
+                    <ul type="circle">
+                        <li>Pandas</li>
+                        <li>Scikit-learn</li>
+                        <li>NumPy</li>
+                        <li>TensorFlow</li>
+                        <li>Matplotlib</li>
+                        <li>OCR &amp; Tesseract</li>
+                        <li>Roboflow</li>
+                    </ul>
+                </li>
+
+                <li>
+                    <strong>Data Engineering &amp; Analytics</strong>
+                    <ul type="circle">
+                        <li>Hadoop</li>
+                        <li>Hive</li>
+                        <li>Tableau</li>
+                        <li>Power BI</li>
+                        <li>Data Warehousing</li>
+                        <li>ETL Pipelines</li>
+                    </ul>
+                </li>
+
+                <li>
+                    <strong>Databases &amp; Version Control</strong>
+                    <ul type="circle">
+                        <li>MySQL</li>
+                        <li>Microsoft SQL Server</li>
+                        <li>GitHub</li>
+                        <li>Git</li>
+                    </ul>
+                </li>
+
+            </ul>
+
+            <!--  I used Square bullets here to visually distinguish soft skills
+       from the technical section above -->
+            <h3 id="soft-skills">Soft Skills</h3>
+
+            <ul type="square">
+                <li>Communication</li>
+                <li>Teamwork</li>
+                <li>Problem Solving</li>
+                <li>Analytical Thinking</li>
+                <li>Adaptability</li>
+            </ul>
         </section>
 
         <hr>
