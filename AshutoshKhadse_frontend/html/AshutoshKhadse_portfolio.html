@@ -295,8 +295,71 @@
         <!-- CONTACT Section: full form with input, select, radio, checkbox -->
         <section id="contact">
             <h2>Contact Me</h2>
-            <!-- form fields go here -->
+
+            <!-- I added a paragraph at the top with direct contact info so visitors
+       can reach out immediately without needing to fill the form -->
+            <p>
+                <strong>Location:</strong> Indore, Madhya Pradesh, India<br>
+                <strong>Email:</strong>
+                <!-- mailto link opens the user's email client directly -->
+                <a href="mailto:ashutoshkhadse2003@gmail.com">
+                    ashutoshkhadse2003@gmail.com
+                </a><br>
+                <strong>Phone:</strong>
+                <!-- telephone link works on mobile tapping it opens the dialer -->
+                <a href="tel:+919074216446">+91-9074216446</a>
+            </p>
+
+            <hr>
+
+            <!-- action="#" is a placeholder means the form won't actually submit anywhere -->
+            <form action="#" method="post">
+
+                <!-- label for="name" links to input id="name"  required for accessibility -->
+                <label for="name">Name:</label><br>
+                <input type="text" id="name" name="name" placeholder="Your name" /><br><br>
+
+                <label for="email">Email:</label><br>
+                <input type="email" id="email" name="email" placeholder="your@email.com" /><br><br>
+
+                <!-- Radio buttons where only one option selectable at a time, good for Gender -->
+                <label>Gender:</label><br>
+                <input type="radio" id="male" name="gender" value="male" />
+                <label for="male">Male</label>
+                <input type="radio" id="female" name="gender" value="female" />
+                <label for="female">Female</label><br><br>
+
+                <!-- In Checkboxes multiple selections allowed, relevant to my field -->
+                <label>Area of Interest:</label><br>
+                <input type="checkbox" id="ai-ml" name="interest" value="ai-ml" />
+                <label for="ai-ml">AI &amp; Machine Learning</label>
+                <input type="checkbox" id="data-eng" name="interest" value="data-eng" />
+                <label for="data-eng">Data Engineering</label>
+                <input type="checkbox" id="backend" name="interest" value="backend" />
+                <label for="backend">Backend Development</label><br><br>
+
+                <!-- Select dropdown for choosing the reason for contact -->
+                <label for="reason">Reason for Contact:</label><br>
+                <select id="reason" name="reason">
+                    <option value="collaboration">Project Collaboration</option>
+                    <option value="opportunity">Job / Internship Opportunity</option>
+                    <option value="research">Research Discussion</option>
+                    <option value="other">Other</option>
+                </select><br><br>
+
+                <!-- textarea for multi-line message input -->
+                <label for="message">Message:</label><br>
+                <textarea id="message" name="message" rows="5" cols="40"
+                    placeholder="Write your message here..."></textarea><br><br>
+
+                <input type="submit" value="Submit" />
+                <input type="reset" value="Reset" />
+
+            </form>
+
         </section>
+
+        <hr>
 
     </main>
 
