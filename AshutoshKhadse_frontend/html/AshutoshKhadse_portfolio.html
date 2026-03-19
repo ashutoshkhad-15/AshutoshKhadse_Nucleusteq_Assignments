@@ -157,7 +157,61 @@
         <!-- EDUCATION Section: table with colspan -->
         <section id="education">
             <h2>Education</h2>
-            <!-- table with degree, institution, year, grade goes here -->
+
+            <!--
+    I used a table because education data is genuinely tabular, each entry
+    has the same set of defined columns so it's easy to compare row by row.
+    I used rowspan on the B.Tech cell because the Woosong exchange is part
+    of the same degree merging them shows that relationship clearly.
+  -->
+            <table border="1" cellpadding="8" cellspacing="0">
+
+                <!-- colspan="4" merges all columns into one title row -->
+                <tr>
+                    <th colspan="4">Academic History</th>
+                </tr>
+
+                <!-- Column headers -->
+                <tr>
+                    <th>Degree / Branch</th>
+                    <th>Institution</th>
+                    <th>Period</th>
+                    <th>Grade</th>
+                </tr>
+
+                <!-- rowspan="2" on the first cell because the Woosong exchange
+         is part of the same B.Tech degree at Medi-caps as they belong
+         together and rowspan communicates that relationship -->
+                <tr>
+                    <td rowspan="2">B.Tech &mdash; Computer Science &amp; Engineering</td>
+                    <td>Medi-caps University, India</td>
+                    <td>2022 &ndash; 2026</td>
+                    <td>CGPA: 9.29</td>
+                </tr>
+
+                <!-- Second row of the B.Tech no first cell because rowspan covers it -->
+                <tr>
+                    <td>Woosong University, South Korea (Exchange &mdash; AI &amp; Big Data)</td>
+                    <td>Feb 2024 &ndash; Jun 2024</td>
+                    <td>CGPA: 4.24 / 4.5</td>
+                </tr>
+
+                <tr>
+                    <td>Class XII</td>
+                    <td>Gyan Sagar Vidya Niketan, India</td>
+                    <td>2020 &ndash; 2021</td>
+                    <td>Aggregate: 95%</td>
+                </tr>
+
+                <tr>
+                    <td>Class X</td>
+                    <td>Little Angels Hr. Sec. School, India</td>
+                    <td>2018 &ndash; 2019</td>
+                    <td>Aggregate: 94%</td>
+                </tr>
+
+            </table>
+
         </section>
 
         <hr>
