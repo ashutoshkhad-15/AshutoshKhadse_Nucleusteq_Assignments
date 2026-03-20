@@ -281,7 +281,7 @@ main section h2 {
   letter-spacing: 0.07em;
   font-weight: 600;
   margin-bottom: 10px;
-  color: var(--color-accent);      /* Apple blue category label */
+  color: var(--color-accent);      
 }
 
 #skills ul ul {
@@ -375,7 +375,7 @@ main section h2 {
   padding: 8px 20px;
   background-color: var(--color-accent);
   color: #ffffff;
-  border-radius: 980px;        /* Apple fully-rounded pill button */
+  border-radius: 980px;        /* mandatory: pill-shaped button */
   font-size: 0.85rem;
   font-weight: 500;
   text-decoration: none;
@@ -544,4 +544,98 @@ main section h2 {
 #contact input[type="reset"]:hover {
   background-color: var(--color-accent-light);
   color: var(--color-accent-dark);
+}
+
+/* Footer */
+
+footer {
+  background-color: var(--color-bg-dark);   /* mandatory: background-color */
+  color: #6e6e73;
+  text-align: center;                       /* mandatory: text-align */
+  padding: 36px 24px;                        /* mandatory: padding */
+  font-size: 0.82rem;                        /* mandatory: font-size — smaller */
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+footer p {
+  color: #86868b;          
+  margin-bottom: 8px;
+}
+
+footer a { color: var(--color-accent); font-weight: 500; }
+footer a:hover { color: #3d96f5; text-decoration: underline; }
+
+
+/* Media Queries responsive design */
+
+/*  For Tablet (768px and below)  */
+@media (max-width: 768px) {
+
+  header { padding: 48px 20px 40px; }
+  header h1 { font-size: 2.2rem; }
+
+  /* Nav stacks vertically at tablet */
+  nav ul {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  nav ul li a {
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  nav ul ul {
+    display: flex;
+    position: static;
+    box-shadow: none;
+    border-radius: 0;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: none;
+  }
+
+  nav ul ul li a { padding-left: 32px; }
+
+  /* Skills grid to 1 column on tablet */
+  #skills > ul { grid-template-columns: 1fr; }
+  #skills ul ul { column-count: 2; }
+
+  #education table { font-size: 0.85rem; }
+
+  main { padding: 28px 16px; gap: 16px; }
+  main section { padding: 32px 24px; }
+}
+
+/*  For Mobile (480px and below)  */
+@media (max-width: 480px) {
+
+  header h1 { font-size: 1.8rem; }
+  header h2 { font-size: 1rem; }
+
+  /* flex-direction */
+  nav ul {
+    flex-direction: column;   /* mandatory: stacks nav vertically on mobile */
+    align-items: stretch;
+  }
+
+  nav ul li a { padding: 13px 20px; font-size: 0.9rem; }
+
+  #skills ul ul { column-count: 1; }
+
+  /* Table gets horizontal scroll on mobile */
+  #education { overflow-x: auto; }
+  #education table { min-width: 520px; }
+
+  /* Full-width inputs on mobile */
+  #contact input[type="text"],
+  #contact input[type="email"],
+  #contact select,
+  #contact textarea { max-width: 100%; }
+
+  main { padding: 16px 12px; gap: 14px; }
+  main section { padding: 24px 16px; }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
 }
