@@ -189,3 +189,26 @@ function AttendanceSummary() {
     console.log(student.name + ": " + student.attendance + "% — " + status);
   });
 }
+
+// All analysis functions are called and display results
+
+console.log("\n  STUDENT PERFORMANCE ANALYZER  \n");
+
+displayTotalsAndAverages();
+console.log("");
+
+displayGrades();
+console.log("");
+
+SubjectHighestScore();
+console.log("");
+
+SubjectAverageScore();
+console.log("");
+
+OverallClassTopper();
+console.log("");
+
+AttendanceSummary();
+
+console.log("\n  ANALYSIS COMPLETE  \n");
