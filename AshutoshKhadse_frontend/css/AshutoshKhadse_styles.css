@@ -141,3 +141,75 @@ header img {
   object-fit: cover;
   background-color: #3a3a3c;
 }
+
+/* Navigation styling with a dark background using flexand horizontal links */
+
+nav {
+  background-color: rgba(29, 29, 31, 0.95);
+  padding: 0 36px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+nav ul {
+  display: flex;           /* mandatory: horizontal layout */
+  list-style: none;        /* mandatory: removes bullet points */
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 960px;
+}
+
+nav ul li { position: relative; }
+
+nav ul li a {
+  display: block;
+  padding: 14px 16px;      /* mandatory: padding */
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;   /* mandatory: removes underline */
+  font-size: 0.85rem;
+  font-weight: 400;
+  transition: var(--transition);
+  border-bottom: 2px solid transparent;
+}
+
+/* :hover — mandatory pseudo-class */
+nav ul li a:hover {
+  color: #ffffff;                              /* full white on hover */
+  border-bottom: 2px solid var(--color-accent); /* Apple blue indicator */
+  text-decoration: none;
+}
+
+/* For Nested dropdown for Skills sub-items */
+nav ul ul {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #2c2c2e;
+  min-width: 180px;
+  flex-direction: column;
+  border-radius: 0 0 var(--radius-small) var(--radius-small);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+nav ul li:hover > ul { display: flex; }
+
+nav ul ul li a {
+  padding: 10px 18px;
+  font-size: 0.82rem;
+  border-bottom: none;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+nav ul ul li a:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-bottom: none;
+}
