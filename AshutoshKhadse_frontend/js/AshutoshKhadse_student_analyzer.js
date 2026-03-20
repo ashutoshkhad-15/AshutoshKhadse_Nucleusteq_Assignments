@@ -84,3 +84,29 @@ function Grade(student) {
   if (avg >= 50) return "C";
   return "Fail";
 }
+
+// This is a function to analyze a student and return an object with their name, total marks, average marks, and grade.
+function displayTotalsAndAverages() {
+  console.log("____________________________________________");
+  console.log("       TOTAL MARKS & AVERAGES");
+  console.log("____________________________________________");
+
+  students.forEach(function(student) {
+    const total = getTotalMarks(student);
+    const avg   = AverageMarks(student);
+    console.log(student.name + " Total Marks: " + total);
+    console.log(student.name + " Average: " + avg);
+    console.log("--------------------------------------------");
+  });
+}
+
+function displayGrades() {
+  console.log("____________________________________________");
+  console.log("              STUDENT GRADES");
+  console.log("____________________________________________");
+
+  students.forEach(function(student) {
+    const grade = Grade(student);
+    console.log(student.name + " Grade: " + grade);
+  });
+}
