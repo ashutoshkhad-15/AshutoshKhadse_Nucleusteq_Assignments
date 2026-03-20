@@ -63,3 +63,24 @@ function AverageMarks(student) {
   const avg = total / student.marks.length;
   return parseFloat(avg.toFixed(1));
 }
+
+// This is a function to get the grade of a student based on the average marks. 
+// I have also added the fail condition for ≤40 marks per subject and below 75 attendance.
+function Grade(student) {
+  const avg = AverageMarks(student);
+  // Fail condition 1: attendance below 75%
+  if (student.attendance < 75) {
+    return "Fail (Low Attendance)";
+  }
+  // Fail condition 2: any single subject score is 40 or below
+  for (let i = 0; i < student.marks.length; i++) {
+    if (student.marks[i].score <= 40) {
+      return "Fail (Failed in " + student.marks[i].subject + ")";
+    }
+  }
+  // Average-based grade scale
+  if (avg >= 85) return "A";
+  if (avg >= 70) return "B";
+  if (avg >= 50) return "C";
+  return "Fail";
+}
