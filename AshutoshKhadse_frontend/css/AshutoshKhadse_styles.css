@@ -5,3 +5,87 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+/* Styling the body with a background color and font. */
+
+:root {
+  /* Core Colors */
+  --color-primary:      #1d1d1f;   /* for headings, dark text */
+  --color-secondary:    #3a3a3c;   /* for nav background */
+  --color-accent:       #0071e3;   /* for links, buttons */
+  --color-accent-dark:  #0058b3;   /* for hover states */
+  --color-accent-light: #e8f1fb;   /* for subtle backgrounds */
+
+  /* Text */
+  --color-text-dark:    #1d1d1f;   /* for main body text */
+  --color-text-light:   #f5f5f7;   /* for Apple off-white */
+  --color-text-muted:   #6e6e73;   /* for Apple muted gray */
+
+  /* Backgrounds */
+  --color-bg-page:      #f5f5f7;   /* for Apple light gray page */
+  --color-bg-card:      #ffffff;   /* for cards and sections */
+  --color-bg-dark:      #1d1d1f;   /* for header + footer */
+  --color-bg-table-alt: #f5f5f7;   /* for alternating table rows */
+
+  /* Borders and Shadows */
+  --color-border:       #d2d2d7;   /* for borders */
+  --shadow-card:        0 2px 16px rgba(0, 0, 0, 0.07);     
+  --shadow-hover:       0 8px 28px rgba(0, 113, 227, 0.16);   
+
+  /* Typography — Apple SF Pro web stack */
+  --font-heading: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body:    -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* Reusable values */
+  --radius:       12px;
+  --radius-small: 8px;
+  --transition:   all 0.2s ease;
+}
+
+/* Base Styles sets the font and background fro the whole page */
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-page);
+  color: var(--color-text-dark);
+  line-height: 1.65;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  color: var(--color-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;     /* Using Apple's signature tight tracking */
+}
+
+h1 { font-size: 2.6rem;  font-weight: 700; }
+h2 { font-size: 1.8rem;  font-weight: 700; margin-bottom: 20px; }
+h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 10px; }
+
+p {
+  margin-bottom: 14px;
+  color: var(--color-text-dark);
+  line-height: 1.7;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+a:hover {
+  color: var(--color-accent-dark);
+  text-decoration: underline;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 0;
+}
+
+strong { font-weight: 600; color: var(--color-primary); }
+em     { font-style: italic; color: var(--color-text-muted); }
