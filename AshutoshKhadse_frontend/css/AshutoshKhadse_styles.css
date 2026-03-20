@@ -1,4 +1,4 @@
-/* Doing CSS RESET to remove all default browser styles and box-sizing to make layout easier to manage. */
+/* I removed the default spacing from all elements first so the layout stays consistent in every browser. */
 
 * {
   margin: 0;
@@ -6,7 +6,7 @@
   box-sizing: border-box;
 }
 
-/* Styling the body with a background color and font. */
+/* I kept the main colors and repeated values here so changing the design later becomes easier. */
 
 :root {
   /* Core Colors */
@@ -90,7 +90,7 @@ hr {
 strong { font-weight: 600; color: var(--color-primary); }
 em     { font-style: italic; color: var(--color-text-muted); }
 
-/* For the Layout i added the Max width wrapper */
+/* I used a max width on the main content so lines do not become too long on large screens. */
 
 main {
   max-width: 960px;
@@ -126,11 +126,12 @@ header h2 {
   font-size: 1.2rem;                         /* mandatory: font-size */
   font-weight: 400;
   font-family: var(--font-body);
-  margin-bottom: 0;
+  margin-bottom: 10px;
   letter-spacing: 0;
 }
 
-/* Circular profile image */
+/* I made the profile image circular because it looks cleaner for a portfolio header. */
+
 header img {
   display: block;
   margin: 0 auto 24px auto;
@@ -520,6 +521,8 @@ main section h2 {
   margin-right: 12px;
 }
 
+/* I styled the submit button more strongly so it stands out as the main action. */
+
 #contact input[type="submit"]:hover {
   background-color: var(--color-accent-dark);
   transform: translateY(-1px);
@@ -568,7 +571,8 @@ footer a:hover { color: #3d96f5; text-decoration: underline; }
 
 /* Media Queries responsive design */
 
-/*  For Tablet (768px and below)  */
+/* On tablet size I stacked the nav and reduced spacing so the layout fits better. */
+
 @media (max-width: 768px) {
 
   header { padding: 48px 20px 40px; }
@@ -607,7 +611,8 @@ footer a:hover { color: #3d96f5; text-decoration: underline; }
   main section { padding: 32px 24px; }
 }
 
-/*  For Mobile (480px and below)  */
+/* On smaller mobile screens I reduced sizes again so the content does not feel cramped. */
+
 @media (max-width: 480px) {
 
   header h1 { font-size: 1.8rem; }
