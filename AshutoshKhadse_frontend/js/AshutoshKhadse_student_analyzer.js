@@ -46,3 +46,13 @@ const students = [
     attendance: 85
   }
 ];
+
+// This is a funciton to get the total marks of a student in the array of students using the forEach loop.
+
+function getTotalMarks(student) {
+  let total = 0;
+  student.marks.forEach(function(markEntry) {
+    total += markEntry.score;
+  });
+  return total;
+}
