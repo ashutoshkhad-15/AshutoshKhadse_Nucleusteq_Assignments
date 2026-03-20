@@ -136,3 +136,24 @@ function SubjectHighestScore() {
     console.log("Highest in " + subjectName + ": " + topperName + " (" + highestScore + ")");
   }
 }
+
+// This function is to display the average score of the class in each subject.
+function SubjectAverageScore() {
+  console.log("____________________________________________");
+  console.log("        SUBJECT-WISE CLASS AVERAGE");
+  console.log("____________________________________________");
+
+  const subjects = students[0].marks;
+
+  for (let si = 0; si < subjects.length; si++) {
+    const subjectName = subjects[si].subject;
+    let total = 0;
+
+    for (let i = 0; i < students.length; i++) {
+      total += students[i].marks[si].score;
+    }
+
+    const avg = parseFloat((total / students.length).toFixed(1));
+    console.log("Average " + subjectName + " Score: " + avg);
+  }
+}
