@@ -213,3 +213,87 @@ nav ul ul li a:hover {
   background-color: rgba(255, 255, 255, 0.06);
   border-bottom: none;
 }
+
+/* Section Card Stylings */
+
+main section {
+  background-color: var(--color-bg-card);
+  padding: 44px 40px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+}
+
+main section h2 {
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--color-accent);
+  margin-bottom: 24px;
+  color: var(--color-primary);
+}
+
+/* About Section */
+
+#about p {
+  line-height: 1.85;
+  max-width: 700px;
+  color: var(--color-text-dark);
+}
+
+/* Skills Section */
+
+#skills h3 {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+#skills > ul {
+  display: grid;                           /* CSS Grid — Layout criterion */
+  grid-template-columns: repeat(2, 1fr);  /* 2 equal columns */
+  gap: 16px;
+  list-style: none;
+  padding: 0;
+}
+
+#skills > ul > li {
+  background-color: var(--color-bg-page);
+  border-radius: var(--radius-small);
+  padding: 20px 22px;
+  border: 1px solid var(--color-border);
+  transition: var(--transition);
+}
+
+#skills > ul > li:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 2px 12px rgba(0, 113, 227, 0.08);
+}
+
+#skills > ul > li > strong {
+  display: block;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--color-accent);      /* Apple blue category label */
+}
+
+#skills ul ul {
+  padding-left: 18px;
+  column-count: 2;
+  column-gap: 16px;
+  line-height: 1.95;
+}
+
+#skills ul ul li {
+  font-size: 0.9rem;
+  color: var(--color-text-dark);
+  break-inside: avoid;
+}
+
