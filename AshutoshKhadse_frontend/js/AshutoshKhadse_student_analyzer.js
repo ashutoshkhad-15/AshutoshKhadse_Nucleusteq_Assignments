@@ -56,3 +56,10 @@ function getTotalMarks(student) {
   });
   return total;
 }
+
+// This is a function to get the average marks of a student in the array of students. I also used parseFloat to keep format decimal digits fixed to 1.
+function AverageMarks(student) {
+  const total = getTotalMarks(student);
+  const avg = total / student.marks.length;
+  return parseFloat(avg.toFixed(1));
+}
