@@ -110,3 +110,29 @@ function displayGrades() {
     console.log(student.name + " Grade: " + grade);
   });
 }
+
+// This is a function to display highest score of a individual in a particular subject
+function SubjectHighestScore() {
+  console.log("____________________________________________");
+  console.log("      SUBJECT-WISE HIGHEST SCORE");
+  console.log("____________________________________________");
+
+  const subjects = students[0].marks;  
+
+  for (let si = 0; si < subjects.length; si++) {
+    const subjectName = subjects[si].subject;
+    let highestScore = -1;
+    let topperName   = "";
+
+    // loop for comparing every student at this subject index
+    for (let i = 0; i < students.length; i++) {
+      const score = students[i].marks[si].score;
+      if (score > highestScore) {
+        highestScore = score;
+        topperName   = students[i].name;
+      }
+    }
+
+    console.log("Highest in " + subjectName + ": " + topperName + " (" + highestScore + ")");
+  }
+}
