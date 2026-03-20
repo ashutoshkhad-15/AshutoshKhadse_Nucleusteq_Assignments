@@ -157,3 +157,35 @@ function SubjectAverageScore() {
     console.log("Average " + subjectName + " Score: " + avg);
   }
 }
+
+// This is a function to display the name and total marks of the class topper.
+function OverallClassTopper() {
+  console.log("____________________________________________");
+  console.log("              CLASS TOPPER");
+  console.log("____________________________________________");
+
+  let topperName  = "";
+  let topperTotal = -1;
+
+  for (let i = 0; i < students.length; i++) {
+    const total = getTotalMarks(students[i]);
+    if (total > topperTotal) {
+      topperTotal = total;
+      topperName  = students[i].name;
+    }
+  }
+
+  console.log("Class Topper: " + topperName + " with " + topperTotal + " marks");
+}
+
+// This is a function to display the attendance summary of each student.
+function AttendanceSummary() {
+  console.log("____________________________________________");
+  console.log("          ATTENDANCE SUMMARY");
+  console.log("____________________________________________");
+
+  students.forEach(function(student) {
+    const status = student.attendance >= 75 ? "OK" : "LOW - Below 75%";
+    console.log(student.name + ": " + student.attendance + "% — " + status);
+  });
+}
