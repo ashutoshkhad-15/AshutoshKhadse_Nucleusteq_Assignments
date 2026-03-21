@@ -28,3 +28,62 @@ let nextId = 1;
 // number = form is in "Edit" mode, value is the ID of the product being edited
 
 let editingId = null;
+
+// In a real app this would be a fetch() call to a backend server. Here we simulate that using Promise + setTimeout to mimic the delay of a real network request.
+// The function returns a Promise that resolves after 1.5 seconds with the product data.
+
+function fetchProductsFromAPI() {
+  return new Promise((resolve) => {
+
+    // Wait 1.5 seconds to simulate network delay
+    setTimeout(() => {
+
+      // Checking if the user has previously saved data in localStorage
+      const saved = localStorage.getItem("inventoryProducts");
+
+      if (saved) {
+        // Return the saved products if they exist
+        resolve(JSON.parse(saved));
+      } else {
+        // Otherwise return the default product list
+        resolve(defaultProducts);
+      }
+
+    }, 1500); // Here, 1500 milliseconds = 1.5 seconds
+
+  });
+}
+
+// This is the first function that runs when the page loads. It shows the loading spinner, waits for the simulated API call to finish, then kicks off the rest of the dashboard.
+
+async function init() {
+  // Grab the loading spinner and product grid from the DOM
+  const loadingEl = document.getElementById("loading-state");
+  const gridEl    = document.getElementById("product-grid");
+
+  // Show the spinner, hide the grid while loading
+  loadingEl.classList.remove("hidden");
+  gridEl.classList.add("hidden");
+
+  // Wait for the simulated API to return data
+  // The "await" pauses here until the Promise resolves
+  const fetchedProducts = await fetchProductsFromAPI();
+
+  // Store the fetched data in our working array
+  products = fetchedProducts;
+
+  // Set nextId so new products don't clash with existing IDs
+  nextId = Math.max(...products.map(p => p.id)) + 1;
+
+  // Hide the spinner, show the grid
+  loadingEl.classList.remove("hidden");
+  gridEl.classList.remove("hidden");
+  loadingEl.classList.add("hidden");
+
+  // Confirm in console that loading worked
+  console.log("Products loaded:", products.length, "items");
+  console.log("Next available ID:", nextId);
+}
+
+// Kick everything off when the page loads
+init();
