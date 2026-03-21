@@ -27,6 +27,11 @@ let nextId = 1;
 
 let editingId = null;
 
+// saveToLocalStorage function converts the products array to a JSON string and stores it in the local storage
+function saveToLocalStorage() {
+    localStorage.setItem("inventoryProducts", JSON.stringify(products));
+}
+
 // In a real app this would be a fetch() call to a backend server. Here we simulate that using Promise + setTimeout to mimic the delay of a real network request.
 // The function returns a Promise that resolves after 1.5 seconds with the product data.
 
@@ -228,6 +233,127 @@ function applyFilters() {
     updateAnalytics(result);
 }
 
+// This method highlights an input in red and shows an error message below it
+function showError(inputId, errorId, message) {
+    document.getElementById(inputId).classList.add("invalid");
+    document.getElementById(errorId).textContent = message;
+}
+
+// Removes red borders and error messages before returning on next submit
+
+function clearFormErrors() {
+    ["input-name", "input-price", "input-stock", "input-category"].forEach(id => {
+        document.getElementById(id).classList.remove("invalid");
+    });
+    ["err-name", "err-price", "err-stock", "err-category"].forEach(id => {
+        document.getElementById(id).textContent = "";
+    });
+}
+
+// Checks all 4 fields before submission & Returns true if everything is valid and false if any field fails its check.
+
+function validateForm() {
+    let isValid = true;
+
+    const name = document.getElementById("input-name").value.trim();
+    const price = document.getElementById("input-price").value;
+    const stock = document.getElementById("input-stock").value;
+    const category = document.getElementById("input-category").value.trim();
+
+    clearFormErrors();
+
+    // Name must not be empty
+    if (!name) {
+        showError("input-name", "err-name", "Product name is required.");
+        isValid = false;
+    }
+
+    // Price must be present and greater than 0
+    if (!price || parseFloat(price) <= 0) {
+        showError("input-price", "err-price", "Price must be greater than 0.");
+        isValid = false;
+    }
+
+    // Stock must be present and cannot be negative
+    if (stock === "" || parseInt(stock) < 0) {
+        showError("input-stock", "err-stock", "Stock must be 0 or more.");
+        isValid = false;
+    }
+
+    // Category must not be empty
+    if (!category) {
+        showError("input-category", "err-category", "Category is required.");
+        isValid = false;
+    }
+
+    return isValid;
+}
+
+// To reset all fields
+function resetForm() {
+    document.getElementById("product-form").reset();
+    document.getElementById("edit-product-id").value = "";
+    clearFormErrors();
+}
+
+// To handle both Add and Edit mode, depending on whether editingId is null or a number.
+
+function handleFormSubmit(event) {
+    // Stop the page from refreshing on submit
+    event.preventDefault();
+
+    // Don't proceed if any field fails validation
+    if (!validateForm()) return;
+
+    // Read the values from the form fields
+    const name = document.getElementById("input-name").value.trim();
+    const price = parseFloat(document.getElementById("input-price").value);
+    const stock = parseInt(document.getElementById("input-stock").value);
+    const category = document.getElementById("input-category").value.trim();
+
+    if (editingId !== null) {
+        // To Find the product in the array and update it
+        const index = products.findIndex(p => p.id === editingId);
+        if (index !== -1) {
+            products[index] = { id: editingId, name, price, stock, category };
+        }
+        exitEditMode();
+
+    } else {
+        // Create a new product object with a unique ID
+        const newProduct = { id: nextId, name, price, stock, category };
+        nextId++;
+        products.push(newProduct);
+    }
+
+    saveToLocalStorage();
+    populateCategoryDropdown();
+    applyFilters();
+    resetForm();
+}
+
+// It handles the delete button click, it removes the product from the array and updates the display.
+
+function handleDeleteClick(event) {
+    // Only acts if the clicked element is a delete button
+    if (!event.target.classList.contains("btn-delete")) return;
+
+    const productId = parseInt(event.target.dataset.id);
+    const product = products.find(p => p.id === productId);
+
+    if (!product) return;
+
+    // Ask the user to confirm before permanently removing
+    if (confirm(`Delete "${product.name}"? This cannot be undone.`)) {
+        // Removes the product from the array using filter
+        products = products.filter(p => p.id !== productId);
+
+        saveToLocalStorage();
+        populateCategoryDropdown();
+        applyFilters();
+    }
+}
+
 // This function wires up all 4 controls to applyFilters() so the list updates on every interaction
 
 function setupEventListeners() {
@@ -239,6 +365,10 @@ function setupEventListeners() {
     document.getElementById("low-stock-filter").addEventListener("change", applyFilters);
 
     document.getElementById("sort-select").addEventListener("change", applyFilters);
+
+    document.getElementById("product-form").addEventListener("submit", handleFormSubmit);
+
+    document.getElementById("product-grid").addEventListener("click", handleDeleteClick);
 }
 
 // This is the first function that runs when the page loads. It shows the loading spinner, waits for the simulated API call to finish, then kicks off the rest of the dashboard.
