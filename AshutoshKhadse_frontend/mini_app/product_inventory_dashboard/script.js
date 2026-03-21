@@ -117,10 +117,128 @@ function renderProducts(productList) {
     });
 }
 
-// APPLY FILTERS
+// This function calculates and displays the 3 stat cards: total products, total inventory value, and out of stock count and it will update every time the product list is edited.
+
+function updateAnalytics(productList) {
+    // Total number of products in the current list
+    const total = productList.length;
+
+    const totalValue = productList.reduce((sum, p) => sum + (p.price * p.stock), 0);
+
+    // Count products where stock has hit zero
+    const outOfStock = productList.filter(p => p.stock === 0).length;
+
+    // Push the calculated values into the DOM
+    document.getElementById("val-total-products").textContent = total;
+    document.getElementById("val-total-value").textContent = "₹" + totalValue.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+    document.getElementById("val-out-of-stock").textContent = outOfStock;
+
+    // From Bonus: also update the category count badges
+    updateCategoryCounts(productList);
+}
+
+// This function is from the bonus category it Counts how many products exist in each category and renders them 
+
+function updateCategoryCounts(productList) {
+    const container = document.getElementById("category-counts");
+
+    // Builds an object like { Electronics: 3, Clothing: 2 }
+    const counts = productList.reduce((acc, p) => {
+        acc[p.category] = (acc[p.category] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Clears old badges and render fresh ones
+    container.innerHTML = "";
+
+    Object.entries(counts).forEach(([category, count]) => {
+        const badge = document.createElement("span");
+        badge.className = "category-badge";
+        badge.innerHTML = `${category} <span class="badge-count">${count}</span>`;
+        container.appendChild(badge);
+    });
+}
+
+// This function reads unique categories from the products array and fills the filter dropdown.
+// Get Called on init and after every add/delete in case a new category was introduced.
+
+function populateCategoryDropdown() {
+    const select = document.getElementById("category-filter");
+
+    // Gets unique categories and sort alphabetically
+    const categories = [...new Set(products.map(p => p.category))].sort();
+
+    // Remembers what the user had selected before rebuilding
+    const currentValue = select.value;
+
+    // Resets to just the default option then rebuild
+    select.innerHTML = `<option value="all">All Categories</option>`;
+
+    categories.forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+    });
+
+    // Restores the previous selection if it still exists
+    if (currentValue && categories.includes(currentValue)) {
+        select.value = currentValue;
+    }
+}
+
+// APPLY FILTER is the Central function that reads all 4 controls (search, category, low stock, sort) and renders the correct filtered + sorted list.
 
 function applyFilters() {
-    renderProducts(products);
+    const searchTerm = document.getElementById("search-input").value.trim().toLowerCase();
+    const selectedCat = document.getElementById("category-filter").value;
+    const lowStockOnly = document.getElementById("low-stock-filter").checked;
+    const sortOption = document.getElementById("sort-select").value;
+
+    // Starts with the full products array
+    let result = [...products];
+
+    // Filter 1 is Search by name which is case-insensitive
+    if (searchTerm) {
+        result = result.filter(p => p.name.toLowerCase().includes(searchTerm));
+    }
+
+    // Filter 2 is Category dropdown
+    if (selectedCat !== "all") {
+        result = result.filter(p => p.category === selectedCat);
+    }
+
+    // Filter 3 is Low stock only for stock less than 5
+    if (lowStockOnly) {
+        result = result.filter(p => p.stock < 5);
+    }
+
+    // Sort AFTER filtering
+    if (sortOption === "price-low") {
+        result.sort((a, b) => a.price - b.price);
+    } else if (sortOption === "price-high") {
+        result.sort((a, b) => b.price - a.price);
+    } else if (sortOption === "name-az") {
+        result.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortOption === "name-za") {
+        result.sort((a, b) => b.name.localeCompare(a.name));
+    }
+
+    renderProducts(result);
+    updateAnalytics(result);
+}
+
+// This function wires up all 4 controls to applyFilters() so the list updates on every interaction
+
+function setupEventListeners() {
+
+    document.getElementById("search-input").addEventListener("input", applyFilters);
+
+    document.getElementById("category-filter").addEventListener("change", applyFilters);
+
+    document.getElementById("low-stock-filter").addEventListener("change", applyFilters);
+
+    document.getElementById("sort-select").addEventListener("change", applyFilters);
 }
 
 // This is the first function that runs when the page loads. It shows the loading spinner, waits for the simulated API call to finish, then kicks off the rest of the dashboard.
@@ -130,7 +248,7 @@ async function init() {
     const loadingEl = document.getElementById("loading-state");
     const gridEl = document.getElementById("product-grid");
 
-    // Show the spinner, hide the grid while loading
+    // Shows the spinner, hide the grid while loading
     loadingEl.classList.remove("hidden");
     gridEl.classList.add("hidden");
 
@@ -138,7 +256,7 @@ async function init() {
     // The "await" pauses here until the Promise resolves
     const fetchedProducts = await fetchProductsFromAPI();
 
-    // Store the fetched data in our working array
+    // Stores the fetched data in our working array
     products = fetchedProducts;
 
     // Set nextId so new products don't clash with existing IDs
@@ -148,6 +266,8 @@ async function init() {
     loadingEl.classList.add("hidden");
     gridEl.classList.remove("hidden");
 
+    populateCategoryDropdown();
+    setupEventListeners();
     // Render all products
     applyFilters();
 }
