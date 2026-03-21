@@ -1,40 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product Inventory Dashboard</title>
-  <link rel="stylesheet" href="css/style.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Inventory Dashboard</title>
+    <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
 
-  <!-- HEADER SECTION -->
+    <!-- HEADER SECTION -->
     <header id="main-header">
-    
-  </header>
+        <div class="header-inner">
+            <div class="header-title-group">
+                <span class="header-icon">📦</span>
+                <h1>Product Inventory Dashboard</h1>
+            </div>
+            <p class="header-subtitle">Manage your stock in real time</p>
+        </div>
+    </header>
 
-  <!-- CONTROLS SECTION -->
-  <section id="controls-section">
-    
-  </section>
+    <main id="app-main">
 
-  <!-- ANALYTICS SECTION -->
-  <section id="analytics-section">
-    
-  </section>
+        <!-- CONTROLS SECTION -->
+        <section id="controls-section">
+            <div class="controls-inner">
 
-  <!-- PRODUCT GRID SECTION -->
-  <section id="product-grid-section">
-    
-  </section>
+                <!-- Search by product name -->
+                <div class="control-group">
+                    <label for="search-input"> Search Products</label>
+                    <input type="text" id="search-input" placeholder="Type a product name..." autocomplete="off" />
+                </div>
 
-  <!-- ADD PRODUCT SECTION -->
-  <section id="add-product-section">
-    
-  </section>
+                <!-- Category dropdown — options will be added in JS -->
+                <div class="control-group">
+                    <label for="category-filter"> Category</label>
+                    <select id="category-filter">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
 
-  <!-- JS loaded at bottom so HTML is ready before script runs -->
-  <script src="js/script.js"></script>
+                <!-- Created Sort dropdown -->
+                <div class="control-group">
+                    <label for="sort-select"> Sort By</label>
+                    <select id="sort-select">
+                        <option value="default">Default Order</option>
+                        <option value="price-low">Price: Low → High</option>
+                        <option value="price-high">Price: High → Low</option>
+                        <option value="name-az">Name: A → Z</option>
+                        <option value="name-za">Name: Z → A</option>
+                    </select>
+                </div>
+
+                <!-- TO check the Low stock -->
+                <div class="control-group checkbox-group">
+                    <label class="checkbox-label" for="low-stock-filter">
+                        <input type="checkbox" id="low-stock-filter" />
+                        <span> Low Stock Only (qty &lt; 5)</span>
+                    </label>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ANALYTICS SECTION -->
+        <section id="analytics-section">
+            <h2 class="section-title"> Inventory Analytics</h2>
+
+            <div class="analytics-grid">
+
+                <div class="stat-card" id="stat-total-products">
+                    <span class="stat-icon">🗃️</span>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Products</p>
+                        <p class="stat-value" id="val-total-products">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="stat-total-value">
+                    <span class="stat-icon">💰</span>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Inventory Value</p>
+                        <p class="stat-value" id="val-total-value">₹0.00</p>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="stat-out-of-stock">
+                    <span class="stat-icon">🚫</span>
+                    <div class="stat-info">
+                        <p class="stat-label">Out of Stock</p>
+                        <p class="stat-value" id="val-out-of-stock">0</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bonus functionality -->
+            <div id="category-counts" class="category-counts"></div>
+            <h2 class="section-title"> Inventory Analytics</h2>
+
+        </section>
+
+        <!-- PRODUCT GRID SECTION -->
+        <section id="product-grid-section">
+            <h2 class="section-title">🛒 Products</h2>
+
+            <div id="loading-state" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Loading products, please wait...</p>
+            </div>
+
+            <div id="product-grid" class="product-grid"></div>
+        </section>
+
+        <!-- ADD PRODUCT SECTION -->
+        <section id="add-product-section">
+            <h2 class="section-title" id="form-title">➕ Add New Product</h2>
+
+            <form id="product-form" novalidate>
+
+                <input type="hidden" id="edit-product-id" value="" />
+
+                <div class="form-grid">
+
+                    <!-- Product Name -->
+                    <div class="form-group">
+                        <label for="input-name">
+                            Product Name <span class="required">*</span>
+                        </label>
+                        <input type="text" id="input-name" placeholder="e.g. Wireless Headphones" autocomplete="off" />
+                        <span class="error-msg" id="err-name"></span>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="form-group">
+                        <label for="input-price">
+                            Price (₹) <span class="required">*</span>
+                        </label>
+                        <input type="number" id="input-price" placeholder="e.g. 1999" min="0" step="0.01" />
+                        <span class="error-msg" id="err-price"></span>
+                    </div>
+
+                    <!-- Stock Quantity -->
+                    <div class="form-group">
+                        <label for="input-stock">
+                            Stock Quantity <span class="required">*</span>
+                        </label>
+                        <input type="number" id="input-stock" placeholder="e.g. 50" min="0" />
+                        <span class="error-msg" id="err-stock"></span>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="form-group">
+                        <label for="input-category">
+                            Category <span class="required">*</span>
+                        </label>
+                        <input type="text" id="input-category" placeholder="e.g. Electronics" autocomplete="off" />
+                        <span class="error-msg" id="err-category"></span>
+                    </div>
+
+                </div>
+
+                <!-- Form buttons -->
+                <div class="form-actions">
+                    <button type="submit" id="form-submit-btn" class="btn btn-primary">
+                        ➕ Add Product
+                    </button>
+                    <!-- Cancel button added such that it is only visible in edit mode -->
+                    <button type="button" id="form-cancel-btn" class="btn btn-secondary hidden">
+                        ✖ Cancel Edit
+                    </button>
+                </div>
+
+            </form>
+        </section>
+
+    </main>
+    <!-- Footer -->
+    <footer id="main-footer">
+        <p>Product Inventory Dashboard &copy; 2026</p>
+    </footer>
+
+
+    <!-- JS loaded at bottom so HTML is ready before script runs -->
+    <script src="js/script.js"></script>
 
 </body>
+
 </html>
