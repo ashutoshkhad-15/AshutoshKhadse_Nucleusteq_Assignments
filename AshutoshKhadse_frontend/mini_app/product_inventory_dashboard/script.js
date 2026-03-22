@@ -296,6 +296,38 @@ function resetForm() {
     clearFormErrors();
 }
 
+// Switches the form into edit mode and fill it with product data
+function enterEditMode(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    // Tracks which product is being edited
+    editingId = productId;
+
+    // Fills each form field with the product's current values
+    document.getElementById("input-name").value = product.name;
+    document.getElementById("input-price").value = product.price;
+    document.getElementById("input-stock").value = product.stock;
+    document.getElementById("input-category").value = product.category;
+    document.getElementById("edit-product-id").value = productId;
+
+    // Updates the form UI to show edit mode
+    document.getElementById("form-title").textContent = "✏️ Edit Product";
+    document.getElementById("form-submit-btn").textContent = "💾 Save Changes";
+    document.getElementById("form-cancel-btn").classList.remove("hidden");
+    document.getElementById("add-product-section").scrollIntoView({ behavior: "smooth" });
+}
+
+// Bring the form back to normal add mode
+function exitEditMode() {
+    editingId = null;
+
+    document.getElementById("form-title").textContent = "➕ Add New Product";
+    document.getElementById("form-submit-btn").textContent = "➕ Add Product";
+    document.getElementById("form-cancel-btn").classList.add("hidden");
+    document.getElementById("edit-product-id").value = "";
+}
+
 // To handle both Add and Edit mode, depending on whether editingId is null or a number.
 
 function handleFormSubmit(event) {
@@ -354,6 +386,15 @@ function handleDeleteClick(event) {
     }
 }
 
+// Checks if an edit button was clicked in the grid
+function handleEditClick(event) {
+    // Stops here if the clicked element is not an edit button
+    if (!event.target.classList.contains("btn-edit")) return;
+
+    const productId = parseInt(event.target.dataset.id);
+    enterEditMode(productId);
+}
+
 // This function wires up all 4 controls to applyFilters() so the list updates on every interaction
 
 function setupEventListeners() {
@@ -368,9 +409,15 @@ function setupEventListeners() {
 
     document.getElementById("product-form").addEventListener("submit", handleFormSubmit);
 
-    document.getElementById("product-grid").addEventListener("click", handleDeleteClick);
-}
+    document.getElementById("form-cancel-btn").addEventListener("click", () => {
+        exitEditMode();
+        resetForm();
+    });
 
+    // Edit and Delete buttons are both handled via click on the grid
+    document.getElementById("product-grid").addEventListener("click", handleDeleteClick);
+    document.getElementById("product-grid").addEventListener("click", handleEditClick);
+}
 // This is the first function that runs when the page loads. It shows the loading spinner, waits for the simulated API call to finish, then kicks off the rest of the dashboard.
 
 async function init() {
