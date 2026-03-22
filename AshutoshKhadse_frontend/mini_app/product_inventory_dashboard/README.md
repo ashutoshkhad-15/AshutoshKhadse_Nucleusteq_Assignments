@@ -184,7 +184,7 @@ persistence and the loading simulation work naturally together.
 ## Screenshots
 
 ### Screenshot 1 — Full Dashboard
-![Full Dashboard](screenshots/screenshot1.png)
+![Full Dashboard](screenshots/Screenshot1.png)
 
 This screenshot shows the complete dashboard on first load with all 10 default
 products rendered. The analytics section shows Total Products as 10, Total
@@ -197,7 +197,7 @@ show an orange Low Stock badge, and the rest show a green In Stock badge.
 ---
 
 ### Screenshot 2 — Search Feature Active
-![Search Active](screenshots/screenshot2.png)
+![Search Active](screenshots/Screenshot2.png)
 
 This screenshot shows the real-time search working. I typed "Cotton" in the
 search field and the grid immediately filtered down to just one result —
@@ -209,7 +209,7 @@ that search, analytics, and category counts all update together in real time.
 ---
 
 ### Screenshot 3 — Category Filter and Sort Active Together
-![Filters and Sort](screenshots/screenshot3.png)
+![Filters and Sort](screenshots/Screenshot3.png)
 
 This screenshot shows multiple controls working simultaneously. I selected
 Electronics from the category dropdown and set Sort By to Name A → Z. The
@@ -221,7 +221,7 @@ confirms that filtering and sorting work correctly together.
 ---
 
 ### Screenshot 4 — Add Product Form
-![Add Product Form](screenshots/screenshot4.png)
+![Add Product Form](screenshots/Screenshot4.png)
 
 This screenshot shows the Add New Product form filled in with a new product —
 Earbuds, priced at ₹2199, stock quantity 66, category Electronics. The form
