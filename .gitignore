@@ -1,0 +1,15 @@
+# IntelliJ IDEA files
+.idea/
+*.iml
+*.iws
+
+# Maven / Gradle build output
+target/
+build/
+out/
+
+# Log files
+*.log
+
+# Windows specific
+Thumbs.db
