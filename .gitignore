@@ -13,3 +13,5 @@ out/
 
 # Windows specific
 Thumbs.db
+# Ignore all compiled class files anywhere in the project
+*.class
