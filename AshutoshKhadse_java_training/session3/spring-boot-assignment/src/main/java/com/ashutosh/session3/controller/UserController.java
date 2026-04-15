@@ -2,15 +2,10 @@ package com.ashutosh.session3.controller;
 
 import com.ashutosh.session3.model.User;
 import com.ashutosh.session3.service.UserService;
+import com.ashutosh.session3.exception.UserNotFoundException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
 import java.util.List;
@@ -59,7 +54,7 @@ public class UserController {
             // my Service layer's validateUser() method can catch the 'null' and return custom error message
             // instead of Spring throwing a generic missing body error before it even reaches code
             @RequestBody(required = false) User user) {
-        try {
+
             // Calling the service method to validate and save the user
             userService.saveUser(user);
 
@@ -67,13 +62,24 @@ public class UserController {
             // instead of just a raw text string.
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of("message", "User successfully created"));
+    }
 
-        } catch (IllegalArgumentException e) {
+    // 3. Delete API
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteUser(
+            // Grabbing the ID straight from the URL path
+            @PathVariable Long id,
+            // Adding a safety check If they don't pass '?confirm=true' in the URL,
+            // the service layer will block the deletion.
+            @RequestParam(required = false) Boolean confirm) {
 
-            // If the user sends bad data (like a blank name), it
-            // sends back a 400 BAD REQUEST status along with the exact error message.
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
+            // Handing it off to the service layer to do the actual deleting
+            userService.deleteUser(id, confirm);
+
+            // If no exceptions were thrown, it was a success
+            // Sending back a 200 OK with a clean JSON message.
+            return ResponseEntity.ok(
+                    Map.of("message", "User deleted successfully")
+            );
     }
 }

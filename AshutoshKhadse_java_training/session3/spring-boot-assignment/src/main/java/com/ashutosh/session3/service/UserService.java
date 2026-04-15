@@ -3,7 +3,7 @@ package com.ashutosh.session3.service;
 import com.ashutosh.session3.model.User;
 import com.ashutosh.session3.repository.UserRepository;
 import org.springframework.stereotype.Service;
-
+import com.ashutosh.session3.exception.UserNotFoundException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,4 +95,27 @@ public class UserService {
         }
     }
 
+    // 3. DELETE USER (DELETE /users/{id})
+    // I added this method to handle deleting users.
+    // It takes the ID from the URL and that 'confirm' query parameter we set up in the Controller.
+    public void deleteUser(Long id, Boolean confirm) {
+
+        // I added a check for 'null' just in case the API request
+        // misses the 'confirm' parameter entirely. This prevents NullPointerException.
+        // If they didn't explicitly pass "confirm=true", I throw an exception to stop the deletion.
+        if (confirm == null || !confirm) {
+            throw new IllegalArgumentException("Confirmation required");
+        }
+
+        // Now we ask the repository to try and delete the user with this ID.
+        // deleteById() returns true if it actually removed someone, and false if the ID didn't exist.
+        boolean deleted = userRepository.deleteById(id);
+        // If the repository says it couldn't find the user to delete
+        if (!deleted) {
+            // We throw custom UserNotFoundException
+            // The Controller will catch this specific exception and turn it into a clean 404 Not Found error.
+            throw new UserNotFoundException("User not found with id: " + id);
+        }
+        // If no exceptions were thrown above, the Controller assumes it was a success!
+    }
 }
