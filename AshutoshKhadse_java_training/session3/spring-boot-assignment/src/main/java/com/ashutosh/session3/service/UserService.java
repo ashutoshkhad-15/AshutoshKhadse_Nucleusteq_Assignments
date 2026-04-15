@@ -71,7 +71,9 @@ public class UserService {
     // Helper Method for Validation
     // I created private method so saveUser() stays clean and readable
     private void validateUser(User user) {
-        if (user == null) {
+        // I noticed that if someone sends an empty JSON object "{}", Spring creates a User object
+        // where all fields are null. So I added this extra check to catch that specific scenario
+        if (user == null || (user.getName() == null && user.getAge() == null && user.getRole() == null)) {
             // Using standard IllegalArgumentException. As Global Exception Handler
             // can easily catch these and turn them into nice 400 Bad Request responses
             throw new IllegalArgumentException("Request body cannot be null");
