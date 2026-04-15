@@ -56,4 +56,41 @@ public class UserService {
             return true;
         return user.getRole().equalsIgnoreCase(role); // case-insensitive match
     }
+
+    // 2. SUBMIT USER (POST /users/submit)
+    public void saveUser(User user) {
+        // custom validation to make sure the user didn't send bad data
+        validateUser(user);
+
+        // Normalize role for consistency
+        user.setRole(user.getRole().toUpperCase());
+
+        userRepository.save(user);
+    }
+
+    // Helper Method for Validation
+    // I created private method so saveUser() stays clean and readable
+    private void validateUser(User user) {
+        if (user == null) {
+            // Using standard IllegalArgumentException. As Global Exception Handler
+            // can easily catch these and turn them into nice 400 Bad Request responses
+            throw new IllegalArgumentException("Request body cannot be null");
+        }
+
+        // Checking that the name isn't null or just a bunch of empty spaces
+        if (user.getName() == null || user.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Name is required");
+        }
+
+        // Age must be provided and has to be greater than 0
+        if (user.getAge() == null || user.getAge() <= 0) {
+            throw new IllegalArgumentException("Valid age is required");
+        }
+
+        // Role is mandatory as we wouldn't know their permissions
+        if (user.getRole() == null || user.getRole().trim().isEmpty()) {
+            throw new IllegalArgumentException("Role is required");
+        }
+    }
+
 }
