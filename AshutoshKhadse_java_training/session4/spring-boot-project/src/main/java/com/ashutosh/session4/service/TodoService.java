@@ -7,6 +7,7 @@ import com.ashutosh.session4.entity.TodoStatus;
 import com.ashutosh.session4.exception.TodoNotFoundException;
 import com.ashutosh.session4.repository.TodoRepository;
 import org.springframework.stereotype.Service;
+import com.ashutosh.session4.exception.InvalidStatusTransitionException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,5 +72,59 @@ public class TodoService {
                 todo.getStatus(),
                 todo.getCreatedAt()
         );
+    }
+
+     // Updates an existing Todo's details and status.
+     // I've structured this to allow "partial updates," meaning the client doesn't
+     // have to send every single field if they only want to change the title.
+    public TodoResponseDTO updateTodo(Long id, TodoRequestDTO requestDTO) {
+        // 1. Verify existence using your custom exception
+        // If the ID is invalid, this throws immediately, preventing any unnecessary logic execution
+        Todo existingTodo = todoRepository.findById(id)
+                .orElseThrow(() -> new TodoNotFoundException(id));
+
+        // 2. Validate and Update Status
+        // I only trigger the validation logic if the user is actually providing a new status
+        // that is different from what we already have in the database.
+        if (requestDTO.getStatus() != null && requestDTO.getStatus() != existingTodo.getStatus()) {
+            validateStatusTransition(existingTodo.getStatus(), requestDTO.getStatus());
+            existingTodo.setStatus(requestDTO.getStatus());
+        }
+
+        // 3. Update Title and Description
+        // This ensures that a user can't accidentally "update" a title to just empty spaces.
+        if (requestDTO.getTitle() != null && !requestDTO.getTitle().isBlank()) {
+            existingTodo.setTitle(requestDTO.getTitle());
+        }
+
+        // 4. Update Description: Simple null check allows clearing a description if they send an empty string
+        if (requestDTO.getDescription() != null) {
+            existingTodo.setDescription(requestDTO.getDescription());
+        }
+
+        // Saving the updated state and converting it back to a DTO for the response.
+        Todo updatedTodo = todoRepository.save(existingTodo);
+        return mapToResponseDTO(updatedTodo);
+    }
+
+    // Deletes a Todo
+    public void deleteTodo(Long id) {
+        // Instead of just checking if it exists, I fetch the whole object
+        Todo todo = todoRepository.findById(id)
+                .orElseThrow(() -> new TodoNotFoundException(id));
+        todoRepository.delete(todo);
+    }
+
+    // Tasks can only move between PENDING and COMPLETED.
+    private void validateStatusTransition(TodoStatus current, TodoStatus requested) {
+        // Only PENDING <-> COMPLETED is allowed.
+        boolean isValid = (current == TodoStatus.PENDING && requested == TodoStatus.COMPLETED) ||
+                (current == TodoStatus.COMPLETED && requested == TodoStatus.PENDING);
+
+        if (!isValid) {
+            // I'm using our custom exception here so the GlobalExceptionHandler
+            // can tell the user exactly which transition was illegal
+            throw new InvalidStatusTransitionException(current, requested);
+        }
     }
 }
