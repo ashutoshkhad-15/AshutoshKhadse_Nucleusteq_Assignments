@@ -43,4 +43,39 @@ public class TodoController {
         // ResponseEntity.ok() here returns the list with a 200 OK status.
         return ResponseEntity.ok(todos);
     }
+
+    // 3. GET TODO BY ID (GET /todos/{id})
+    // I used @PathVariable to grab the ID directly from the URL.
+    // If the service doesn't find the todo, it throws an exception which our
+    // GlobalExceptionHandler handles, so I can keep this method simple and clean.
+    @GetMapping("/{id}")
+    public ResponseEntity<TodoResponseDTO> getTodoById(@PathVariable Long id) {
+        TodoResponseDTO todo = todoService.getTodoById(id);
+        return ResponseEntity.ok(todo);
+    }
+
+    // 4. UPDATE TODO (PUT /todos/{id})
+    // I'm using @Valid here because even when updating, we must ensure
+    // the title and description follow our length and nullability rules.
+    @PutMapping("/{id}")
+    public ResponseEntity<TodoResponseDTO> updateTodo(
+            @PathVariable Long id,
+            @Valid @RequestBody TodoRequestDTO requestDTO) {
+        // I'm passing both the ID from the URL and the data from the Body
+        // to the service layer to handle the state-transition business logic.
+        TodoResponseDTO updatedTodo = todoService.updateTodo(id, requestDTO);
+        return ResponseEntity.ok(updatedTodo);
+    }
+
+    // 5. DELETE TODO (DELETE /todos/{id})
+    // For the delete operation, I noticed that we don't really have any data
+    // to send back to the user once the record is gone.
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTodo(@PathVariable Long id) {
+        todoService.deleteTodo(id);
+        // Following standard REST practices, I'm returning '204 No Content'
+        // It's a clear signal to the client that the action was successful
+        // and there is nothing more to show.
+        return ResponseEntity.noContent().build();
+    }
 }
