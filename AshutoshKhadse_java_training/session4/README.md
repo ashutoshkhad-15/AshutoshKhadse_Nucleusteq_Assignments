@@ -61,3 +61,62 @@ You can monitor the database state at: `http://localhost:8080/h2-console`
 * **JDBC URL:** `jdbc:h2:mem:tododb`
 * **User:** `sa`
 * **Password:** `password`
+
+
+# Session 5: Enterprise Flow and Testing
+
+This phase focused on transforming the Todo API into a production-ready system by implementing **Observability**, **Dependency Injection for External Services**, and **Comprehensive Test Automation**.
+
+---
+
+## 1. System Observability (SLF4J Logging)
+I implemented a strategic logging hierarchy to ensure the system is "observable" without the need for a debugger.
+
+* **Controller Layer:** Logs incoming requests and API milestones (e.g., `Received request to create Todo`).
+* **Service Layer:** Uses `INFO` logs for successful business events and `WARN` logs for edge cases, such as failed lookups or invalid status transitions.
+* **Custom Pattern:** Configured a professional console pattern in `application.properties` including timestamps, thread IDs, and log levels for easier debugging.
+
+## 2. External Service Simulation
+To demonstrate system integration, we introduced the `NotificationServiceClient`:
+
+* **Purpose:** Simulates an external notification system (like Email or SMS).
+* **Implementation:** Injected into the `TodoService` via **Constructor Injection**.
+* **Trigger Points:** Automatically dispatches a notification whenever a Todo is **Created**, **Updated to COMPLETED**, or **Deleted**.
+
+## 3. Comprehensive Testing & Quality Assurance
+Used **JUnit 5**, **Mockito**, and **MockMvc**.
+
+### A. Service Layer (Unit Testing)
+* **Isolation:** Used `@Mock` to isolate the business logic from the database and notification clients.
+* **Happy Path:** Validated successful CRUD flows and correct DTO mapping.
+* **Red Path (Exception Handling):** Explicitly tested that `TodoNotFoundException` and `InvalidStatusTransitionException` are thrown under the correct conditions.
+* **Logic Refinement:** Leveraged coverage reports to identify and fix a status validation edge case where identical status updates were bypassing safety checks.
+
+### B. Controller Layer (Integration Testing)
+* **MockMvc:** Used to simulate real HTTP calls (`POST`, `GET`, `PUT`, `DELETE`).
+* **Verification:** Verified HTTP Status Codes (`201`, `204`, `404`) and validated JSON response structures using `jsonPath`.
+* **Spring Boot 3.4 Compatibility:** Implemented the modern `@MockitoBean` for seamless mock injection into the Spring Application Context.
+
+---
+
+## 4. Code Coverage Report
+The project exceeded the mandatory 85% requirement, reaching near-total coverage of all core business components.
+
+### Final Coverage Metrics:
+| Layer | Line Coverage |
+| :--- | :--- |
+| **Overall** | **98%** |
+| **Controller Layer** | 100% |
+| **Service Layer** | 100% |
+
+---
+
+## How to Run Tests
+To verify the coverage and run the test suite:
+
+1.  Open your terminal in the project root.
+2.  Run the following command:
+    ```bash
+    mvn clean test
+    ```
+3.  **To view the visual report in IntelliJ:** Right-click the `src/test/java` folder and select **'Run All Tests with Coverage'**.
