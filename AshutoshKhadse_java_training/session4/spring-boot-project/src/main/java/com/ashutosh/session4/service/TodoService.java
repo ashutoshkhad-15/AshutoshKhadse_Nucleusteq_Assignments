@@ -19,10 +19,14 @@ import java.util.stream.Collectors;
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    // I added the NotificationServiceClient here as a 'private final' field.
+    private final NotificationServiceClient notificationService;
 
     // Using constructor-based injection
-    public TodoService(TodoRepository todoRepository) {
+    // I updated the constructor to accept our new notification service.
+    public TodoService(TodoRepository todoRepository, NotificationServiceClient notificationService) {
         this.todoRepository = todoRepository;
+        this.notificationService = notificationService;
     }
 
     // POST: Handles the logic for adding a new task.
