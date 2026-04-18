@@ -8,6 +8,9 @@ import com.ashutosh.session4.exception.TodoNotFoundException;
 import com.ashutosh.session4.repository.TodoRepository;
 import org.springframework.stereotype.Service;
 import com.ashutosh.session4.exception.InvalidStatusTransitionException;
+// added for logging functionalities
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +20,11 @@ import java.util.stream.Collectors;
 // this class handles all the data transformations.
 @Service
 public class TodoService {
+
+    // I initialized the SLF4J logger specifically for the TodoService class.
+    // Keeping it 'private static final' ensures we don't waste memory creating a new logger
+    // object every time the service is called, and it accurately tags our logs in the console
+    private static final Logger logger = LoggerFactory.getLogger(TodoService.class);
 
     private final TodoRepository todoRepository;
     // I added the NotificationServiceClient here as a 'private final' field.
@@ -31,6 +39,13 @@ public class TodoService {
 
     // POST: Handles the logic for adding a new task.
     public TodoResponseDTO createTodo(TodoRequestDTO requestDTO) {
+
+        // I added an INFO log right at the start of the method.
+        // If something breaks during the save process,
+        // we can look at the logs to look what failed
+        // I also used the `{}` placeholder to let SLF4J handle injecting the title efficiently
+        logger.info("Service: Processing request to create new TODO with title: {}", requestDTO.getTitle());
+
         // I'm creating a new Entity object and mapping the DTO fields to it
         Todo todo = new Todo();
         todo.setTitle(requestDTO.getTitle());
@@ -43,6 +58,10 @@ public class TodoService {
         todo.setCreatedAt(LocalDateTime.now());
 
         Todo savedTodo = todoRepository.save(todo);
+
+        // after we successfully save the Todo, the dummy NotificationServiceClient is triggered
+        notificationService.sendNotification("New TODO created: " + savedTodo.getTitle());
+
         // returning a ResponseDTO so the frontend never sees the raw Entity
         return mapToResponseDTO(savedTodo);
     }
