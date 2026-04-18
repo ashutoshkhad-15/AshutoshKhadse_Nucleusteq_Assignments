@@ -11,6 +11,8 @@ import com.ashutosh.session4.dto.TodoRequestDTO;
 import com.ashutosh.session4.dto.TodoResponseDTO;
 import com.ashutosh.session4.entity.Todo;
 import com.ashutosh.session4.entity.TodoStatus;
+import com.ashutosh.session4.exception.InvalidStatusTransitionException;
+import com.ashutosh.session4.exception.TodoNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -131,5 +133,57 @@ public class TodoServiceTest {
         // Assert: The only way to test a void method is to verify that its internal dependencies were called!
         // So I'm verifying that the repository's delete() method was executed exactly once with our object.
         verify(todoRepository, times(1)).delete(pendingTodo);
+    }
+
+    // Exception & Edge Case Testing
+    // I wanted to make sure my code doesn't just work when everything goes right,
+    // but also handles failures gracefully and exactly as we designed it to
+
+    @Test
+    void getTodoById_ShouldThrowException_WhenIdNotFound() {
+        // Arrange: Simulate the database returning completely empty
+        when(todoRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // Act & Assert: I used assertThrows here. I learned that this is the best way
+        // to test exceptions in JUnit 5. It expects my specific TodoNotFoundException
+        // to be thrown when the lambda function (todoService.getTodoById) executes.
+        assertThrows(TodoNotFoundException.class, () -> todoService.getTodoById(99L));
+    }
+
+    @Test
+    void updateTodo_ShouldThrowException_WhenIdNotFound() {
+        // Arrange: Same as above, simulating a non-existent ID.
+        when(todoRepository.findById(99L)).thenReturn(Optional.empty());
+        TodoRequestDTO request = new TodoRequestDTO("Title", "Desc", TodoStatus.COMPLETED);
+
+        // Act & Assert: Making sure the update method also throws our custom 404 exception
+        // before it even tries to process the data.
+        assertThrows(TodoNotFoundException.class, () -> todoService.updateTodo(99L, request));
+    }
+
+    @Test
+    void updateTodo_ShouldThrowException_WhenInvalidStatusTransition() {
+        // Arrange: Our existing task in the mock database is set to PENDING.
+        when(todoRepository.findById(1L)).thenReturn(Optional.of(pendingTodo));
+
+        // Act: User tries to update it to PENDING again (which our validation logic blocks)
+        TodoRequestDTO request = new TodoRequestDTO("Title", "Desc", TodoStatus.PENDING);
+
+        // Assert: Verify that our business logic catches the bad transition.
+        assertThrows(InvalidStatusTransitionException.class, () -> todoService.updateTodo(1L, request));
+    }
+
+    @Test
+    void deleteTodo_ShouldThrowException_WhenIdNotFound() {
+        // Arrange: Simulate the ID not existing.
+        when(todoRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // Act & Assert: Check for the exception.
+        assertThrows(TodoNotFoundException.class, () -> todoService.deleteTodo(99L));
+
+        // Verify: I used never() to explicitly guarantee
+        // that if the ID is not found, the service completely stops and absolutely
+        // DOES NOT try to call the delete method on the repository.
+        verify(todoRepository, never()).delete(any());
     }
 }

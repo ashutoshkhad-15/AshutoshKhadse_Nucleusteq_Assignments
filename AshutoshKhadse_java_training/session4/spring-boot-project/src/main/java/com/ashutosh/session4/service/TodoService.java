@@ -133,7 +133,11 @@ public class TodoService {
         // 2. Validate and Update Status
         // I only trigger the validation logic if the user is actually providing a new status
         // that is different from what we already have in the database.
-        if (requestDTO.getStatus() != null && requestDTO.getStatus() != existingTodo.getStatus()) {
+        // I updated this logic based on test coverage results. Previously, if a user sent
+        // the exact same status (e.g., PENDING to PENDING), the check bypassed the validation
+        // helper and caused downstream errors. Now, we strictly validate ANY provided status
+        // to ensure the transition rules (and custom exceptions) are always enforced.
+        if (requestDTO.getStatus() != null) {
             validateStatusTransition(existingTodo.getStatus(), requestDTO.getStatus());
             existingTodo.setStatus(requestDTO.getStatus());
         }
