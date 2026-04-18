@@ -68,6 +68,12 @@ public class TodoService {
 
     // GET ALL: Returns a list of all DTOs.
     public List<TodoResponseDTO> getAllTodos() {
+
+        // I added this log to track how often the full list is being requested
+        // I'm using INFO here instead of DEBUG so that the logs are visible in the
+        // default console output without needing extra configuration.
+        logger.info("Service: Fetching all TODOs from the database");
+
         // I used a stream here It fetches all entities, transforms each one using our helper method
         // and bundles them into a clean list
         return todoRepository.findAll()
@@ -78,11 +84,22 @@ public class TodoService {
 
     // GET BY ID: Returns a single DTO or throws our custom exception.
     public TodoResponseDTO getTodoById(Long id) {
+
+        // Logging the specific ID helps us trace exactly which task a user is looking for.
+        // I opted for INFO level for all primary lookups to ensure full
+        // traceability of user actions in the standard logs.
+        logger.info("Service: Fetching TODO with ID: {}", id);
+
         // I used .orElseThrow() to handle the "Not Found"
         // we created TodoNotFoundException, our GlobalExceptionHandler
         // will automatically turn this into a 404 response.
         Todo todo = todoRepository.findById(id)
-                .orElseThrow(() -> new TodoNotFoundException(id));
+                .orElseThrow(() -> {
+                    // Using WARN here because a missing ID represents a potential
+                    // issue with the client request
+                    logger.warn("Service: Todo search failed. ID {} not found", id);
+                    return new TodoNotFoundException(id);
+                });
         return mapToResponseDTO(todo);
     }
 
@@ -101,10 +118,17 @@ public class TodoService {
      // I've structured this to allow "partial updates," meaning the client doesn't
      // have to send every single field if they only want to change the title.
     public TodoResponseDTO updateTodo(Long id, TodoRequestDTO requestDTO) {
+
+        // logging the info of updating also
+        logger.info("Service: Attempting to update TODO ID: {}", id);
+
         // 1. Verify existence using your custom exception
         // If the ID is invalid, this throws immediately, preventing any unnecessary logic execution
         Todo existingTodo = todoRepository.findById(id)
-                .orElseThrow(() -> new TodoNotFoundException(id));
+                .orElseThrow(() -> {
+                    logger.warn("Service: Update failed. ID {} does not exist", id);
+                    return new TodoNotFoundException(id);
+                });
 
         // 2. Validate and Update Status
         // I only trigger the validation logic if the user is actually providing a new status
@@ -132,9 +156,16 @@ public class TodoService {
 
     // Deletes a Todo
     public void deleteTodo(Long id) {
+
+        // Deletion is logged at INFO level to maintain a clear record.
+        logger.info("Service: Processing deletion for TODO ID: {}", id);
+
         // Instead of just checking if it exists, I fetch the whole object
         Todo todo = todoRepository.findById(id)
-                .orElseThrow(() -> new TodoNotFoundException(id));
+                .orElseThrow(() -> {
+                    logger.warn("Service: Delete failed. ID {} not found", id);
+                    return new TodoNotFoundException(id);
+                });
         todoRepository.delete(todo);
     }
 
