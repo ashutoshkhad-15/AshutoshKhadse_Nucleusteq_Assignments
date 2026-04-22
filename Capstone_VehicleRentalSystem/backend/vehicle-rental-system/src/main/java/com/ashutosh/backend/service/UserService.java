@@ -6,6 +6,8 @@ import com.ashutosh.backend.dto.response.LoginResponseDTO;
 import com.ashutosh.backend.dto.response.UserResponseDTO;
 import com.ashutosh.backend.entity.AppUser;
 import com.ashutosh.backend.enums.UserRole;
+import com.ashutosh.backend.exception.DuplicateResourceException;
+import com.ashutosh.backend.exception.InvalidCredentialsException;
 import com.ashutosh.backend.repository.AppUserRepository;
 import com.ashutosh.backend.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,12 +37,12 @@ public class UserService {
 
         // Business Validation: Prevent duplicate accounts
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email is already registered");
+            throw new DuplicateResourceException("Email is already registered");
         }
 
-        // If you mapped this method in your repository, uncomment it!
+        // If you mapped this method in your repository, uncomment it
         if (userRepository.existsByDriversLicenseNumber(request.getDriversLicenseNumber())) {
-            throw new RuntimeException("Driver's license is already registered");
+            throw new DuplicateResourceException("Driver's license is already registered");
         }
 
         // Cryptography: Secure the password before saving
@@ -64,18 +66,20 @@ public class UserService {
     }
 
     public LoginResponseDTO authenticateUser(LoginRequestDTO request) {
+        // Define and sanitize the email BEFORE we use it
+        String sanitizedEmail = request.getEmail().toLowerCase().trim();
         // Find user by email
-        AppUser user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        AppUser user = userRepository.findByEmail(sanitizedEmail)
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
-        // Senior Safeguard: Block deactivated/banned users from logging in
+        // Block deactivated/banned users from logging in
         if (!user.getIsActive()) {
-            throw new RuntimeException("Account has been deactivated. Please contact support.");
+            throw new InvalidCredentialsException("Account has been deactivated. Please contact support.");
         }
 
         // Verify the raw password against the hashed database password
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Invalid email or password");
+            throw new InvalidCredentialsException("Invalid email or password");
         }
 
         // Generate the real cryptographic JWT token
