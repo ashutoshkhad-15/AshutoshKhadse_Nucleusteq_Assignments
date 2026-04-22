@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusFleet | Login</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="dark-theme">
+
+    <div class="fullscreen-hero">
+
+        <nav class="top-nav fade-in-slow">
+            <div class="brand-container" style="display: flex; align-items: center; gap: 2rem;">
+                <div class="brand-logo">NexusFleet.</div>
+
+                <label class="theme-switch" title="Toggle Light/Dark Mode">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="nav-links">
+                <a href="dashboard.html">Fleet Catalog</a>
+                <a href="#">Support</a>
+                <a href="register.html" class="nav-btn">Sign Up</a>
+            </div>
+        </nav>
+
+        <div class="hero-container">
+
+            <div class="hero-text fade-in-slow">
+                <h1><span>Nexus</span>Fleet.</h1>
+                <p>Browse premium vehicles, book instantly, and hit the road.</p>
+            </div>
+
+            <div class="form-wrapper slide-up">
+                <div class="glass-card">
+
+                    <h2>Welcome Back</h2>
+                    <p class="subtitle">Log in to manage your bookings.</p>
+
+                    <div id="errorMessage" class="error-toast"></div>
+
+                    <form id="loginForm">
+
+                        <div class="floating-group">
+                            <input type="email" id="loginEmail" required placeholder=" ">
+                            <label for="loginEmail">Email Address</label>
+                        </div>
+
+                        <div class="floating-group password-group">
+                            <input type="password" id="loginPassword" required placeholder=" ">
+                            <label for="loginPassword">Password</label>
+                            <button type="button" id="togglePassword" class="password-toggle-btn"
+                                aria-label="Toggle password visibility">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="eye-icon">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <button type="submit" id="loginButton" class="btn-modern">
+                            Sign In
+                        </button>
+
+                    </form>
+
+                    <div class="link-container">
+                        <span class="text-muted">New to NexusFleet?</span>
+                        <a href="register.html" class="hover-link">Create an account</a>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusFleet | Join the Elite</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="dark-theme">
+
+    <div class="fullscreen-hero">
+
+        <nav class="top-nav fade-in-slow">
+            <div class="brand-container" style="display: flex; align-items: center; gap: 2rem;">
+                <div class="brand-logo">NexusFleet.</div>
+
+                <label class="theme-switch" title="Toggle Light/Dark Mode">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="nav-links">
+                <a href="dashboard.html">Fleet Catalog</a>
+                <a href="#">Support</a>
+                <a href="index.html" class="nav-btn">Sign In</a>
+            </div>
+        </nav>
+
+        <div class="hero-container">
+
+            <div class="hero-text fade-in-slow">
+                <h1>Your next journey begins here.</h1>
+                <p>Join NexusFleet to experience seamless booking and unparalleled access to our premium
+                    high-performance fleet.</p>
+            </div>
+
+            <div class="form-wrapper wide-card slide-up">
+                <div class="glass-card">
+
+                    <h2>Create Account</h2>
+                    <p class="subtitle">Enter your details to set up your member profile.</p>
+
+                    <div id="registerErrorMessage" class="error-toast"></div>
+
+                    <form id="registerForm">
+
+                        <div class="form-section">
+                            <div class="form-grid">
+                                <div class="floating-group">
+                                    <input type="text" id="registerFirstName" required placeholder=" ">
+                                    <label for="registerFirstName">First Name</label>
+                                </div>
+                                <div class="floating-group">
+                                    <input type="text" id="registerLastName" required placeholder=" ">
+                                    <label for="registerLastName">Last Name</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-grid">
+                                <div class="floating-group">
+                                    <input type="email" id="registerEmail" required placeholder=" ">
+                                    <label for="registerEmail">Email Address</label>
+                                </div>
+                                <div class="floating-group">
+                                    <input type="tel" id="registerPhone" required placeholder=" ">
+                                    <label for="registerPhone">Phone Number</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-grid">
+                                <div class="floating-group">
+                                    <input type="text" id="registerLicense" required placeholder=" ">
+                                    <label for="registerLicense">Driver's License</label>
+                                </div>
+
+                                <div class="floating-group password-group">
+                                    <input type="password" id="registerPassword" required placeholder=" ">
+                                    <label for="registerPassword">Password</label>
+                                    <button type="button" id="toggleRegPassword" class="password-toggle-btn"
+                                        aria-label="Toggle password visibility">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" class="eye-icon">
+                                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="registerButton" class="btn-modern">
+                            Join NexusFleet
+                        </button>
+
+                    </form>
+
+                    <div class="link-container">
+                        <span class="text-muted">Already a member?</span>
+                        <a href="index.html" class="hover-link">Sign in here</a>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+
+</body>
+
+</html>
