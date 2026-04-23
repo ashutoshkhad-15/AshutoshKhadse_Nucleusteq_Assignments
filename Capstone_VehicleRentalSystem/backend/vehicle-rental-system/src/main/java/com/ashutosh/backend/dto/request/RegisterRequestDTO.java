@@ -2,6 +2,7 @@ package com.ashutosh.backend.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -11,9 +12,11 @@ public class RegisterRequestDTO {
     // this DTO grabs all the required fields from our AppUser database schema
     // so a new customer can successfully create an account.
     @NotBlank(message = "First name is required")
+    @Size(min = 2, max = 50)
     private String firstName;
 
     @NotBlank(message = "Last name is required")
+    @Size(min = 2, max = 50)
     private String lastName;
 
     @NotBlank(message = "Email is required")
@@ -27,6 +30,7 @@ public class RegisterRequestDTO {
     private String password;
 
     @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be exactly 10 digits")
     private String phoneNumber;
 
     // requiring this upfront satisfies my Capstone scope for real-world KYC logic.
