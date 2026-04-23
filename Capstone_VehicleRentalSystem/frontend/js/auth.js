@@ -1,10 +1,8 @@
-
 const API_BASE_URL = 'http://localhost:8080/api/auth';
 
 /* THEME SWITCHER LOGIC */
 const themeToggle = document.getElementById('themeToggle');
 if (themeToggle) {
-    // Check if user previously selected light mode
     if (localStorage.getItem('theme') === 'light') {
         document.body.classList.replace('dark-theme', 'light-theme');
         themeToggle.checked = true;
@@ -19,6 +17,19 @@ if (themeToggle) {
             localStorage.setItem('theme', 'dark');
         }
     });
+}
+
+/* FORMATTERS */
+function formatValidationErrors(errors) {
+    return Object.entries(errors)
+        .map(([field, message]) => `❌ ${formatFieldName(field)}: ${message}`)
+        .join("<br>");
+}
+
+function formatFieldName(field) {
+    return field
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, str => str.toUpperCase());
 }
 
 /* PASSWORD VISIBILITY TOGGLES */
@@ -48,18 +59,24 @@ if (toggleRegPasswordBtn && regPasswordInput) {
 
 /* LOGIN LOGIC & TOKEN STORAGE */
 const loginForm = document.getElementById('loginForm');
+
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
-        const errorDiv = document.getElementById('errorMessage');
+
+        // Handle both possible IDs safely
+        const errorDiv = document.getElementById('loginErrorMessage') || document.getElementById('errorMessage');
+
         const submitBtn = document.getElementById('loginButton');
 
-        // UX: Disable button and show loading state
-        submitBtn.classList.add('loading');
-        submitBtn.textContent = "Authenticating...";
+        //  Prevent crash if button not found
+        if (submitBtn) {
+            submitBtn.classList.add('loading');
+            submitBtn.textContent = "Authenticating...";
+        }
 
         try {
             const response = await fetch(`${API_BASE_URL}/login`, {
@@ -71,28 +88,34 @@ if (loginForm) {
             const data = await response.json();
 
             if (response.ok) {
-                // SUCCESS: Store the JWT and User info securely
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user_role', data.user.role);
                 localStorage.setItem('user_name', data.user.firstName);
 
-                // ROUTING: Send the authenticated user to the protected dashboard
                 window.location.href = 'dashboard.html';
             } else {
-                showError(errorDiv, data.error || "Authentication failed. Please check your credentials.");
+                if (data.errors) {
+                    showError(errorDiv, formatValidationErrors(data.errors));
+                } else {
+                    showError(errorDiv, data.error || data.message || "Invalid email or password");
+                }
             }
+
         } catch (error) {
-            showError(errorDiv, "Server connection error. Is the NexusFleet backend running?");
+            showError(errorDiv, "Server connection error. Is backend running?");
         } finally {
-            // UX: Restore button state
-            submitBtn.classList.remove('loading');
-            submitBtn.textContent = "Sign In";
+            // Prevent crash if button not found
+            if (submitBtn) {
+                submitBtn.classList.remove('loading');
+                submitBtn.textContent = "Sign In";
+            }
         }
     });
 }
 
 /* REGISTRATION LOGIC */
 const registerForm = document.getElementById('registerForm');
+
 if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -100,7 +123,6 @@ if (registerForm) {
         const errorDiv = document.getElementById('registerErrorMessage');
         const submitBtn = document.getElementById('registerButton');
 
-        // Construct the exact DTO payload Spring Boot expects
         const payload = {
             firstName: document.getElementById('registerFirstName').value.trim(),
             lastName: document.getElementById('registerLastName').value.trim(),
@@ -110,9 +132,11 @@ if (registerForm) {
             password: document.getElementById('registerPassword').value
         };
 
-        // UX: Disable button
-        submitBtn.classList.add('loading');
-        submitBtn.textContent = "Creating Profile...";
+        // Prevent crash if button not found
+        if (submitBtn) {
+            submitBtn.classList.add('loading');
+            submitBtn.textContent = "Creating Profile...";
+        }
 
         try {
             const response = await fetch(`${API_BASE_URL}/register`, {
@@ -124,28 +148,40 @@ if (registerForm) {
             const data = await response.json();
 
             if (response.ok) {
-                // SUCCESS: Alert user and route back to login
-                alert('Welcome to NexusFleet! Your account has been created. Please sign in.');
-                window.location.href = 'index.html';
+                alert("🎉 Account created successfully! Please login.");
+                window.location.href = "index.html";
             } else {
-                showError(errorDiv, data.error || "Registration failed. Please check your information.");
+                if (data.errors) {
+                    showError(errorDiv, formatValidationErrors(data.errors));
+                } else {
+                    showError(errorDiv, data.message || "Registration failed");
+                }
             }
+
         } catch (error) {
-            showError(errorDiv, "Server connection error. Please try again later.");
+            showError(errorDiv, "Server connection error. Please try again.");
         } finally {
-            submitBtn.classList.remove('loading');
-            submitBtn.textContent = "Join NexusFleet";
+            if (submitBtn) {
+                submitBtn.classList.remove('loading');
+                submitBtn.textContent = "Join NexusFleet";
+            }
         }
     });
 }
 
 /* HELPER FUNCTIONS */
 function showError(element, message) {
-    element.textContent = message;
+    if (!element) return; 
+    element.innerHTML = message;
     element.classList.add('active');
 
-    // Trigger CSS "shake" reflow
     element.style.animation = 'none';
     element.offsetHeight;
     element.style.animation = null;
+}
+
+/* LOGOUT FUNCTION */
+function logout() {
+    localStorage.clear();
+    window.location.href = "index.html";
 }
