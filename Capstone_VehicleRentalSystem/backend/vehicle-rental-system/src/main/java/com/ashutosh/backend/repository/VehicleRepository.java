@@ -9,9 +9,16 @@ import java.util.List;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
-    // these custom finders will allow the frontend to filter vehicles by their type (CAR/BIKE)
-    // and only show ones that are currently 'AVAILABLE' to be booked.
+
+    // Get all vehicles that are currently available to be booked
     List<Vehicle> findByStatus(VehicleStatus status);
+
+    // Filter vehicles by both Type (CAR/BIKE) and Status (AVAILABLE)
     List<Vehicle> findByVehicleTypeAndStatus(VehicleType type, VehicleStatus status);
+
+    // Filter vehicles by just Type
     List<Vehicle> findByVehicleType(VehicleType vehicleType);
+
+    // Required by VehicleService.java to prevent duplicate license plates during POST/PUT
+    boolean existsByLicensePlate(String licensePlate);
 }

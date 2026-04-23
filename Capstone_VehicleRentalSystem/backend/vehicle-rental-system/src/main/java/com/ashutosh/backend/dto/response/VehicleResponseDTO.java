@@ -15,8 +15,8 @@ public class VehicleResponseDTO {
     private String model;
     private String licensePlate;
     private VehicleType vehicleType;
-    private String fuelType;
-    private String transmission;
+    private String vehicleFuelType;
+    private String vehicleTransmission;
     private Integer seatingCapacity;
     private BigDecimal dailyRate;
     private VehicleStatus status;
