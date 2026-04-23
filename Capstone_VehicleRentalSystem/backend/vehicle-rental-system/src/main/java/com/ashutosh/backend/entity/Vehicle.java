@@ -44,7 +44,7 @@ public class Vehicle {
     // License plate must be unique, we can't have two different cars with the same plate in our system
     // @Pattern uses a Regular Expression (Regex) to ensure only valid license plate characters are allowed.
     @NotBlank(message = "License plate cannot be blank")
-    @Pattern(regexp = "^[A-Z0-9]+$", message = "License plate must contain only uppercase letters, numbers")
+    @Pattern(regexp = "^[A-Z0-9-]+$", message = "License plate must contain only uppercase letters, numbers and hyphens")
     @Column(name = "license_plate", unique = true, nullable = false, length = 20)
     private String licensePlate;
 
@@ -61,7 +61,7 @@ public class Vehicle {
 
     @NotNull(message = "Transmission is required")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(name = "transmission", nullable = false, length = 30)
     private VehicleTransmission  vehicleTransmission;
 
     @NotNull(message = "Seating capacity is required")

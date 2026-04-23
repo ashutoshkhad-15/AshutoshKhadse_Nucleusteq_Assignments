@@ -19,7 +19,7 @@ public class VehicleRequestDTO {
     private String model;
 
     @NotBlank(message = "License plate cannot be blank")
-    @Pattern(regexp = "^[A-Z0-9]+$", message = "License plate must contain only uppercase letters and numbers")
+    @Pattern(regexp = "^[A-Z0-9-]+$", message = "License plate must contain only uppercase letters and numbers and hyphens")
     private String licensePlate;
 
     @NotNull(message = "Vehicle type is required")
