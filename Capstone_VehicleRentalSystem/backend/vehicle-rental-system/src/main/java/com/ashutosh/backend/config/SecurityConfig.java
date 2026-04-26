@@ -34,11 +34,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Required for stateless REST APIs
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // PUBLIC: Registration and Login are always open
-                        .requestMatchers("/api/auth/**").permitAll()
+
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
 
                         // PUBLIC: Anyone can view the vehicle catalog
-                        .requestMatchers(HttpMethod.GET, "/api/vehicles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/admin/**").permitAll()
 
                         // ADMIN ONLY: Adding/Deleting cars and viewing all bookings
                         .requestMatchers(HttpMethod.POST, "/api/vehicles/**").hasRole("ADMIN")
@@ -46,10 +47,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/vehicles/**").hasRole("ADMIN")
                         .requestMatchers("/api/bookings/admin/**").hasRole("ADMIN")
 
-                        // Everything else requires the user to be logged in (e.g., making a booking)
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/vehicle/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
-                // Inject our custom JWT Filter before the standard Spring security checks
+                // Inject custom JWT Filter before the standard Spring security checks
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

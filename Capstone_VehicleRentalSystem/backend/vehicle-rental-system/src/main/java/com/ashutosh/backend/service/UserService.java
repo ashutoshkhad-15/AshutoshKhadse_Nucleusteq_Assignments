@@ -8,6 +8,7 @@ import com.ashutosh.backend.entity.AppUser;
 import com.ashutosh.backend.enums.UserRole;
 import com.ashutosh.backend.exception.DuplicateResourceException;
 import com.ashutosh.backend.exception.InvalidCredentialsException;
+import com.ashutosh.backend.exception.ResourceNotFoundException;
 import com.ashutosh.backend.repository.AppUserRepository;
 import com.ashutosh.backend.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,7 +41,6 @@ public class UserService {
             throw new DuplicateResourceException("Email is already registered");
         }
 
-        // If you mapped this method in your repository, uncomment it
         if (userRepository.existsByDriversLicenseNumber(request.getDriversLicenseNumber())) {
             throw new DuplicateResourceException("Driver's license is already registered");
         }
@@ -65,8 +65,13 @@ public class UserService {
         return mapToUserResponseDTO(savedUser);
     }
 
+    public UserResponseDTO getUserProfile(String email) {
+        AppUser user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return mapToUserResponseDTO(user);
+    }
+
     public LoginResponseDTO authenticateUser(LoginRequestDTO request) {
-        // Define and sanitize the email BEFORE we use it
         String sanitizedEmail = request.getEmail().toLowerCase().trim();
         // Find user by email
         AppUser user = userRepository.findByEmail(sanitizedEmail)
@@ -92,7 +97,7 @@ public class UserService {
                 .build();
     }
 
-    // Helper method to keep our mapping DRY (Don't Repeat Yourself)
+    // Helper method
     private UserResponseDTO mapToUserResponseDTO(AppUser user) {
         return UserResponseDTO.builder()
                 .id(user.getId())
@@ -100,7 +105,7 @@ public class UserService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .role(user.getRole()) // Assuming your DTO expects a String here, otherwise remove .name()
+                .role(user.getRole())
                 .isActive(user.getIsActive())
                 .build();
     }

@@ -31,4 +31,19 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         return ResponseEntity.ok(userService.authenticateUser(request));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getCurrentUser(org.springframework.security.core.Authentication authentication) {
+        String userEmail = "";
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof com.ashutosh.backend.entity.AppUser) {
+            userEmail = ((com.ashutosh.backend.entity.AppUser) principal).getEmail();
+        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+            userEmail = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+        } else {
+            userEmail = principal.toString();
+        }
+        return ResponseEntity.ok(userService.getUserProfile(userEmail));
+    }
 }
