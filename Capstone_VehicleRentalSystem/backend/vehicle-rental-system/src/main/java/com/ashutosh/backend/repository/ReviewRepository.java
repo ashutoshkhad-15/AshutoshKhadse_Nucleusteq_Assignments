@@ -4,8 +4,12 @@ import com.ashutosh.backend.entity.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
-    // this allows us to pull up a review based on the specific booking ID.
+
     boolean existsByBookingId(Long bookingId);
+    
+    List<Review> findByBooking_Vehicle_IdOrderByCreatedAtDesc(Long vehicleId);
 }
