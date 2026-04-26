@@ -7,6 +7,7 @@ import com.ashutosh.backend.enums.VehicleStatus;
 import com.ashutosh.backend.enums.VehicleType;
 import com.ashutosh.backend.enums.VehicleFuelType;
 import com.ashutosh.backend.enums.VehicleTransmission;
+import com.ashutosh.backend.exception.ResourceNotFoundException;
 import com.ashutosh.backend.repository.VehicleRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -118,6 +119,23 @@ public class VehicleService {
         }
 
         return vehicles.stream()
+                .filter(v -> v.getStatus() != VehicleStatus.RETIRED)
+                .map(this::mapToResponseDTO)
+                .toList();
+    }
+    // Get Single Vehicle by ID
+    @Transactional(readOnly = true)
+    public VehicleResponseDTO getVehicleById(Long id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with ID: " + id));
+        return mapToResponseDTO(vehicle);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VehicleResponseDTO> getAllActiveVehicles() {
+        // Exclude RETIRED vehicles from the public view
+        return vehicleRepository.findAll().stream()
+                .filter(v -> v.getStatus() != VehicleStatus.RETIRED)
                 .map(this::mapToResponseDTO)
                 .toList();
     }

@@ -44,10 +44,19 @@ public class VehicleController {
         return ResponseEntity.noContent().build();
     }
 
-    // 4. GET ALL VEHICLES
     @GetMapping
+    public ResponseEntity<List<VehicleResponseDTO>> getActiveVehicles() {
+        return ResponseEntity.ok(vehicleService.getAllActiveVehicles());
+    }
+
+    @GetMapping("/admin/all")
     public ResponseEntity<List<VehicleResponseDTO>> getAllVehicles() {
         return ResponseEntity.ok(vehicleService.getAllVehicles());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<VehicleResponseDTO> getVehicleById(@PathVariable Long id) {
+        return ResponseEntity.ok(vehicleService.getVehicleById(id));
     }
 
     // 5. FILTER VEHICLES
