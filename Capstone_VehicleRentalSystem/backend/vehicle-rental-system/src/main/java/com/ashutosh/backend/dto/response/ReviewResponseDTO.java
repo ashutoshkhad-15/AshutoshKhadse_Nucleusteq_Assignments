@@ -14,4 +14,5 @@ public class ReviewResponseDTO {
     private String comment;
     private String reviewerFirstName; // Extracted from the related AppUser for display
     private LocalDateTime createdAt;
+    private String reviewerEmail;
 }

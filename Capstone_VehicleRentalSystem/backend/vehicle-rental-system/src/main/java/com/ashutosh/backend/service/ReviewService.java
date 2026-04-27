@@ -91,6 +91,7 @@ public class ReviewService {
                 // Extracts the first name from the nested AppUser for the public UI
                 .reviewerFirstName(review.getBooking().getUser().getFirstName())
                 .createdAt(review.getCreatedAt())
+                .reviewerEmail(review.getBooking().getUser().getEmail())
                 .build();
     }
 }
