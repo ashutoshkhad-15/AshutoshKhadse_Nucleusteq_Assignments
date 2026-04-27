@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -70,8 +71,8 @@ public class VehicleService {
             throw new IllegalArgumentException("License plate is already registered to another vehicle.");
         }
 
-        vehicle.setMake(request.getMake().trim());
-        vehicle.setModel(request.getModel().trim());
+        vehicle.setMake(request.getMake());
+        vehicle.setModel(request.getModel());
         vehicle.setLicensePlate(newPlate);
         vehicle.setVehicleType(request.getVehicleType());
         vehicle.setVehicleFuelType(request.getVehicleFuelType());
@@ -79,6 +80,10 @@ public class VehicleService {
         vehicle.setSeatingCapacity(request.getSeatingCapacity());
         vehicle.setDailyRate(request.getDailyRate());
         vehicle.setImageUrl(request.getImageUrl());
+
+        if (request.getStatus() != null) {
+            vehicle.setStatus(request.getStatus());
+        }
 
         // Save and return
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
@@ -104,10 +109,12 @@ public class VehicleService {
 
     // 5. FILTER VEHICLES (By Type & Availability)
     @Transactional(readOnly = true)
-    public List<VehicleResponseDTO> filterVehicles(VehicleType type, VehicleStatus status) {
+    public List<VehicleResponseDTO> filterVehicles(VehicleType type, VehicleStatus status, LocalDate startDate, LocalDate endDate) {
         List<Vehicle> vehicles;
 
-        if (type != null && status != null) {
+        if (startDate != null && endDate != null) {
+            vehicles = vehicleRepository.findAvailableVehiclesByDate(startDate, endDate);
+        } else if (type != null && status != null) {
             vehicles = vehicleRepository.findByVehicleTypeAndStatus(type, status);
         } else if (type != null) {
             vehicles = vehicleRepository.findByVehicleType(type);
@@ -120,6 +127,8 @@ public class VehicleService {
 
         return vehicles.stream()
                 .filter(v -> v.getStatus() != VehicleStatus.RETIRED)
+                .filter(v -> type == null || v.getVehicleType().equals(type))
+                .filter(v -> status == null || v.getStatus().equals(status))
                 .map(this::mapToResponseDTO)
                 .toList();
     }

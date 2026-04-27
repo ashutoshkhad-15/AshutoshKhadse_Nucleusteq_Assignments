@@ -7,10 +7,12 @@ import com.ashutosh.backend.enums.VehicleType;
 import com.ashutosh.backend.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -63,7 +65,9 @@ public class VehicleController {
     @GetMapping("/filter")
     public ResponseEntity<List<VehicleResponseDTO>> filterVehicles(
             @RequestParam(required = false) VehicleType type,
-            @RequestParam(required = false) VehicleStatus status) {
-        return ResponseEntity.ok(vehicleService.filterVehicles(type, status));
+            @RequestParam(required = false) VehicleStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(vehicleService.filterVehicles(type, status, startDate, endDate));
     }
 }

@@ -1,6 +1,7 @@
 package com.ashutosh.backend.dto.request;
 
 import com.ashutosh.backend.enums.VehicleFuelType;
+import com.ashutosh.backend.enums.VehicleStatus;
 import com.ashutosh.backend.enums.VehicleTransmission;
 import com.ashutosh.backend.enums.VehicleType;
 import jakarta.validation.constraints.*;
@@ -30,6 +31,8 @@ public class VehicleRequestDTO {
 
     @NotNull(message = "Transmission is required")
     private VehicleTransmission vehicleTransmission;
+
+    private VehicleStatus status;
 
     @NotNull(message = "Seating capacity is required")
     @Min(value = 1, message = "Seating capacity must be at least 1")
