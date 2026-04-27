@@ -29,6 +29,8 @@ public class BookingService {
     private final VehicleRepository vehicleRepository;
     private final AppUserRepository appuserRepository;
 
+    private final com.ashutosh.backend.repository.ReviewRepository reviewRepository;
+
     @Transactional
     public BookingResponseDTO createBooking(BookingRequestDTO request, String userEmail) {
         // Validate dates
@@ -81,21 +83,24 @@ public class BookingService {
         return mapToResponseDTO(savedBooking);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<BookingResponseDTO> getUserBookings(String userEmail) {
         AppUser user = appuserRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Booking> bookings = bookingRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
+        EvaluateBookings(bookings);
 
-        return bookingRepository.findByUser_IdOrderByCreatedAtDesc(user.getId())
-                .stream()
+        return bookings.stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<BookingResponseDTO> getAllBookingsForAdmin() {
-        return bookingRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
+        List<Booking> bookings = bookingRepository.findAllByOrderByCreatedAtDesc();
+        EvaluateBookings(bookings);
+
+        return bookings.stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
@@ -143,6 +148,29 @@ public class BookingService {
         return mapToResponseDTO(updatedBooking);
     }
 
+    private void EvaluateBookings(List<Booking> bookings) {
+        LocalDate today = LocalDate.now();
+        boolean dbNeedsUpdate = false;
+
+        for (Booking booking : bookings) {
+            if (booking.getStatus() == BookingStatus.CONFIRMED && booking.getEndDate().isBefore(today)) {
+
+                booking.setStatus(BookingStatus.COMPLETED);
+
+                Vehicle vehicle = booking.getVehicle();
+                if (vehicle.getStatus() == VehicleStatus.BOOKED) {
+                    vehicle.setStatus(VehicleStatus.AVAILABLE);
+                }
+
+                dbNeedsUpdate = true;
+            }
+        }
+
+        if (dbNeedsUpdate) {
+            bookingRepository.saveAll(bookings);
+        }
+    }
+
     // HELPER MAPPER
     private BookingResponseDTO mapToResponseDTO(Booking booking) {
         return BookingResponseDTO.builder()
@@ -160,6 +188,7 @@ public class BookingService {
                 .totalAmount(booking.getTotalAmount())
                 .status(booking.getStatus())
                 .createdAt(booking.getCreatedAt())
+                .isReviewed(reviewRepository.existsByBookingId(booking.getId()))
                 .build();
     }
 }

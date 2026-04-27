@@ -33,4 +33,5 @@ public class BookingResponseDTO {
     private BigDecimal    totalAmount;
     private BookingStatus status;
     private LocalDateTime createdAt;
+    private Boolean       isReviewed;
 }
