@@ -5,42 +5,55 @@ import com.ashutosh.backend.dto.response.VehicleResponseDTO;
 import com.ashutosh.backend.entity.Vehicle;
 import com.ashutosh.backend.enums.VehicleStatus;
 import com.ashutosh.backend.enums.VehicleType;
-import com.ashutosh.backend.enums.VehicleFuelType;
-import com.ashutosh.backend.enums.VehicleTransmission;
 import com.ashutosh.backend.exception.ResourceNotFoundException;
 import com.ashutosh.backend.repository.VehicleRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * Service class responsible for managing vehicle inventory.
+ * Handles the business logic for adding, updating, and filtering vehicles.
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
 
-    // 1. ADD VEHICLE (ADMIN)
+    /**
+     * Validates and persists new vehicle details to the database.
+     * Ensures that the license plate is unique and the daily rate is valid before saving.
+     *
+     * @param request The vehicle data transfer object containing creation details.
+     * @return VehicleResponseDTO The successfully saved vehicle data.
+     */
     @Transactional
     public VehicleResponseDTO addVehicle(VehicleRequestDTO request) {
         String licensePlate = request.getLicensePlate().trim().toUpperCase();
+        log.info("Attempting to add a new vehicle with license plate: {}", licensePlate);
 
         if (vehicleRepository.existsByLicensePlate(licensePlate)) {
+            log.warn("Vehicle addition failed: License plate {} already exists in the system.", licensePlate);
             throw new IllegalArgumentException("A vehicle with this license plate already exists.");
         }
 
         if (request.getDailyRate().doubleValue() <= 0) {
+            log.warn("Vehicle addition failed: Invalid daily rate provided ({}).", request.getDailyRate());
             throw new IllegalArgumentException("Daily rate must be greater than 0.");
         }
         if (request.getSeatingCapacity() <= 0) {
+            log.warn("Vehicle addition failed: Invalid seating capacity provided ({}).", request.getSeatingCapacity());
             throw new IllegalArgumentException("Seating capacity must be valid.");
         }
 
-        // Convert the validated DTO into our strict Entity using the Builder pattern
+        // Map the validated request data to the Vehicle entity
         Vehicle vehicle = Vehicle.builder()
                 .make(request.getMake().trim())
                 .model(request.getModel().trim())
@@ -50,24 +63,38 @@ public class VehicleService {
                 .vehicleTransmission(request.getVehicleTransmission())
                 .seatingCapacity(request.getSeatingCapacity())
                 .dailyRate(request.getDailyRate())
-                .status(VehicleStatus.AVAILABLE) // Brand new vehicles are always available
+                .status(VehicleStatus.AVAILABLE) // New vehicles default to AVAILABLE status
                 .imageUrl(request.getImageUrl())
                 .build();
 
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
+        log.info("Successfully added new vehicle: {} {} with ID: {}", savedVehicle.getMake(), savedVehicle.getModel(), savedVehicle.getId());
+
         return mapToResponseDTO(savedVehicle);
     }
 
-    // 2. UPDATE VEHICLE (ADMIN)
+    /**
+     * Updates an existing vehicle's records.
+     * Includes a check to ensure the new license plate does not conflict with another existing vehicle.
+     *
+     * @param id The unique identifier of the vehicle being edited.
+     * @param request The updated vehicle details.
+     * @return VehicleResponseDTO The updated vehicle.
+     */
     @Transactional
     public VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request) {
+        log.info("Attempting to update vehicle with ID: {}", id);
+
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with ID: " + id));
+                .orElseThrow(() -> {
+                    log.error("Vehicle update failed: Vehicle not found with ID: {}", id);
+                    return new EntityNotFoundException("Vehicle not found with ID: " + id);
+                });
 
         String newPlate = request.getLicensePlate().trim().toUpperCase();
-        // Guard Rail: Ensure the admin isn't changing the plate to one that already exists on ANOTHER car
-        if (!vehicle.getLicensePlate().equals(newPlate) &&
-                vehicleRepository.existsByLicensePlate(newPlate)) {
+
+        if (!vehicle.getLicensePlate().equals(newPlate) && vehicleRepository.existsByLicensePlate(newPlate)) {
+            log.warn("Vehicle update failed for ID {}: License plate {} is registered to another vehicle.", id, newPlate);
             throw new IllegalArgumentException("License plate is already registered to another vehicle.");
         }
 
@@ -85,31 +112,60 @@ public class VehicleService {
             vehicle.setStatus(request.getStatus());
         }
 
-        // Save and return
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
+        log.info("Successfully updated vehicle with ID: {}", updatedVehicle.getId());
+
         return mapToResponseDTO(updatedVehicle);
     }
 
-    // 3. DELETE VEHICLE (ADMIN - Soft Delete)
+    /**
+     * Performs a soft delete by marking the vehicle's status as RETIRED.
+     * This preserves historical booking records instead of permanently deleting the entity.
+     *
+     * @param id The unique identifier of the vehicle to remove.
+     */
     @Transactional
     public void deleteVehicle(Long id) {
+        log.info("Attempting to soft delete (RETIRE) vehicle with ID: {}", id);
+
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with ID: " + id));
+                .orElseThrow(() -> {
+                    log.error("Vehicle deletion failed: Vehicle not found with ID: {}", id);
+                    return new EntityNotFoundException("Vehicle not found with ID: " + id);
+                });
+
         vehicle.setStatus(VehicleStatus.RETIRED);
+        log.info("Successfully marked vehicle ID: {} as RETIRED", id);
     }
 
-    // 4. GET ALL VEHICLES
+    /**
+     * Retrieves a comprehensive list of all vehicles, including retired ones.
+     * Primarily intended for the administrative dashboard view.
+     *
+     * @return List of all vehicles.
+     */
     @Transactional(readOnly = true)
     public List<VehicleResponseDTO> getAllVehicles() {
+        log.info("Fetching complete inventory of all vehicles.");
         return vehicleRepository.findAll()
                 .stream()
                 .map(this::mapToResponseDTO)
                 .toList();
     }
 
-    // 5. FILTER VEHICLES (By Type & Availability)
+    /**
+     * Dynamically filters vehicles based on frontend parameters.
+     * If no specific filters are passed, it defaults to returning the full inventory.
+     *
+     * @param type The vehicle type (e.g., CAR, BIKE).
+     * @param status The current operational status.
+     * @param startDate The requested rental start date.
+     * @param endDate The requested rental end date.
+     * @return List of matching vehicles.
+     */
     @Transactional(readOnly = true)
     public List<VehicleResponseDTO> filterVehicles(VehicleType type, VehicleStatus status, LocalDate startDate, LocalDate endDate) {
+        log.info("Filtering vehicles. Parameters - Type: {}, Status: {}, StartDate: {}, EndDate: {}", type, status, startDate, endDate);
         List<Vehicle> vehicles;
 
         if (startDate != null && endDate != null) {
@@ -121,7 +177,6 @@ public class VehicleService {
         } else if (status != null) {
             vehicles = vehicleRepository.findByStatus(status);
         } else {
-            // Fallback if no filters are provided
             vehicles = vehicleRepository.findAll();
         }
 
@@ -132,24 +187,48 @@ public class VehicleService {
                 .map(this::mapToResponseDTO)
                 .toList();
     }
-    // Get Single Vehicle by ID
+
+    /**
+     * Retrieves specific details for a single vehicle.
+     * Typically used when viewing vehicle details on the user interface.
+     *
+     * @param id The unique identifier of the vehicle.
+     * @return The corresponding vehicle details.
+     */
     @Transactional(readOnly = true)
     public VehicleResponseDTO getVehicleById(Long id) {
+        log.info("Fetching details for vehicle ID: {}", id);
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with ID: " + id));
+                .orElseThrow(() -> {
+                    log.error("Vehicle fetch failed: Vehicle not found with ID: {}", id);
+                    return new ResourceNotFoundException("Vehicle not found with ID: " + id);
+                });
         return mapToResponseDTO(vehicle);
     }
 
+    /**
+     * Retrieves all operational vehicles for the public catalog.
+     * Explicitly filters out RETIRED units to prevent invalid bookings.
+     *
+     * @return List of active vehicles.
+     */
     @Transactional(readOnly = true)
     public List<VehicleResponseDTO> getAllActiveVehicles() {
-        // Exclude RETIRED vehicles from the public view
+        log.info("Fetching all active vehicles for public catalog.");
+
         return vehicleRepository.findAll().stream()
                 .filter(v -> v.getStatus() != VehicleStatus.RETIRED)
                 .map(this::mapToResponseDTO)
                 .toList();
     }
 
-    // HELPER METHOD: Entity to DTO Mapper
+    /**
+     * Converts the Vehicle database entity into a Data Transfer Object (DTO).
+     * Ensures internal database models are not exposed directly to the frontend.
+     *
+     * @param vehicle The database entity.
+     * @return The formatted response DTO.
+     */
     private VehicleResponseDTO mapToResponseDTO(Vehicle vehicle) {
         return VehicleResponseDTO.builder()
                 .id(vehicle.getId())
