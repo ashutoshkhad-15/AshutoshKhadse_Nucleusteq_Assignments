@@ -1,11 +1,21 @@
 package com.ashutosh.backend.enums;
 
-// I created this enum to define different roles of users in the system
-// I created this so that we avoid using hardcoded strings like "USER", "ADMIN" everywhere
+/**
+ * Defines the different access levels for users in the system.
+ * This enum is used to manage permissions and ensure users can only access
+ * features appropriate for their specific role.
+ */
 public enum UserRole {
 
-    // Default role for normal users of the application
+    /**
+     * The default role for standard customers who use the platform to browse
+     * and rent vehicles.
+     */
     USER,
-    // Role for admin users who will manage users, vehicles
+
+    /**
+     * An elevated role for administrators who manage the vehicle fleet,
+     * system bookings, and user accounts.
+     */
     ADMIN
 }

@@ -1,11 +1,19 @@
 package com.ashutosh.backend.enums;
 
-// This enum is used to define the type of vehicle
-// I created this to avoid using string values like "CAR" or "BIKE" directly in the code
+/**
+ * Categorizes the fleet into specific vehicle groups.
+ * This distinction helps the system apply different rental logic and
+ * provides relevant filtering options for users.
+ */
 public enum VehicleType {
 
-    // Represents a car vehicle
+    /**
+     * Represents a four-wheeled vehicle.
+     */
     CAR,
-    // Represents a bike vehicle
+
+    /**
+     * Represents a two-wheeled vehicle.
+     */
     BIKE
 }

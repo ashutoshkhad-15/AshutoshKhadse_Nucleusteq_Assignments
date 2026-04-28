@@ -1,14 +1,34 @@
 package com.ashutosh.backend.enums;
 
-// This enum is used to track the status of a booking
-// I created this as it also helps in applying business rules based on status easily
+/**
+ * Represents the various stages of a vehicle rental lifecycle.
+ * This enum is used to track the current state of a reservation and
+ * trigger specific business logic, such as releasing a vehicle back
+ * to the fleet or preventing duplicate bookings.
+ */
 public enum BookingStatus {
 
+    /**
+     * Indicates that the rental period has started and the vehicle is
+     * currently with the user.
+     */
     ACTIVE,
-    // Booking is confirmed and vehicle is reserved for the user
+
+    /**
+     * Indicates the booking is verified and the vehicle is reserved
+     * for the upcoming trip.
+     */
     CONFIRMED,
-    // Booking is cancelled by user or admin
+
+    /**
+     * Indicates the reservation was voided by a user or an administrator
+     * before the trip began.
+     */
     CANCELLED,
-    // Booking is completed after the vehicle has been returned
+
+    /**
+     * Indicates the vehicle has been physically returned and the rental
+     * transaction is closed.
+     */
     COMPLETED
 }

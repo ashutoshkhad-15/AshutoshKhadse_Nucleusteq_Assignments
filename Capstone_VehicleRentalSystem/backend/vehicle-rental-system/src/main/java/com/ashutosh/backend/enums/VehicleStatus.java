@@ -1,15 +1,28 @@
 package com.ashutosh.backend.enums;
 
-// This enum is used to represent the current status of a vehicle
-// I created this to avoid using string values for status in different places
+/**
+ * Represents the current operational state of a vehicle.
+ * Used to determine if a vehicle can be shown in the catalog or reserved for a trip.
+ */
 public enum VehicleStatus {
 
-    // Vehicle is free and can be booked by users
+    /**
+     * Indicates the vehicle is free and ready for new user bookings.
+     */
     AVAILABLE,
-    // Vehicle is currently booked by a user
+
+    /**
+     * Indicates the vehicle is currently reserved for a confirmed or active trip.
+     */
     BOOKED,
-    // Vehicle is under maintenance (not available for booking)
+
+    /**
+     * Indicates the vehicle is undergoing repairs and is temporarily unavailable.
+     */
     MAINTENANCE,
-    // Vehicle is no longer in use (maybe sold or removed from service)
+
+    /**
+     * Indicates the vehicle has been permanently removed from the active fleet.
+     */
     RETIRED
 }
