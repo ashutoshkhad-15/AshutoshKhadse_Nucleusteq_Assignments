@@ -123,6 +123,10 @@ public class BookingService {
             throw new IllegalStateException("Booking cannot be cancelled in its current state.");
         }
 
+        if (booking.getStatus() == BookingStatus.ACTIVE) {
+            throw new IllegalStateException("Cannot cancel an active, ongoing booking. Vehicle is currently on the road.");
+        }
+
         if (LocalDate.now().isAfter(booking.getStartDate()) || LocalDate.now().isEqual(booking.getStartDate())) {
             throw new IllegalStateException("Bookings cannot be cancelled on or after the start date.");
         }
@@ -153,7 +157,14 @@ public class BookingService {
         boolean dbNeedsUpdate = false;
 
         for (Booking booking : bookings) {
-            if (booking.getStatus() == BookingStatus.CONFIRMED && booking.getEndDate().isBefore(today)) {
+            if (booking.getStatus() == BookingStatus.CONFIRMED &&
+                    !today.isBefore(booking.getStartDate()) &&  // Today is on or after Start Date
+                    !today.isAfter(booking.getEndDate())) {     // Today is on or before End Date
+
+                booking.setStatus(BookingStatus.ACTIVE);
+                dbNeedsUpdate = true;
+            } else if ((booking.getStatus() == BookingStatus.CONFIRMED || booking.getStatus() == BookingStatus.ACTIVE) &&
+                    today.isAfter(booking.getEndDate())) {
 
                 booking.setStatus(BookingStatus.COMPLETED);
 

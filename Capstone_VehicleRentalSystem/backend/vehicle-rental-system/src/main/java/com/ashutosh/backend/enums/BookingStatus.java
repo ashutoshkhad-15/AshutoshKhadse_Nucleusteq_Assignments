@@ -4,8 +4,7 @@ package com.ashutosh.backend.enums;
 // I created this as it also helps in applying business rules based on status easily
 public enum BookingStatus {
 
-    // Booking is created but not yet confirmed (waiting for approval)
-    PENDING,
+    ACTIVE,
     // Booking is confirmed and vehicle is reserved for the user
     CONFIRMED,
     // Booking is cancelled by user or admin
