@@ -13,6 +13,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Configures the main security policies for the application.
+ * Sets up stateless session management, defines role-based access control (RBAC) routing,
+ * and integrates the custom JWT validation filter to secure all API endpoints.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -23,11 +28,31 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
+    /**
+     * Defines the cryptographic hashing mechanism for the system.
+     * Uses BCrypt to securely encode passwords, ensuring raw credentials
+     * are never stored or compared in plain text.
+     *
+     * @return The configured BCrypt password encoder instance.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(); // Mathematically secures the passwords
     }
 
+    /**
+     * Builds the primary security filter chain to evaluate incoming HTTP requests.
+     * Disables CSRF protection because the REST API relies on stateless JWTs rather than session cookies.
+     * Enforces strict access rules:
+     * 1. Permits open access for CORS pre-flight requests, authentication, and public catalog viewing.
+     * 2. Restricts inventory modifications (POST/PUT/DELETE) and admin booking routes exclusively to the ADMIN role.
+     * 3. Mandates a valid authentication token for all other system operations.
+     * Inserts the custom JWT filter to intercept and validate tokens before standard Spring security checks.
+     *
+     * @param http The HttpSecurity builder used to configure web-based security.
+     * @return The finalized security filter chain ready for execution.
+     * @throws Exception If an error occurs during the security configuration process.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http

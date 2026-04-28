@@ -8,25 +8,37 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+/**
+ * Configures Cross-Origin Resource Sharing (CORS) for the application.
+ * This setup allows the frontend to communicate with the backend API
+ * even when they are running on different ports or domains.
+ */
 @Configuration
 public class GlobalCorsConfig {
 
-    // @Order(Ordered.HIGHEST_PRECEDENCE) forces this filter to run BEFORE Spring Security
+    /**
+     * Defines a global CORS filter with the highest priority.
+     * Setting the order to HIGHEST_PRECEDENCE ensures that CORS pre-flight requests
+     * are handled before Spring Security filters. It allows all origins, headers,
+     * and HTTP methods to ensure smooth communication during development.
+     *
+     * @return A configured CorsFilter applied to all application paths.
+     */
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allow any origin (e.g., your Live Server on 127.0.0.1:5500)
+        // Allows requests from any origin
         config.addAllowedOriginPattern("*");
 
-        // Allow any header
+        // Allows all HTTP headers in requests
         config.addAllowedHeader("*");
 
-        // Allow any method (GET, POST, OPTIONS, etc.)
+        // Allows all HTTP methods like GET, POST, PUT, and DELETE
         config.addAllowedMethod("*");
 
-        // Do not enforce credentials for this basic setup
+        // Disables credentials to keep the basic setup simple and compatible with wildcards
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
