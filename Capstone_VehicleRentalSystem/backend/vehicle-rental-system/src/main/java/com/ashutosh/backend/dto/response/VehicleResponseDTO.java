@@ -8,10 +8,15 @@ import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
 
+/**
+ * Data Transfer Object for presenting vehicle details to the client application.
+ * This class serves as the primary data structure for populating the vehicle catalog,
+ * providing users with all necessary technical specifications and current availability
+ * status for browsing and selection.
+ */
 @Data
 @Builder
 public class VehicleResponseDTO {
-    // Sent to the frontend so users can see the catalog and available cars.
     private Long id;
     private String make;
     private String model;
@@ -22,5 +27,9 @@ public class VehicleResponseDTO {
     private Integer seatingCapacity;
     private BigDecimal dailyRate;
     private VehicleStatus status;
+
+    /**
+     * The stored URL for the vehicle's display image used in the frontend catalog.
+     */
     private String imageUrl;
 }

@@ -10,8 +10,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// I've designed this entity to be the "bridge" between our Users and our Vehicles.
-// This is where the actual business value of the Vehicle Rental System lives
+/**
+ * Represents a rental transaction in the system.
+ * This entity serves as the primary connection between users and vehicles,
+ * storing the specific dates, pricing, and current status of a rental agreement.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,11 +29,18 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // setting optional = false ensures a booking can never exist without a valid user.
+    /**
+     * The user who is making the reservation.
+     * Uses lazy loading to optimize performance by only fetching user details when needed.
+     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private AppUser user;
 
+    /**
+     * The specific vehicle being rented.
+     * Established as a mandatory relationship to maintain database integrity.
+     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "vehicle_id", nullable = false)
     private Vehicle vehicle;
@@ -41,6 +51,10 @@ public class Booking {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
+    /**
+     * The daily rental price at the time the booking was made.
+     * Stored here to protect the record from future price changes in the vehicle catalog.
+     */
     @Column(name = "price_per_day", nullable = false)
     private BigDecimal pricePerDay;
 
@@ -51,6 +65,10 @@ public class Booking {
     @Column(nullable = false)
     private BookingStatus status;
 
+    /**
+     * Used for optimistic locking to prevent multiple users from booking
+     * the same vehicle at the exact same time.
+     */
     @Version
     private Integer version;
 

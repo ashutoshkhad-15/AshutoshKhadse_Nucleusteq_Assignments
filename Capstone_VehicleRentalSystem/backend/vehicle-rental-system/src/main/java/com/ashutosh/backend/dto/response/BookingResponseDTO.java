@@ -8,6 +8,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Data Transfer Object for sending booking details to the frontend.
+ * This class provides a flattened view of the Booking entity, combining user and vehicle
+ * information into a single object to simplify data binding in the UI components.
+ */
 @Data
 @Builder
 public class BookingResponseDTO {

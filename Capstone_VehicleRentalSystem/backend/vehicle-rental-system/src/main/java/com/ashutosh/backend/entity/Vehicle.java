@@ -13,8 +13,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// I'm using the Lombok and JPA Auditing approach
-// It keeps our database schema consistent and our Java code clean.
+/**
+ * Represents a physical vehicle asset within the rental fleet.
+ * This entity stores comprehensive technical specifications, pricing models,
+ * and real-time availability status. It includes built-in validation to ensure
+ * data integrity and uses optimistic locking to manage concurrent booking attempts.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,8 +33,6 @@ public class Vehicle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // @NotBlank ensures the string is not null, not empty, and doesn't contain only spaces.
-    // @Size limits the length to prevent malicious massive string injections.
     @NotBlank(message = "Make cannot be blank")
     @Size(min = 2, max = 50, message = "Make must be between 2 and 50 characters")
     @Column(nullable = false, length = 50)
@@ -41,14 +43,15 @@ public class Vehicle {
     @Column(nullable = false, length = 100)
     private String model;
 
-    // License plate must be unique, we can't have two different cars with the same plate in our system
-    // @Pattern uses a Regular Expression (Regex) to ensure only valid license plate characters are allowed.
+    /**
+     * The unique legal registration identifier.
+     * Validated against a strict alphanumeric pattern to prevent invalid entries.
+     */
     @NotBlank(message = "License plate cannot be blank")
     @Pattern(regexp = "^[A-Z0-9-]+$", message = "License plate must contain only uppercase letters, numbers and hyphens")
     @Column(name = "license_plate", unique = true, nullable = false, length = 20)
     private String licensePlate;
 
-    // Using STRING enums so "CAR", "BIKE" is readable in the database tables.
     @NotNull(message = "Vehicle type is required")
     @Enumerated(EnumType.STRING)
     @Column(name = "vehicle_type", nullable = false, length = 20)
@@ -70,15 +73,16 @@ public class Vehicle {
     @Column(name = "seating_capacity", nullable = false)
     private Integer seatingCapacity = 4;
 
-    // @DecimalMin prevents negative pricing.
-    // @Digits strictly enforces the precision (max 8 digits before decimal, max 2 after).
     @NotNull(message = "Daily rate is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Daily rate must be strictly greater than zero")
     @Digits(integer = 8, fraction = 2, message = "Daily rate format is invalid (must have up to 2 decimal places)")
     @Column(name = "daily_rate", nullable = false, precision = 10, scale = 2)
     private BigDecimal dailyRate;
 
-    // Tracks if the vehicle is AVAILABLE, BOOKED, RETIRED or UNDER_MAINTENANCE.
+    /**
+     * The current operational status (e.g., AVAILABLE, BOOKED).
+     * Determines whether the vehicle appears in the active rental catalog.
+     */
     @NotNull(message = "Vehicle status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -88,6 +92,10 @@ public class Vehicle {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    /**
+     * Version field for optimistic concurrency control.
+     * Prevents data overwrites when multiple admins update the same vehicle simultaneously.
+     */
     @Version
     private Integer version;
 

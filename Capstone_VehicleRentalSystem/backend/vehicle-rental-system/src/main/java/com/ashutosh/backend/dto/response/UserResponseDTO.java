@@ -4,20 +4,29 @@ import com.ashutosh.backend.enums.UserRole;
 import lombok.Builder;
 import lombok.Data;
 
+/**
+ * Data Transfer Object for providing user profile information to the client.
+ * This class acts as a security layer by filtering out sensitive internal data
+ * such as password hashes and government identifiers, ensuring only safe,
+ * display-ready information reaches the frontend.
+ */
 @Data
 @Builder
 public class UserResponseDTO {
 
-        // this is our security shield. Notice how I did NOT include the passwordHash
-        // or the driversLicenseNumber in this response object.
-        // This ensures sensitive data never accidentally leaks to the frontend's browser network tab.
         private Long id;
         private String firstName;
         private String lastName;
         private String email;
-        // I included phone number and active status so the frontend profile page
-        // has enough data to display the user's basic contact info.
         private String phoneNumber;
+
+        /**
+         * The system role assigned to the user, determining their access permissions.
+         */
         private UserRole role;
+
+        /**
+         * Indicates whether the user's account is active and permitted to use the system.
+         */
         private Boolean isActive;
 }

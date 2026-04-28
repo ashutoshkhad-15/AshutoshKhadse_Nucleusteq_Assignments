@@ -4,6 +4,11 @@ import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
 
+/**
+ * Data Transfer Object for presenting vehicle reviews to the client.
+ * Provides a read-only view of customer feedback, including the reviewer's
+ * identity and the rating, to be displayed on vehicle catalog or detail pages.
+ */
 @Data
 @Builder
 public class ReviewResponseDTO {
@@ -12,7 +17,7 @@ public class ReviewResponseDTO {
     private Long bookingId;
     private Integer rating;
     private String comment;
-    private String reviewerFirstName; // Extracted from the related AppUser for display
+    private String reviewerFirstName;
     private LocalDateTime createdAt;
     private String reviewerEmail;
 }

@@ -3,15 +3,26 @@ package com.ashutosh.backend.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
+/**
+ * Data Transfer Object sent to the client upon successful authentication.
+ * It bundles the security token required for subsequent authorized requests
+ * along with the user's profile details to minimize initial API round-trips.
+ */
 @Data
 @Builder
 public class LoginResponseDTO {
 
-    // I am including the auth token here so the frontend has the "ticket"
-    // it needs to securely make future API requests.
+    /**
+     * The JSON Web Token (JWT) string.
+     * Acts as the bearer token that the frontend must include in the
+     * Authorization header for all protected API calls.
+     */
     private String token;
 
-    // instead of forcing the UI to make a second API call to fetch the profile,
-    // I am nesting the UserResponseDTO right here. This drastically simplifies my frontend state management
+    /**
+     * A nested object containing the authenticated user's profile information.
+     * Including this in the login response allows the frontend to immediately
+     * update the UI state and user context without an additional fetch.
+     */
     private UserResponseDTO user;
 }
