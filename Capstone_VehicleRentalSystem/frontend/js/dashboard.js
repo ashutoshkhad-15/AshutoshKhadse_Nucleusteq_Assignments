@@ -245,7 +245,7 @@ function loadVehicleDetails(id) {
     rentBtn.onclick = null;
 
     if (userRole === 'ADMIN') {
-        rentBtn.textContent = "Edit Vehicle (Admin)";
+        rentBtn.textContent = "Edit Vehicle (Admin Only)";
         rentBtn.style.background = "#eab308";
         rentBtn.onclick = () => openEditModal(vehicle);
 
@@ -377,26 +377,52 @@ function filterBookings() {
         return;
     }
 
-    list.innerHTML = ''; 
+    list.innerHTML = '';
 
     filtered.forEach(b => {
         const card = document.createElement('div');
         card.className = 'booking-card';
 
         const status = b.status ? b.status.toString().toUpperCase() : '';
-        let statusColor = status === 'CONFIRMED' ? '#22c55e' : (status === 'CANCELLED' ? '#ef4444' : '#64748b');
+        let statusColor = '#64748b'; // Default grey
+        if (status === 'CONFIRMED') statusColor = '#22c55e'; // Green
+        if (status === 'CANCELLED') statusColor = '#ef4444'; // Red
+        if (status === 'ACTIVE') statusColor = '#3b82f6';    // Blue
 
         let actionsHtml = '';
         if (status === 'CONFIRMED') {
-            actionsHtml += `<button onclick="cancelBooking(${b.id})" class="btn-ghost" style="padding: 0.6rem 1rem; border-color: #ef4444; color: #ef4444; width: 100%;">Cancel</button>`;
+            actionsHtml += `
+            <button onclick="cancelBooking(${b.id})" class="btn-ghost" style="padding: 0.6rem 1rem; border-color: #ef4444; color: #ef4444; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                Cancel
+            </button>`;
+        } 
+        else if (status === 'ACTIVE') {
             if (userRole === 'ADMIN') {
-                actionsHtml += `<button onclick="completeBooking(${b.id})" class="btn-success" style="padding: 0.6rem 1rem; width: 100%; margin-top: 0.5rem;">Mark Completed</button>`;
+                actionsHtml += `
+                <button onclick="completeBooking(${b.id})" class="btn-success" style="padding: 0.6rem 1rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Mark Returned
+                </button>`;
+            } else {
+                actionsHtml += `<div style="text-align: center; color: var(--accent); font-weight: 600; font-size: 0.9rem; padding: 0.6rem 0; background: rgb(255, 255, 252); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">On the Road</div>`;
             }
-        } else if (status === 'COMPLETED' && userRole !== 'ADMIN') {
+        } 
+        else if (status === 'COMPLETED' && userRole !== 'ADMIN') {
             if (!b.isReviewed) {
                 actionsHtml += `<button onclick="openReviewModal(${b.id})" class="btn-primary" style="padding: 0.6rem 1rem; width: 100%;">Leave a Review</button>`;
             } else {
-                actionsHtml += `<div style="text-align: center; color: var(--success); font-weight: 600; font-size: 0.9rem; padding: 0.6rem 0; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);"> Reviewed </div>`;
+                actionsHtml += `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.4rem; color: var(--success); font-weight: 600; font-size: 0.9rem; padding: 0.6rem 0; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    Review Submitted
+                </div>`;
             }
         }
 
@@ -555,6 +581,9 @@ async function loadVehicleReviews(vehicleId) {
         }
 
         container.innerHTML = '';
+        const userRole = localStorage.getItem('user_role');
+        const rawUserEmail = localStorage.getItem('user_email');
+        const currentUserEmail = rawUserEmail ? rawUserEmail.toLowerCase() : '';
         reviews.forEach(review => {
             const stars = '⭐'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
 
@@ -564,11 +593,17 @@ async function loadVehicleReviews(vehicleId) {
                 ? `"${review.comment}"`
                 : '<span style="color: var(--text-muted); font-style: italic;">No comment provided.</span>';
 
-            const currentUserEmail = localStorage.getItem('user_email');
+            const authorEmail = review.reviewerEmail ? review.reviewerEmail.toLowerCase() : '';
 
             let deleteBtnHtml = '';
-            if (userRole === 'ADMIN' || currentUserEmail === review.reviewerEmail) {
-                deleteBtnHtml = `<button onclick="deleteReview(${review.id})" class="btn-text-only" style="color: var(--danger); font-size: 0.8rem; margin-left: 1rem;">Delete</button>`;
+            if (userRole === 'ADMIN' || currentUserEmail === authorEmail) {
+                deleteBtnHtml = `
+                <button onclick="deleteReview(${review.id})" title="Delete Review" class="btn-text-only" style="color: var(--danger); margin-left: 1rem; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>`;
             }
 
             const reviewHtml = `
