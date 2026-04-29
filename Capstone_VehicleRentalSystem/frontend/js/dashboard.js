@@ -1,5 +1,4 @@
-const DASHBOARD_API_URL = 'http://localhost:8080/api';
-
+//  Global State 
 let currentVehicles = [];
 let currentBookings = [];
 let selectedVehicleId = null;
@@ -9,25 +8,17 @@ const userName = localStorage.getItem('user_name');
 // Calendar Instances
 let startDatePicker = null;
 let endDatePicker = null;
-let filterStartDatePicker = null; // New for dashboard filters
-let filterEndDatePicker = null;   // New for dashboard filters
+let filterStartDatePicker = null; 
+let filterEndDatePicker = null;  
 
-// Helper function to safely attach events
-function safeAddListener(id, event, handler) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.addEventListener(event, handler);
-    } else {
-        console.warn(`Element #${id} not found. Skipping event listener.`);
-    }
-}
-
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('welcomeMessage').textContent = userName || 'Driver';
     const badge = document.getElementById('roleBadge');
     badge.textContent = userRole === 'ADMIN' ? 'Admin Portal' : 'Member Portal';
     badge.style.background = userRole === 'ADMIN' ? '#ef4444' : 'var(--accent)';
 
+    // Admin UI Adjustments
     if (userRole === 'ADMIN') {
         document.getElementById('adminAddVehicleBtn').style.display = 'block';
         document.getElementById('navBookingsBtn').textContent = 'Bookings';
@@ -42,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('navBookingsBtn').textContent = 'My Bookings';
     }
 
+    // Initialize Filter Calendars
     filterStartDatePicker = flatpickr("#filterStartDate", {
         minDate: "today",
         dateFormat: "Y-m-d",
@@ -61,11 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCatalog();
 });
 
+// Event Listeners Setup
 function setupEventListeners() {
     safeAddListener('navCatalogBtn', 'click', showCatalogView);
     safeAddListener('navBookingsBtn', 'click', showBookingsView);
     safeAddListener('backToCatalogBtn', 'click', showCatalogView);
-    safeAddListener('logoutBtn', 'click', logout);
+    safeAddListener('logoutBtn', 'click', logout); 
 
     safeAddListener('applyFiltersBtn', 'click', applyFilters);
     safeAddListener('clearFiltersBtn', 'click', () => {
@@ -85,36 +78,31 @@ function setupEventListeners() {
         document.getElementById('bookingModalOverlay').style.display = 'none';
     });
     safeAddListener('bookingForm', 'submit', handleBookingSubmit);
+    
     safeAddListener('closeReviewModalBtn', 'click', () => {
         document.getElementById('reviewModalOverlay').style.display = 'none';
     });
     safeAddListener('reviewForm', 'submit', handleReviewSubmit);
     safeAddListener('bookingStatusFilter', 'change', filterBookings);
 
+    // Admin Only Listeners
     if (userRole === 'ADMIN') {
         safeAddListener('adminAddVehicleBtn', 'click', () => {
             const overlay = document.getElementById('addModalOverlay');
             if (overlay) overlay.style.display = 'flex';
         });
 
-        safeAddListener('closeAddModalBtn', 'click', () => {
-            document.getElementById('addModalOverlay').style.display = 'none';
-        });
-        safeAddListener('cancelAddBtn', 'click', () => {
-            document.getElementById('addModalOverlay').style.display = 'none';
-        });
+        safeAddListener('closeAddModalBtn', 'click', () => document.getElementById('addModalOverlay').style.display = 'none');
+        safeAddListener('cancelAddBtn', 'click', () => document.getElementById('addModalOverlay').style.display = 'none');
         safeAddListener('addVehicleForm', 'submit', handleAddVehicle);
 
-        safeAddListener('closeModalBtn', 'click', () => {
-            document.getElementById('editModalOverlay').style.display = 'none';
-        });
-        safeAddListener('cancelEditBtn', 'click', () => {
-            document.getElementById('editModalOverlay').style.display = 'none';
-        });
+        safeAddListener('closeModalBtn', 'click', () => document.getElementById('editModalOverlay').style.display = 'none');
+        safeAddListener('cancelEditBtn', 'click', () => document.getElementById('editModalOverlay').style.display = 'none');
         safeAddListener('editVehicleForm', 'submit', handleEditVehicle);
     }
 }
 
+// View Navigation
 function showCatalogView() {
     document.getElementById('catalogView').style.display = 'block';
     document.getElementById('detailView').style.display = 'none';
@@ -145,10 +133,11 @@ function showDetailView(vehicleId) {
     loadVehicleReviews(vehicleId);
 }
 
+// Vehicle Catalog Logic
 async function loadCatalog() {
     try {
         const endpoint = userRole === 'ADMIN' ? '/vehicles/admin/all' : '/vehicles';
-        const response = await apiFetch(`${DASHBOARD_API_URL}${endpoint}`);
+        const response = await apiFetch(endpoint);
         const vehicles = await response.json();
 
         currentVehicles = vehicles;
@@ -166,29 +155,23 @@ async function applyFilters() {
     const end = document.getElementById('filterEndDate').value;
 
     const params = new URLSearchParams();
-
     if (type) params.append('type', type);
     if (status) params.append('status', status);
     if (start) params.append('startDate', start);
     if (end) params.append('endDate', end);
 
-    const url = `${DASHBOARD_API_URL}/vehicles/filter?${params.toString()}`;
-
     try {
-        const response = await apiFetch(url);
-
-        if (!response.ok) {
-            throw new Error(`Filter error: ${response.status}`);
-        }
+        const response = await apiFetch(`/vehicles/filter?${params.toString()}`);
+        if (!response.ok) throw new Error(`Filter error: ${response.status}`);
 
         const vehicles = await response.json();
         renderVehicleGrid(vehicles);
     } catch (error) {
         console.error("Filtering failed:", error);
-        const grid = document.getElementById('vehicleGrid');
-        grid.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 2rem;">
-            Failed to filter fleet. Please try again.
-        </div>`;
+        document.getElementById('vehicleGrid').innerHTML = `
+            <div style="text-align: center; color: var(--danger); padding: 2rem;">
+                Failed to filter fleet. Please try again.
+            </div>`;
     }
 }
 
@@ -241,7 +224,6 @@ function loadVehicleDetails(id) {
     document.getElementById('detailPrice').textContent = `₹${vehicle.dailyRate}`;
 
     const rentBtn = document.getElementById('rentNowBtn');
-
     rentBtn.onclick = null;
 
     if (userRole === 'ADMIN') {
@@ -250,10 +232,7 @@ function loadVehicleDetails(id) {
         rentBtn.onclick = () => openEditModal(vehicle);
 
         const existingDeleteBtn = document.getElementById('adminDeleteBtn');
-        if (existingDeleteBtn) {
-            existingDeleteBtn.remove();
-        }
-
+        if (existingDeleteBtn) existingDeleteBtn.remove();
     } else {
         if (vehicle.status !== 'AVAILABLE') {
             rentBtn.textContent = "Currently Unavailable";
@@ -268,6 +247,7 @@ function loadVehicleDetails(id) {
     }
 }
 
+// Booking Logic 
 function openBookingModal() {
     document.getElementById('bookingModalOverlay').style.display = 'flex';
     document.getElementById('bookingError').classList.remove('active');
@@ -279,10 +259,8 @@ function openBookingModal() {
                 minDate: "today",
                 dateFormat: "Y-m-d",
                 disableMobile: true,
-                onChange: function (selectedDates, dateStr, instance) {
-                    if (endDatePicker) {
-                        endDatePicker.set('minDate', dateStr);
-                    }
+                onChange: function (selectedDates, dateStr) {
+                    if (endDatePicker) endDatePicker.set('minDate', dateStr);
                 }
             });
 
@@ -317,7 +295,7 @@ async function handleBookingSubmit(e) {
     submitBtn.disabled = true;
 
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}/bookings`, {
+        const response = await apiFetch('/bookings', {
             method: 'POST',
             body: JSON.stringify(payload)
         });
@@ -346,13 +324,10 @@ async function loadBookings() {
     const endpoint = userRole === 'ADMIN' ? '/bookings/admin/all' : '/bookings/my-bookings';
 
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}${endpoint}`);
+        const response = await apiFetch(endpoint);
         if (!response.ok) throw new Error(`Server returned ${response.status}`);
 
-        // Save the raw data to our global cache
         currentBookings = await response.json();
-
-        // Trigger the filter logic to render the list
         filterBookings();
 
     } catch (error) {
@@ -361,12 +336,10 @@ async function loadBookings() {
     }
 }
 
-// Handles frontend filtering and DOM rendering
 function filterBookings() {
     const filterValue = document.getElementById('bookingStatusFilter').value;
     const list = document.getElementById('bookingsList');
 
-    // Filter the cached array instantly
     let filtered = currentBookings;
     if (filterValue !== 'ALL') {
         filtered = currentBookings.filter(b => b.status && b.status.toUpperCase() === filterValue);
@@ -384,10 +357,10 @@ function filterBookings() {
         card.className = 'booking-card';
 
         const status = b.status ? b.status.toString().toUpperCase() : '';
-        let statusColor = '#64748b'; // Default grey
-        if (status === 'CONFIRMED') statusColor = '#22c55e'; // Green
-        if (status === 'CANCELLED') statusColor = '#ef4444'; // Red
-        if (status === 'ACTIVE') statusColor = '#3b82f6';    // Blue
+        let statusColor = '#64748b'; 
+        if (status === 'CONFIRMED') statusColor = '#22c55e'; 
+        if (status === 'CANCELLED') statusColor = '#ef4444'; 
+        if (status === 'ACTIVE') statusColor = '#3b82f6';    
 
         let actionsHtml = '';
         if (status === 'CONFIRMED') {
@@ -462,18 +435,19 @@ function filterBookings() {
 async function cancelBooking(id) {
     if (!confirm("Are you sure you want to cancel this booking?")) return;
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}/bookings/${id}/cancel`, { method: 'PUT' });
+        const response = await apiFetch(`/bookings/${id}/cancel`, { method: 'PUT' });
         if (response.ok) { alert("Booking cancelled."); loadBookings(); }
     } catch (error) { console.error(error); }
 }
 
 async function completeBooking(id) {
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}/bookings/admin/${id}/complete`, { method: 'PUT' });
+        const response = await apiFetch(`/bookings/admin/${id}/complete`, { method: 'PUT' });
         if (response.ok) loadBookings();
     } catch (error) { console.error(error); }
 }
 
+// Admin Vehicle Management Logic
 async function handleAddVehicle(e) {
     e.preventDefault();
     const payload = {
@@ -488,7 +462,7 @@ async function handleAddVehicle(e) {
         imageUrl: document.getElementById('addImage').value || null
     };
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}/vehicles`, { method: 'POST', body: JSON.stringify(payload) });
+        const response = await apiFetch('/vehicles', { method: 'POST', body: JSON.stringify(payload) });
         if (response.ok) {
             alert("Vehicle added!");
             document.getElementById('addModalOverlay').style.display = 'none';
@@ -523,7 +497,7 @@ async function handleEditVehicle(e) {
         status: document.getElementById('editStatus').value
     };
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        const response = await apiFetch(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
         if (response.ok) {
             alert("Updated!");
             document.getElementById('editModalOverlay').style.display = 'none';
@@ -532,6 +506,7 @@ async function handleEditVehicle(e) {
     } catch (error) { console.error(error); }
 }
 
+// Reviews Logic 
 function openReviewModal(bookingId) {
     document.getElementById('reviewBookingId').value = bookingId;
     document.getElementById('reviewForm').reset();
@@ -549,10 +524,12 @@ async function handleReviewSubmit(e) {
         rating: parseInt(document.getElementById('reviewRating').value),
         comment: document.getElementById('reviewComment').value.trim()
     };
+    
     submitBtn.textContent = "Submitting...";
     submitBtn.disabled = true;
+    
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}/reviews`, { method: 'POST', body: JSON.stringify(payload) });
+        const response = await apiFetch('/reviews', { method: 'POST', body: JSON.stringify(payload) });
         if (response.ok) {
             alert("Review submitted!");
             document.getElementById('reviewModalOverlay').style.display = 'none';
@@ -561,8 +538,12 @@ async function handleReviewSubmit(e) {
             const data = await response.json();
             showError(errorDiv, data.error || "Submission failed.");
         }
-    } catch (error) { showError(errorDiv, "Connection error."); }
-    finally { submitBtn.textContent = "Submit Review"; submitBtn.disabled = false; }
+    } catch (error) { 
+        showError(errorDiv, "Connection error."); 
+    } finally { 
+        submitBtn.textContent = "Submit Review"; 
+        submitBtn.disabled = false; 
+    }
 }
 
 async function loadVehicleReviews(vehicleId) {
@@ -570,7 +551,7 @@ async function loadVehicleReviews(vehicleId) {
     container.innerHTML = '<div style="text-align: center; color: var(--text-muted);">Loading reviews...</div>';
 
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}/reviews/vehicle/${vehicleId}`);
+        const response = await apiFetch(`/reviews/vehicle/${vehicleId}`);
         if (!response.ok) throw new Error("Failed to fetch reviews");
 
         const reviews = await response.json();
@@ -581,18 +562,13 @@ async function loadVehicleReviews(vehicleId) {
         }
 
         container.innerHTML = '';
-        const userRole = localStorage.getItem('user_role');
         const rawUserEmail = localStorage.getItem('user_email');
         const currentUserEmail = rawUserEmail ? rawUserEmail.toLowerCase() : '';
+        
         reviews.forEach(review => {
             const stars = '⭐'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
-
             const date = new Date(review.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-
-            const commentHtml = review.comment
-                ? `"${review.comment}"`
-                : '<span style="color: var(--text-muted); font-style: italic;">No comment provided.</span>';
-
+            const commentHtml = review.comment ? `"${review.comment}"` : '<span style="color: var(--text-muted); font-style: italic;">No comment provided.</span>';
             const authorEmail = review.reviewerEmail ? review.reviewerEmail.toLowerCase() : '';
 
             let deleteBtnHtml = '';
@@ -630,21 +606,16 @@ async function loadVehicleReviews(vehicleId) {
     }
 }
 
-// Add this at the end of your dashboard.js file
 async function deleteReview(reviewId) {
     if (!confirm("Are you sure you want to delete this review?")) return;
 
     try {
-        const response = await apiFetch(`${DASHBOARD_API_URL}/reviews/${reviewId}`, {
-            method: 'DELETE'
-        });
+        const response = await apiFetch(`/reviews/${reviewId}`, { method: 'DELETE' });
 
         if (response.ok || response.status === 204) {
             alert("Review deleted successfully.");
-            // Refresh the reviews list without closing the detail view
             loadVehicleReviews(selectedVehicleId);
-            // Also refresh bookings silently so the "Leave a Review" button comes back in the My Bookings tab
-            loadBookings();
+            loadBookings(); // Refreshes booking list to show 'Leave a Review' button again
         } else {
             const data = await response.json();
             alert(data.error || "Failed to delete review.");
