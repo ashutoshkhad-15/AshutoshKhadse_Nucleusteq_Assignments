@@ -47,25 +47,61 @@ body {
 
 /* ANIMATIONS */
 @keyframes slowZoom {
-    from { background-size: 100%; transform: scale(1); }
-    to { transform: scale(1.03); }
-}
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(40px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+    from {
+        background-size: 100%;
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(1.03);
+    }
 }
 
-.slide-up { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.fade-in-slow { animation: fadeIn 1.2s ease forwards; }
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+.slide-up {
+    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.fade-in-slow {
+    animation: fadeIn 1.2s ease forwards;
+}
 
 /* NAVIGATION */
 .top-nav {
@@ -144,7 +180,9 @@ body {
     text-align: center;
 }
 
-.nav-btn:hover { color: var(--text-main); }
+.nav-btn:hover {
+    color: var(--text-main);
+}
 
 .nav-btn.active {
     background: var(--bg-surface);
@@ -173,7 +211,9 @@ body.light-theme .nav-btn.active {
     height: 24px;
 }
 
-.theme-switch input { display: none; }
+.theme-switch input {
+    display: none;
+}
 
 .slider {
     position: absolute;
@@ -198,11 +238,21 @@ body.light-theme .nav-btn.active {
     transition: 0.4s;
 }
 
-input:checked+.slider { background-color: var(--accent); border-color: var(--accent); }
-input:checked+.slider::before { transform: translateX(20px); background: white; }
+input:checked+.slider {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+input:checked+.slider::before {
+    transform: translateX(20px);
+    background: white;
+}
 
 /* BUTTONS & FORMS */
-.btn-primary, .btn-secondary, .btn-success, .btn-ghost {
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-ghost {
     padding: 0.7rem 1.8rem;
     border-radius: 30px;
     font-size: 0.95rem;
@@ -215,17 +265,49 @@ input:checked+.slider::before { transform: translateX(20px); background: white; 
     justify-content: center;
 }
 
-.btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); }
-.btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
 
-.btn-success { background: var(--success); color: white; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); }
-.btn-success:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
 
-.btn-secondary { background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border-color); }
-.btn-secondary:hover { background: var(--border-color); }
+.btn-success {
+    background: var(--success);
+    color: white;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
 
-.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid transparent; }
-.btn-ghost:hover { color: var(--text-main); border-color: var(--border-color); }
+.btn-success:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--border-color);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+}
+
+.btn-ghost:hover {
+    color: var(--text-main);
+    border-color: var(--border-color);
+}
 
 .btn-text-only {
     background: transparent;
@@ -240,7 +322,11 @@ input:checked+.slider::before { transform: translateX(20px); background: white; 
     transition: 0.3s;
     opacity: 0.8;
 }
-.btn-text-only:hover { opacity: 1; transform: translateX(-5px); }
+
+.btn-text-only:hover {
+    opacity: 1;
+    transform: translateX(-5px);
+}
 
 .modern-input {
     width: 100%;
@@ -256,11 +342,21 @@ input:checked+.slider::before { transform: translateX(20px); background: white; 
     box-sizing: border-box;
     height: 3rem;
 }
-.modern-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
-.modern-input option { background: var(--bg-surface); color: var(--text-main); }
+
+.modern-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.modern-input option {
+    background: var(--bg-surface);
+    color: var(--text-main);
+}
 
 /* UTILITIES */
-.text-muted { color: var(--text-muted); }
+.text-muted {
+    color: var(--text-muted);
+}
 
 .hover-link {
     color: #60a5fa;
@@ -268,7 +364,11 @@ input:checked+.slider::before { transform: translateX(20px); background: white; 
     font-weight: 500;
     transition: color 0.3s ease;
 }
-.hover-link:hover { color: #93c5fd; text-decoration: underline; }
+
+.hover-link:hover {
+    color: #93c5fd;
+    text-decoration: underline;
+}
 
 .error-toast {
     display: none;
@@ -281,8 +381,14 @@ input:checked+.slider::before { transform: translateX(20px); background: white; 
     font-size: 0.9rem;
     animation: shake 0.4s ease-in-out;
 }
-.error-toast.active { display: block; }
+
+.error-toast.active {
+    display: block;
+}
 
 @media (max-width: 900px) {
-    .top-nav { flex-direction: column; gap: 1.5rem; }
+    .top-nav {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
 }
