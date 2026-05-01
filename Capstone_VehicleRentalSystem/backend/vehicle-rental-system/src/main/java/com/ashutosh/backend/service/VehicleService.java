@@ -166,22 +166,32 @@ public class VehicleService {
     @Transactional(readOnly = true)
     public List<VehicleResponseDTO> filterVehicles(VehicleType type, VehicleStatus status, LocalDate startDate, LocalDate endDate) {
         log.info("Filtering vehicles. Parameters - Type: {}, Status: {}, StartDate: {}, EndDate: {}", type, status, startDate, endDate);
-        List<Vehicle> vehicles;
-
-        if (startDate != null && endDate != null) {
-            vehicles = vehicleRepository.findAvailableVehiclesByDate(startDate, endDate);
-        } else if (type != null && status != null) {
-            vehicles = vehicleRepository.findByVehicleTypeAndStatus(type, status);
-        } else if (type != null) {
-            vehicles = vehicleRepository.findByVehicleType(type);
-        } else if (status != null) {
-            vehicles = vehicleRepository.findByStatus(status);
-        } else {
-            vehicles = vehicleRepository.findAll();
-        }
+        List<Vehicle> vehicles = fetchVehiclesForFilter(type, status, startDate, endDate);
 
         return vehicles.stream()
                 .filter(v -> v.getStatus() != VehicleStatus.RETIRED)
+                .filter(v -> type == null || v.getVehicleType().equals(type))
+                .filter(v -> status == null || v.getStatus().equals(status))
+                .map(this::mapToResponseDTO)
+                .toList();
+    }
+
+    /**
+     * Applies the same fleet filtering semantics for administrators, while preserving
+     * visibility into RETIRED units that should remain hidden from the public catalog.
+     *
+     * @param type The vehicle type (e.g., CAR, BIKE).
+     * @param status The current operational status.
+     * @param startDate The requested rental start date.
+     * @param endDate The requested rental end date.
+     * @return List of matching vehicles, including retired ones when requested.
+     */
+    @Transactional(readOnly = true)
+    public List<VehicleResponseDTO> filterVehiclesForAdmin(VehicleType type, VehicleStatus status, LocalDate startDate, LocalDate endDate) {
+        log.info("Admin fleet filter. Parameters - Type: {}, Status: {}, StartDate: {}, EndDate: {}", type, status, startDate, endDate);
+        List<Vehicle> vehicles = fetchVehiclesForFilter(type, status, startDate, endDate);
+
+        return vehicles.stream()
                 .filter(v -> type == null || v.getVehicleType().equals(type))
                 .filter(v -> status == null || v.getStatus().equals(status))
                 .map(this::mapToResponseDTO)
@@ -243,5 +253,21 @@ public class VehicleService {
                 .status(vehicle.getStatus())
                 .imageUrl(vehicle.getImageUrl())
                 .build();
+    }
+
+    private List<Vehicle> fetchVehiclesForFilter(VehicleType type, VehicleStatus status, LocalDate startDate, LocalDate endDate) {
+        if (startDate != null && endDate != null && (status == null || status == VehicleStatus.AVAILABLE)) {
+            return vehicleRepository.findAvailableVehiclesByDate(startDate, endDate);
+        }
+        if (type != null && status != null) {
+            return vehicleRepository.findByVehicleTypeAndStatus(type, status);
+        }
+        if (type != null) {
+            return vehicleRepository.findByVehicleType(type);
+        }
+        if (status != null) {
+            return vehicleRepository.findByStatus(status);
+        }
+        return vehicleRepository.findAll();
     }
 }

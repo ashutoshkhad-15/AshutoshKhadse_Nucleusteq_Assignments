@@ -139,4 +139,28 @@ public class VehicleController {
 
         return ResponseEntity.ok(vehicleService.filterVehicles(type, status, startDate, endDate));
     }
+
+    /**
+     * Applies fleet filters for administrative inventory views.
+     * Unlike the public catalog filter, this endpoint preserves RETIRED vehicles
+     * so admins can audit the full fleet lifecycle.
+     *
+     * @param type Optional filter for vehicle category (e.g., CAR, BIKE).
+     * @param status Optional filter for current operational status.
+     * @param startDate Optional filter for rental start date.
+     * @param endDate Optional filter for rental end date.
+     * @return ResponseEntity containing the list of matching vehicles.
+     */
+    @GetMapping("/admin/filter")
+    public ResponseEntity<List<VehicleResponseDTO>> filterVehiclesForAdmin(
+            @RequestParam(required = false) VehicleType type,
+            @RequestParam(required = false) VehicleStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        log.info("REST request received: Admin filter vehicles. Parameters - Type: {}, Status: {}, Start: {}, End: {}",
+                type, status, startDate, endDate);
+
+        return ResponseEntity.ok(vehicleService.filterVehiclesForAdmin(type, status, startDate, endDate));
+    }
 }

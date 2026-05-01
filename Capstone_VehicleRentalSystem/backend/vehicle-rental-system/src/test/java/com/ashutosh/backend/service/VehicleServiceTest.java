@@ -211,4 +211,56 @@ class VehicleServiceTest {
         assertEquals(1, result.size());
         verify(vehicleRepository, times(1)).findAvailableVehiclesByDate(start, end);
     }
+
+    @Test
+    void filterVehicles_PublicCatalogStillExcludesRetired() {
+        // GIVEN
+        Vehicle retiredVehicle = Vehicle.builder()
+                .id(2L)
+                .make("Honda")
+                .model("City")
+                .licensePlate("MH-14-XY-9999")
+                .vehicleType(VehicleType.CAR)
+                .vehicleFuelType(VehicleFuelType.PETROL)
+                .vehicleTransmission(VehicleTransmission.AUTOMATIC)
+                .seatingCapacity(5)
+                .dailyRate(BigDecimal.valueOf(2000))
+                .status(VehicleStatus.RETIRED)
+                .build();
+        when(vehicleRepository.findByStatus(VehicleStatus.RETIRED)).thenReturn(List.of(retiredVehicle));
+
+        // WHEN
+        List<VehicleResponseDTO> result = vehicleService.filterVehicles(null, VehicleStatus.RETIRED, null, null);
+
+        // THEN
+        assertTrue(result.isEmpty());
+        verify(vehicleRepository, times(1)).findByStatus(VehicleStatus.RETIRED);
+    }
+
+    @Test
+    void filterVehiclesForAdmin_StatusRetired_ReturnsRetiredVehicles() {
+        // GIVEN
+        Vehicle retiredVehicle = Vehicle.builder()
+                .id(2L)
+                .make("Honda")
+                .model("City")
+                .licensePlate("MH-14-XY-9999")
+                .vehicleType(VehicleType.CAR)
+                .vehicleFuelType(VehicleFuelType.PETROL)
+                .vehicleTransmission(VehicleTransmission.AUTOMATIC)
+                .seatingCapacity(5)
+                .dailyRate(BigDecimal.valueOf(2000))
+                .status(VehicleStatus.RETIRED)
+                .build();
+        when(vehicleRepository.findByStatus(VehicleStatus.RETIRED)).thenReturn(List.of(retiredVehicle));
+
+        // WHEN
+        List<VehicleResponseDTO> result = vehicleService.filterVehiclesForAdmin(null, VehicleStatus.RETIRED, null, null);
+
+        // THEN
+        assertEquals(1, result.size());
+        assertEquals(VehicleStatus.RETIRED, result.get(0).getStatus());
+        assertEquals(2L, result.get(0).getId());
+        verify(vehicleRepository, times(1)).findByStatus(VehicleStatus.RETIRED);
+    }
 }

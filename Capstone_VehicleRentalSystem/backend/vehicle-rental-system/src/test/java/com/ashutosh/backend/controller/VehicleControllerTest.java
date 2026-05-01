@@ -326,6 +326,28 @@ class VehicleControllerTest {
         assertEquals(endDate, endDateCaptor.getValue());
     }
 
+    @Test
+    void filterVehiclesForAdmin_WithRetiredStatus_ReturnsRetiredResults() throws Exception {
+        // GIVEN
+        VehicleResponseDTO retiredVehicle = buildVehicleResponse(3L, VehicleStatus.RETIRED, BigDecimal.valueOf(2000));
+        when(vehicleService.filterVehiclesForAdmin(any(), any(), any(), any()))
+                .thenReturn(List.of(retiredVehicle));
+
+        // WHEN
+        mockMvc.perform(get("/api/vehicles/admin/filter")
+                        .param("status", "RETIRED"))
+
+                // THEN
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(3L))
+                .andExpect(jsonPath("$[0].status").value("RETIRED"));
+
+        ArgumentCaptor<VehicleStatus> statusCaptor = ArgumentCaptor.forClass(VehicleStatus.class);
+        verify(vehicleService, times(1)).filterVehiclesForAdmin(any(), statusCaptor.capture(), any(), any());
+        assertEquals(VehicleStatus.RETIRED, statusCaptor.getValue());
+    }
+
     private VehicleResponseDTO buildVehicleResponse(Long id, VehicleStatus status, BigDecimal dailyRate) {
         return VehicleResponseDTO.builder()
                 .id(id)
