@@ -161,7 +161,11 @@ async function applyFilters() {
     if (end) params.append('endDate', end);
 
     try {
-        const response = await apiFetch(`/vehicles/filter?${params.toString()}`);
+        const endpoint = userRole === 'ADMIN'
+            ? `/vehicles/admin/filter?${params.toString()}`
+            : `/vehicles/filter?${params.toString()}`;
+
+        const response = await apiFetch(endpoint);
         if (!response.ok) throw new Error(`Filter error: ${response.status}`);
 
         const vehicles = await response.json();
@@ -207,7 +211,6 @@ function renderVehicleGrid(vehicles) {
 function updateStats(vehicles) {
     document.getElementById('statTotal').textContent = vehicles.length;
     document.getElementById('statAvailable').textContent = vehicles.filter(v => v.status === 'AVAILABLE').length;
-    document.getElementById('statBooked').textContent = vehicles.filter(v => v.status === 'BOOKED').length;
 }
 
 function loadVehicleDetails(id) {
