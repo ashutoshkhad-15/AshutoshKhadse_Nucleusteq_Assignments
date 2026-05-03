@@ -1,0 +1,1373 @@
+{
+  "info": {
+    "name": "Vehicle Rental System Backend Tests",
+    "_postman_id": "8a5cb4da-a2fa-4e0e-86d4-vehicle-rental-system-tests",
+    "description": "Postman collection for exercising the Capstone_VehicleRentalSystem backend. Run the full collection from `1. Auth` downward and it will generate fresh users, plates, tokens, and chained IDs automatically for each run.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const defaults = {",
+          "    baseUrl: 'http://localhost:8080/api',",
+          "    adminEmail: 'admin@test.com',",
+          "    adminPassword: 'admin123',",
+          "    primaryPassword: 'Pass@123',",
+          "    secondaryPassword: 'Pass@123'",
+          "};",
+          "Object.keys(defaults).forEach(function (key) {",
+          "    if (!pm.collectionVariables.get(key)) {",
+          "        pm.collectionVariables.set(key, defaults[key]);",
+          "    }",
+          "});",
+          "const firstRequestName = 'Register Primary User - Happy';",
+          "const runtimeKeys = [",
+          "    'userToken',",
+          "    'otherUserToken',",
+          "    'adminToken',",
+          "    'vehicleAId',",
+          "    'vehicleBId',",
+          "    'vehicleCId',",
+          "    'booking1Id',",
+          "    'booking2Id',",
+          "    'reviewId'",
+          "];",
+          "function datePlus(days) {",
+          "    const d = new Date();",
+          "    d.setHours(12, 0, 0, 0);",
+          "    d.setDate(d.getDate() + days);",
+          "    return d.toISOString().split('T')[0];",
+          "}",
+          "function initializeRunData(forceRefresh) {",
+          "    let runId = pm.collectionVariables.get('runId');",
+          "    if (forceRefresh || !runId) {",
+          "        runId = Date.now().toString().slice(-8);",
+          "        pm.collectionVariables.set('runId', runId);",
+          "        runtimeKeys.forEach(function (key) {",
+          "            pm.collectionVariables.unset(key);",
+          "        });",
+          "    }",
+          "    pm.collectionVariables.set('primaryEmail', `postman.primary.${runId}@example.com`);",
+          "    pm.collectionVariables.set('secondaryEmail', `postman.secondary.${runId}@example.com`);",
+          "    pm.collectionVariables.set('primaryPhone', `91${runId}`);",
+          "    pm.collectionVariables.set('secondaryPhone', `92${runId}`);",
+          "    pm.collectionVariables.set('primaryLicense', `DLPRIMARY${runId}`);",
+          "    pm.collectionVariables.set('secondaryLicense', `DLSECOND${runId}`);",
+          "    pm.collectionVariables.set('vehicleAPlate', `TS-${runId.substring(0, 2)}-AA-${runId.substring(4, 8)}`);",
+          "    pm.collectionVariables.set('vehicleBPlate', `TS-${runId.substring(0, 2)}-AB-${runId.substring(4, 8)}`);",
+          "    pm.collectionVariables.set('vehicleCPlate', `TS-${runId.substring(0, 2)}-AC-${runId.substring(4, 8)}`);",
+          "    pm.collectionVariables.set('booking1Start', datePlus(7));",
+          "    pm.collectionVariables.set('booking1End', datePlus(8));",
+          "    pm.collectionVariables.set('booking2Start', datePlus(10));",
+          "    pm.collectionVariables.set('booking2End', datePlus(11));",
+          "    pm.collectionVariables.set('bookingInvalidStart', datePlus(5));",
+          "    pm.collectionVariables.set('bookingInvalidEnd', datePlus(4));",
+          "    pm.collectionVariables.set('filterStartDate', datePlus(20));",
+          "    pm.collectionVariables.set('filterEndDate', datePlus(22));",
+          "}",
+          "initializeRunData(pm.info.requestName === firstRequestName);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "adminEmail", "value": "admin@test.com" },
+    { "key": "adminPassword", "value": "admin123" },
+    { "key": "primaryPassword", "value": "Pass@123" },
+    { "key": "secondaryPassword", "value": "Pass@123" },
+    { "key": "runId", "value": "" },
+    { "key": "primaryEmail", "value": "" },
+    { "key": "secondaryEmail", "value": "" },
+    { "key": "primaryPhone", "value": "" },
+    { "key": "secondaryPhone", "value": "" },
+    { "key": "primaryLicense", "value": "" },
+    { "key": "secondaryLicense", "value": "" },
+    { "key": "userToken", "value": "" },
+    { "key": "otherUserToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "vehicleAPlate", "value": "" },
+    { "key": "vehicleBPlate", "value": "" },
+    { "key": "vehicleCPlate", "value": "" },
+    { "key": "vehicleAId", "value": "" },
+    { "key": "vehicleBId", "value": "" },
+    { "key": "vehicleCId", "value": "" },
+    { "key": "booking1Id", "value": "" },
+    { "key": "booking2Id", "value": "" },
+    { "key": "reviewId", "value": "" },
+    { "key": "booking1Start", "value": "" },
+    { "key": "booking1End", "value": "" },
+    { "key": "booking2Start", "value": "" },
+    { "key": "booking2End", "value": "" },
+    { "key": "bookingInvalidStart", "value": "" },
+    { "key": "bookingInvalidEnd", "value": "" },
+    { "key": "filterStartDate", "value": "" },
+    { "key": "filterEndDate", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "description": "Creates two test users, logs them in, and verifies happy and fail scenarios for authentication endpoints.",
+      "item": [
+        {
+          "name": "Register Primary User - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Postman\",\n  \"lastName\": \"Primary\",\n  \"email\": \"{{primaryEmail}}\",\n  \"password\": \"{{primaryPassword}}\",\n  \"phoneNumber\": \"{{primaryPhone}}\",\n  \"driversLicenseNumber\": \"{{primaryLicense}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Creates a unique customer account for this collection run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('User response contains the registered email', function () {",
+                  "    pm.expect(data.email).to.eql(pm.collectionVariables.get('primaryEmail'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Primary User Duplicate Email - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Postman\",\n  \"lastName\": \"Duplicate\",\n  \"email\": \"{{primaryEmail}}\",\n  \"password\": \"{{primaryPassword}}\",\n  \"phoneNumber\": \"9012345678\",\n  \"driversLicenseNumber\": \"DLDUPLICATE{{runId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', function () { pm.response.to.have.status(409); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Duplicate email error is returned', function () {",
+                  "    pm.expect(data.error).to.eql('Email is already registered');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register User Validation - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"1\",\n  \"lastName\": \"\",\n  \"email\": \"bad-email\",\n  \"password\": \"123\",\n  \"phoneNumber\": \"1234\",\n  \"driversLicenseNumber\": \"dl\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Validation errors are returned', function () {",
+                  "    pm.expect(data.errors).to.have.property('email');",
+                  "    pm.expect(data.errors).to.have.property('password');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Primary User - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{primaryEmail}}\",\n  \"password\": \"{{primaryPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('userToken', data.token);",
+                  "pm.test('Token is present', function () { pm.expect(data.token).to.be.a('string').and.not.empty; });",
+                  "pm.test('Logged in user email matches primary user', function () {",
+                  "    pm.expect(data.user.email).to.eql(pm.collectionVariables.get('primaryEmail'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Primary User Wrong Password - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{primaryEmail}}\",\n  \"password\": \"WrongPass123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Invalid credential error is returned', function () {",
+                  "    pm.expect(data.error).to.eql('Invalid email or password');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User - Happy",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": "{{baseUrl}}/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Current user profile is returned', function () {",
+                  "    pm.expect(data.email).to.eql(pm.collectionVariables.get('primaryEmail'));",
+                  "    pm.expect(data.role).to.eql('USER');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User Without Token - Fail",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401 or 403', function () {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Secondary User - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Postman\",\n  \"lastName\": \"Secondary\",\n  \"email\": \"{{secondaryEmail}}\",\n  \"password\": \"{{secondaryPassword}}\",\n  \"phoneNumber\": \"{{secondaryPhone}}\",\n  \"driversLicenseNumber\": \"{{secondaryLicense}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Secondary User - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{secondaryEmail}}\",\n  \"password\": \"{{secondaryPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('otherUserToken', data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Admin - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Uses the seeded admin account from DataSeeder."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('adminToken', data.token);",
+                  "pm.test('Admin role is returned', function () {",
+                  "    pm.expect(data.user.role).to.eql('ADMIN');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Vehicles",
+      "description": "Tests public catalog endpoints and admin inventory operations.",
+      "item": [
+        {
+          "name": "Add Vehicle A - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry A\",\n  \"licensePlate\": \"{{vehicleAPlate}}\",\n  \"vehicleType\": \"CAR\",\n  \"vehicleFuelType\": \"PETROL\",\n  \"vehicleTransmission\": \"AUTOMATIC\",\n  \"seatingCapacity\": 5,\n  \"dailyRate\": 2500,\n  \"imageUrl\": \"https://example.com/camry-a.jpg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/vehicles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('vehicleAId', data.id);",
+                  "pm.test('Vehicle defaults to AVAILABLE', function () { pm.expect(data.status).to.eql('AVAILABLE'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Vehicle B - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Honda\",\n  \"model\": \"City B\",\n  \"licensePlate\": \"{{vehicleBPlate}}\",\n  \"vehicleType\": \"CAR\",\n  \"vehicleFuelType\": \"PETROL\",\n  \"vehicleTransmission\": \"MANUAL\",\n  \"seatingCapacity\": 5,\n  \"dailyRate\": 2200,\n  \"imageUrl\": \"https://example.com/city-b.jpg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/vehicles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('vehicleBId', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Vehicle C - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Hyundai\",\n  \"model\": \"Creta C\",\n  \"licensePlate\": \"{{vehicleCPlate}}\",\n  \"vehicleType\": \"CAR\",\n  \"vehicleFuelType\": \"DIESEL\",\n  \"vehicleTransmission\": \"AUTOMATIC\",\n  \"seatingCapacity\": 5,\n  \"dailyRate\": 2800,\n  \"imageUrl\": \"https://example.com/creta-c.jpg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/vehicles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('vehicleCId', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Vehicle Duplicate Plate - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Duplicate\",\n  \"licensePlate\": \"{{vehicleAPlate}}\",\n  \"vehicleType\": \"CAR\",\n  \"vehicleFuelType\": \"PETROL\",\n  \"vehicleTransmission\": \"AUTOMATIC\",\n  \"seatingCapacity\": 5,\n  \"dailyRate\": 2100,\n  \"imageUrl\": \"https://example.com/duplicate.jpg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/vehicles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Duplicate plate message is returned', function () {",
+                  "    pm.expect(data.error).to.eql('A vehicle with this license plate already exists.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Vehicle Validation - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"\",\n  \"model\": \"\",\n  \"licensePlate\": \"bad plate\",\n  \"vehicleType\": null,\n  \"vehicleFuelType\": null,\n  \"vehicleTransmission\": null,\n  \"seatingCapacity\": 0,\n  \"dailyRate\": -100\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/vehicles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Validation errors are returned', function () {",
+                  "    pm.expect(data.errors).to.have.property('licensePlate');",
+                  "    pm.expect(data.errors).to.have.property('dailyRate');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Vehicle A - Happy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry A Updated\",\n  \"licensePlate\": \"{{vehicleAPlate}}\",\n  \"vehicleType\": \"CAR\",\n  \"vehicleFuelType\": \"PETROL\",\n  \"vehicleTransmission\": \"AUTOMATIC\",\n  \"status\": \"MAINTENANCE\",\n  \"seatingCapacity\": 5,\n  \"dailyRate\": 3000,\n  \"imageUrl\": \"https://example.com/camry-a-updated.jpg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/vehicles/{{vehicleAId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Vehicle status is updated', function () {",
+                  "    pm.expect(data.status).to.eql('MAINTENANCE');",
+                  "    pm.expect(data.dailyRate).to.eql(3000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Vehicle Not Found - Fail",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Ghost\",\n  \"model\": \"Vehicle\",\n  \"licensePlate\": \"GH-00-AA-0001\",\n  \"vehicleType\": \"CAR\",\n  \"vehicleFuelType\": \"PETROL\",\n  \"vehicleTransmission\": \"MANUAL\",\n  \"status\": \"AVAILABLE\",\n  \"seatingCapacity\": 4,\n  \"dailyRate\": 1500,\n  \"imageUrl\": \"https://example.com/ghost.jpg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/vehicles/99999999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 500', function () { pm.response.to.have.status(500); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Generic error payload is returned', function () {",
+                  "    pm.expect(data.error).to.eql('An unexpected error occurred. Please try again later.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Vehicle B - Happy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/vehicles/{{vehicleBId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Vehicle Not Found - Fail",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/vehicles/99999999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 500', function () { pm.response.to.have.status(500); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Generic error payload is returned', function () {",
+                  "    pm.expect(data.error).to.eql('An unexpected error occurred. Please try again later.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Active Vehicles - Happy",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vehicles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Active vehicle list excludes retired vehicle B', function () {",
+                  "    pm.expect(data.some(v => String(v.id) === pm.collectionVariables.get('vehicleBId'))).to.eql(false);",
+                  "});",
+                  "pm.test('Vehicle C is visible in the catalog', function () {",
+                  "    pm.expect(data.some(v => String(v.id) === pm.collectionVariables.get('vehicleCId'))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Vehicles Admin Inventory - Happy",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/vehicles/admin/all"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "const retired = data.find(v => String(v.id) === pm.collectionVariables.get('vehicleBId'));",
+                  "pm.test('Retired vehicle B is visible to admin inventory', function () {",
+                  "    pm.expect(retired).to.be.an('object');",
+                  "    pm.expect(retired.status).to.eql('RETIRED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Vehicle By Id - Happy",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vehicles/{{vehicleAId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Vehicle A detail is returned', function () {",
+                  "    pm.expect(String(data.id)).to.eql(pm.collectionVariables.get('vehicleAId'));",
+                  "    pm.expect(data.status).to.eql('MAINTENANCE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Vehicle By Id Not Found - Fail",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vehicles/99999999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', function () { pm.response.to.have.status(404); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Not found payload is returned', function () {",
+                  "    pm.expect(data.error).to.eql('Vehicle not found with ID: 99999999');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public Filter By Type - Happy",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vehicles/filter?type=CAR"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Filtered results do not include retired vehicles', function () {",
+                  "    pm.expect(data.every(v => v.status !== 'RETIRED')).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public Filter Retired Hidden - Negative",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vehicles/filter?status=RETIRED"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Public filter returns no retired vehicles', function () {",
+                  "    pm.expect(data).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Filter Retired - Happy",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/vehicles/admin/filter?status=RETIRED"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "const retired = data.find(v => String(v.id) === pm.collectionVariables.get('vehicleBId'));",
+                  "pm.test('Admin retired filter returns vehicle B', function () {",
+                  "    pm.expect(retired).to.be.an('object');",
+                  "    pm.expect(retired.status).to.eql('RETIRED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Bookings",
+      "description": "Creates two bookings on vehicle C, then exercises read, cancel, and complete flows.",
+      "item": [
+        {
+          "name": "Create Booking 1 - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{vehicleCId}},\n  \"startDate\": \"{{booking1Start}}\",\n  \"endDate\": \"{{booking1End}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/bookings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('booking1Id', data.id);",
+                  "pm.test('Booking is confirmed', function () { pm.expect(data.status).to.eql('CONFIRMED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Booking Overlap - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{vehicleCId}},\n  \"startDate\": \"{{booking1Start}}\",\n  \"endDate\": \"{{booking1End}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/bookings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Overlap error is returned', function () {",
+                  "    pm.expect(data.error).to.eql('Vehicle is already booked during these dates.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Booking Invalid Date Order - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{vehicleCId}},\n  \"startDate\": \"{{bookingInvalidStart}}\",\n  \"endDate\": \"{{bookingInvalidEnd}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/bookings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Date ordering error is returned', function () {",
+                  "    pm.expect(data.error).to.eql('End date cannot be before start date.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Bookings - Happy",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": "{{baseUrl}}/bookings/my-bookings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Booking 1 appears in user history', function () {",
+                  "    pm.expect(data.some(b => String(b.id) === pm.collectionVariables.get('booking1Id'))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Bookings Without Token - Fail",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/bookings/my-bookings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401 or 403', function () {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Booking 1 As Other User - Fail",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{otherUserToken}}" }
+            ],
+            "url": "{{baseUrl}}/bookings/{{booking1Id}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403', function () { pm.response.to.have.status(403); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Permission error is returned', function () {",
+                  "    pm.expect(data.error).to.eql('You do not have permission to cancel this booking.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Booking 1 - Happy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": "{{baseUrl}}/bookings/{{booking1Id}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Booking is cancelled', function () { pm.expect(data.status).to.eql('CANCELLED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Booking 1 Again - Fail",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": "{{baseUrl}}/bookings/{{booking1Id}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Current-state booking cancel error is returned', function () {",
+                  "    pm.expect(data.error).to.eql('Booking cannot be cancelled in its current state.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Booking 2 For Review Flow - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{vehicleCId}},\n  \"startDate\": \"{{booking2Start}}\",\n  \"endDate\": \"{{booking2End}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/bookings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('booking2Id', data.id);",
+                  "pm.test('Booking 2 is confirmed', function () { pm.expect(data.status).to.eql('CONFIRMED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Bookings Admin - Happy",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/bookings/admin/all"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Admin sees booking 1 and booking 2', function () {",
+                  "    pm.expect(data.some(b => String(b.id) === pm.collectionVariables.get('booking1Id'))).to.eql(true);",
+                  "    pm.expect(data.some(b => String(b.id) === pm.collectionVariables.get('booking2Id'))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Bookings Admin As User - Fail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": "{{baseUrl}}/bookings/admin/all"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete Booking 2 As Admin - Happy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/bookings/admin/{{booking2Id}}/complete"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Booking 2 is completed', function () { pm.expect(data.status).to.eql('COMPLETED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete Booking 2 Again - Fail",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/bookings/admin/{{booking2Id}}/complete"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Complete booking rule message is returned', function () {",
+                  "    pm.expect(data.error).to.eql('Only confirmed or active bookings can be marked as completed.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Reviews",
+      "description": "Creates one review on booking 2 and validates duplicate, listing, and deletion rules.",
+      "item": [
+        {
+          "name": "Add Review - Happy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": {{booking2Id}},\n  \"rating\": 5,\n  \"comment\": \"Excellent vehicle and booking experience.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/reviews"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('reviewId', data.id);",
+                  "pm.test('Review belongs to booking 2', function () {",
+                  "    pm.expect(String(data.bookingId)).to.eql(pm.collectionVariables.get('booking2Id'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Review Duplicate - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": {{booking2Id}},\n  \"rating\": 5,\n  \"comment\": \"Duplicate review attempt.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/reviews"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', function () { pm.response.to.have.status(409); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Duplicate review error is returned', function () {",
+                  "    pm.expect(data.error).to.eql('A review has already been submitted for this booking.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Review Validation - Fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 0,\n  \"comment\": \"Invalid payload\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/reviews"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Validation errors are returned', function () {",
+                  "    pm.expect(data.errors).to.have.property('bookingId');",
+                  "    pm.expect(data.errors).to.have.property('rating');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Vehicle Reviews - Happy",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reviews/vehicle/{{vehicleCId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Review list contains the saved review', function () {",
+                  "    pm.expect(data.some(r => String(r.id) === pm.collectionVariables.get('reviewId'))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Review As Other User - Fail",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{otherUserToken}}" }
+            ],
+            "url": "{{baseUrl}}/reviews/{{reviewId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403', function () { pm.response.to.have.status(403); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Delete permission error is returned', function () {",
+                  "    pm.expect(data.error).to.eql('You do not have permission to delete this review.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Review - Happy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": "{{baseUrl}}/reviews/{{reviewId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Review Not Found - Fail",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/reviews/{{reviewId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', function () { pm.response.to.have.status(404); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Review not found payload is returned', function () {",
+                  "    pm.expect(data.error).to.eql(`Review not found with ID: ${pm.collectionVariables.get('reviewId')}`);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
