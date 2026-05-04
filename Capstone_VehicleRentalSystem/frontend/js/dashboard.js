@@ -1,0 +1,630 @@
+//  Global State 
+let currentVehicles = [];
+let currentBookings = [];
+let selectedVehicleId = null;
+const userRole = localStorage.getItem('user_role');
+const userName = localStorage.getItem('user_name');
+
+// Calendar Instances
+let startDatePicker = null;
+let endDatePicker = null;
+let filterStartDatePicker = null; 
+let filterEndDatePicker = null;  
+
+// Initialization
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('welcomeMessage').textContent = userName || 'Driver';
+    const badge = document.getElementById('roleBadge');
+    badge.textContent = userRole === 'ADMIN' ? 'Admin Portal' : 'Member Portal';
+    badge.style.background = userRole === 'ADMIN' ? '#ef4444' : 'var(--accent)';
+
+    // Admin UI Adjustments
+    if (userRole === 'ADMIN') {
+        document.getElementById('adminAddVehicleBtn').style.display = 'block';
+        document.getElementById('navBookingsBtn').textContent = 'Bookings';
+        const statusDropdown = document.getElementById('filterStatus');
+        if (statusDropdown) {
+            const retiredOption = document.createElement('option');
+            retiredOption.value = 'RETIRED';
+            retiredOption.textContent = 'Retired';
+            statusDropdown.appendChild(retiredOption);
+        }
+    } else {
+        document.getElementById('navBookingsBtn').textContent = 'My Bookings';
+    }
+
+    // Initialize Filter Calendars
+    filterStartDatePicker = flatpickr("#filterStartDate", {
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        disableMobile: true,
+        onChange: function (selectedDates, dateStr) {
+            if (filterEndDatePicker) filterEndDatePicker.set('minDate', dateStr);
+        }
+    });
+
+    filterEndDatePicker = flatpickr("#filterEndDate", {
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        disableMobile: true
+    });
+
+    setupEventListeners();
+    loadCatalog();
+});
+
+// Event Listeners Setup
+function setupEventListeners() {
+    safeAddListener('navCatalogBtn', 'click', showCatalogView);
+    safeAddListener('navBookingsBtn', 'click', showBookingsView);
+    safeAddListener('backToCatalogBtn', 'click', showCatalogView);
+    safeAddListener('logoutBtn', 'click', logout); 
+
+    safeAddListener('applyFiltersBtn', 'click', applyFilters);
+    safeAddListener('clearFiltersBtn', 'click', () => {
+        document.getElementById('filterType').value = '';
+        document.getElementById('filterStatus').value = '';
+
+        if (filterStartDatePicker) filterStartDatePicker.clear();
+        if (filterEndDatePicker) {
+            filterEndDatePicker.clear();
+            filterEndDatePicker.set('minDate', 'today');
+        }
+
+        loadCatalog();
+    });
+
+    safeAddListener('closeBookingModalBtn', 'click', () => {
+        document.getElementById('bookingModalOverlay').style.display = 'none';
+    });
+    safeAddListener('bookingForm', 'submit', handleBookingSubmit);
+    
+    safeAddListener('closeReviewModalBtn', 'click', () => {
+        document.getElementById('reviewModalOverlay').style.display = 'none';
+    });
+    safeAddListener('reviewForm', 'submit', handleReviewSubmit);
+    safeAddListener('bookingStatusFilter', 'change', filterBookings);
+
+    // Admin Only Listeners
+    if (userRole === 'ADMIN') {
+        safeAddListener('adminAddVehicleBtn', 'click', () => {
+            const overlay = document.getElementById('addModalOverlay');
+            if (overlay) overlay.style.display = 'flex';
+        });
+
+        safeAddListener('closeAddModalBtn', 'click', () => document.getElementById('addModalOverlay').style.display = 'none');
+        safeAddListener('cancelAddBtn', 'click', () => document.getElementById('addModalOverlay').style.display = 'none');
+        safeAddListener('addVehicleForm', 'submit', handleAddVehicle);
+
+        safeAddListener('closeModalBtn', 'click', () => document.getElementById('editModalOverlay').style.display = 'none');
+        safeAddListener('cancelEditBtn', 'click', () => document.getElementById('editModalOverlay').style.display = 'none');
+        safeAddListener('editVehicleForm', 'submit', handleEditVehicle);
+    }
+}
+
+// View Navigation
+function showCatalogView() {
+    document.getElementById('catalogView').style.display = 'block';
+    document.getElementById('detailView').style.display = 'none';
+    document.getElementById('bookingsView').style.display = 'none';
+
+    document.getElementById('navCatalogBtn').classList.add('active');
+    document.getElementById('navBookingsBtn').classList.remove('active');
+    loadCatalog();
+}
+
+function showBookingsView() {
+    document.getElementById('catalogView').style.display = 'none';
+    document.getElementById('detailView').style.display = 'none';
+    document.getElementById('bookingsView').style.display = 'flex';
+
+    document.getElementById('navCatalogBtn').classList.remove('active');
+    document.getElementById('navBookingsBtn').classList.add('active');
+    loadBookings();
+}
+
+function showDetailView(vehicleId) {
+    document.getElementById('catalogView').style.display = 'none';
+    document.getElementById('bookingsView').style.display = 'none';
+    document.getElementById('detailView').style.display = 'flex';
+
+    selectedVehicleId = vehicleId;
+    loadVehicleDetails(vehicleId);
+    loadVehicleReviews(vehicleId);
+}
+
+// Vehicle Catalog Logic
+async function loadCatalog() {
+    try {
+        const endpoint = userRole === 'ADMIN' ? '/vehicles/admin/all' : '/vehicles';
+        const response = await apiFetch(endpoint);
+        const vehicles = await response.json();
+
+        currentVehicles = vehicles;
+        renderVehicleGrid(vehicles);
+        updateStats(vehicles);
+    } catch (error) {
+        document.getElementById('vehicleGrid').innerHTML = `<p style="color: red; text-align: center;">Failed to load fleet. Backend might be offline.</p>`;
+    }
+}
+
+async function applyFilters() {
+    const type = document.getElementById('filterType').value;
+    const status = document.getElementById('filterStatus').value;
+    const start = document.getElementById('filterStartDate').value;
+    const end = document.getElementById('filterEndDate').value;
+
+    const params = new URLSearchParams();
+    if (type) params.append('type', type);
+    if (status) params.append('status', status);
+    if (start) params.append('startDate', start);
+    if (end) params.append('endDate', end);
+
+    try {
+        const endpoint = userRole === 'ADMIN'
+            ? `/vehicles/admin/filter?${params.toString()}`
+            : `/vehicles/filter?${params.toString()}`;
+
+        const response = await apiFetch(endpoint);
+        if (!response.ok) throw new Error(`Filter error: ${response.status}`);
+
+        const vehicles = await response.json();
+        renderVehicleGrid(vehicles);
+    } catch (error) {
+        console.error("Filtering failed:", error);
+        document.getElementById('vehicleGrid').innerHTML = `
+            <div style="text-align: center; color: var(--danger); padding: 2rem;">
+                Failed to filter fleet. Please try again.
+            </div>`;
+    }
+}
+
+function renderVehicleGrid(vehicles) {
+    const grid = document.getElementById('vehicleGrid');
+    grid.innerHTML = '';
+
+    if (vehicles.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">No vehicles found matching criteria.</div>`;
+        return;
+    }
+
+    vehicles.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'vehicle-card';
+        card.onclick = () => showDetailView(v.id);
+
+        let statusColor = v.status === 'AVAILABLE' ? '#22c55e' : (v.status === 'BOOKED' ? '#eab308' : '#ef4444');
+
+        card.innerHTML = `
+            <div style="position: absolute; top: 1rem; right: 1rem; background: ${statusColor}; color: white; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">
+                ${v.status}
+            </div>
+            <img src="${v.imageUrl || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvcXd5vYpDWGgyZCXrtPg2B0nNbRg523gdYA&s'}" alt="${v.model}">
+            <h3 style="margin: 0.5rem 0 0.2rem 0;">${v.make} ${v.model}</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">${v.vehicleType} • ${v.vehicleTransmission}</p>
+            <div style="font-size: 1.25rem; font-weight: bold; color: var(--accent);">₹${v.dailyRate} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">/ day</span></div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function updateStats(vehicles) {
+    document.getElementById('statTotal').textContent = vehicles.length;
+    document.getElementById('statAvailable').textContent = vehicles.filter(v => v.status === 'AVAILABLE').length;
+}
+
+function loadVehicleDetails(id) {
+    const vehicle = currentVehicles.find(v => v.id === id);
+    if (!vehicle) return;
+
+    document.getElementById('detailTitle').textContent = `${vehicle.make} ${vehicle.model}`;
+    document.getElementById('detailImage').src = vehicle.imageUrl || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvcXd5vYpDWGgyZCXrtPg2B0nNbRg523gdYA&s';
+    document.getElementById('detailType').textContent = vehicle.vehicleType;
+    document.getElementById('detailTransmission').textContent = vehicle.vehicleTransmission;
+    document.getElementById('detailFuel').textContent = vehicle.vehicleFuelType;
+    document.getElementById('detailSeats').textContent = vehicle.seatingCapacity;
+    document.getElementById('detailPlate').textContent = vehicle.licensePlate;
+    document.getElementById('detailPrice').textContent = `₹${vehicle.dailyRate}`;
+
+    const rentBtn = document.getElementById('rentNowBtn');
+    rentBtn.onclick = null;
+
+    if (userRole === 'ADMIN') {
+        rentBtn.textContent = "Edit Vehicle (Admin Only)";
+        rentBtn.style.background = "#eab308";
+        rentBtn.onclick = () => openEditModal(vehicle);
+
+        const existingDeleteBtn = document.getElementById('adminDeleteBtn');
+        if (existingDeleteBtn) existingDeleteBtn.remove();
+    } else {
+        if (vehicle.status !== 'AVAILABLE') {
+            rentBtn.textContent = "Currently Unavailable";
+            rentBtn.style.background = "var(--text-muted)";
+            rentBtn.disabled = true;
+        } else {
+            rentBtn.textContent = "Book Now";
+            rentBtn.style.background = "var(--accent)";
+            rentBtn.disabled = false;
+            rentBtn.onclick = openBookingModal;
+        }
+    }
+}
+
+// Booking Logic 
+function openBookingModal() {
+    document.getElementById('bookingModalOverlay').style.display = 'flex';
+    document.getElementById('bookingError').classList.remove('active');
+    document.getElementById('bookingForm').reset();
+
+    if (!startDatePicker) {
+        try {
+            startDatePicker = flatpickr("#bookingStartDate", {
+                minDate: "today",
+                dateFormat: "Y-m-d",
+                disableMobile: true,
+                onChange: function (selectedDates, dateStr) {
+                    if (endDatePicker) endDatePicker.set('minDate', dateStr);
+                }
+            });
+
+            endDatePicker = flatpickr("#bookingEndDate", {
+                minDate: "today",
+                dateFormat: "Y-m-d",
+                disableMobile: true
+            });
+        } catch (error) {
+            console.error("Flatpickr failed to load.", error);
+            alert("Warning: Calendar script failed to load. Using standard text inputs.");
+        }
+    } else {
+        startDatePicker.clear();
+        endDatePicker.clear();
+        endDatePicker.set('minDate', 'today');
+    }
+}
+
+async function handleBookingSubmit(e) {
+    e.preventDefault();
+    const errorDiv = document.getElementById('bookingError');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+
+    const payload = {
+        vehicleId: selectedVehicleId,
+        startDate: document.getElementById('bookingStartDate').value,
+        endDate: document.getElementById('bookingEndDate').value
+    };
+
+    submitBtn.textContent = "Processing...";
+    submitBtn.disabled = true;
+
+    try {
+        const response = await apiFetch('/bookings', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            alert("Booking Confirmed!");
+            document.getElementById('bookingModalOverlay').style.display = 'none';
+            showBookingsView();
+        } else {
+            showError(errorDiv, data.error || "Failed to book. Dates might overlap.");
+        }
+    } catch (error) {
+        showError(errorDiv, "Connection error.");
+    } finally {
+        submitBtn.textContent = "Confirm Booking";
+        submitBtn.disabled = false;
+    }
+}
+
+async function loadBookings() {
+    const list = document.getElementById('bookingsList');
+    list.innerHTML = `<div style="text-align: center; color: var(--text-muted);">Loading bookings...</div>`;
+    document.getElementById('bookingsTitle').textContent = userRole === 'ADMIN' ? 'All System Bookings' : 'My Booking History';
+
+    const endpoint = userRole === 'ADMIN' ? '/bookings/admin/all' : '/bookings/my-bookings';
+
+    try {
+        const response = await apiFetch(endpoint);
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+
+        currentBookings = await response.json();
+        filterBookings();
+
+    } catch (error) {
+        console.error("Booking Fetch Error:", error);
+        list.innerHTML = `<div style="color: var(--danger); text-align: center; padding: 2rem;"><strong>Failed to load bookings.</strong></div>`;
+    }
+}
+
+function filterBookings() {
+    const filterValue = document.getElementById('bookingStatusFilter').value;
+    const list = document.getElementById('bookingsList');
+
+    let filtered = currentBookings;
+    if (filterValue !== 'ALL') {
+        filtered = currentBookings.filter(b => b.status && b.status.toUpperCase() === filterValue);
+    }
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No bookings found for this status.</div>`;
+        return;
+    }
+
+    list.innerHTML = '';
+
+    filtered.forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'booking-card';
+
+        const status = b.status ? b.status.toString().toUpperCase() : '';
+        let statusColor = '#64748b'; 
+        if (status === 'CONFIRMED') statusColor = '#22c55e'; 
+        if (status === 'CANCELLED') statusColor = '#ef4444'; 
+        if (status === 'ACTIVE') statusColor = '#3b82f6';    
+
+        let actionsHtml = '';
+        if (status === 'CONFIRMED') {
+            actionsHtml += `
+            <button onclick="cancelBooking(${b.id})" class="btn-ghost" style="padding: 0.6rem 1rem; border-color: #ef4444; color: #ef4444; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                Cancel
+            </button>`;
+        } 
+        else if (status === 'ACTIVE') {
+            if (userRole === 'ADMIN') {
+                actionsHtml += `
+                <button onclick="completeBooking(${b.id})" class="btn-success" style="padding: 0.6rem 1rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Mark Returned
+                </button>`;
+            } else {
+                actionsHtml += `<div style="text-align: center; color: var(--accent); font-weight: 600; font-size: 0.9rem; padding: 0.6rem 0; background: rgb(255, 255, 252); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">On the Road</div>`;
+            }
+        } 
+        else if (status === 'COMPLETED' && userRole !== 'ADMIN') {
+            if (!b.isReviewed) {
+                actionsHtml += `<button onclick="openReviewModal(${b.id})" class="btn-primary" style="padding: 0.6rem 1rem; width: 100%;">Leave a Review</button>`;
+            } else {
+                actionsHtml += `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.4rem; color: var(--success); font-weight: 600; font-size: 0.9rem; padding: 0.6rem 0; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    Review Submitted
+                </div>`;
+            }
+        }
+
+        const userTag = userRole === 'ADMIN' ? `
+            <div class="info-label">Booked by:</div>
+            <div class="info-value" style="color: #fbbf24;">${b.userEmail || 'Unknown User'}</div>
+        ` : '';
+
+        const vehicleImg = b.vehicleImageUrl || 'https://www.shutterstock.com/image-vector/vector-line-art-car-concept-260nw-2488843165.jpg';
+
+        card.innerHTML = `
+            <div class="booking-img-wrapper">
+                <img src="${vehicleImg}" alt="${b.vehicleMake} ${b.vehicleModel}" onerror="this.onerror=null; this.src='https://www.shutterstock.com/image-vector/vector-line-art-car-concept-260nw-2488843165.jpg'">
+            </div>
+            <div class="booking-details">
+                <div class="booking-header-row"><h3>${b.vehicleMake} ${b.vehicleModel}</h3></div>
+                <div class="info-grid">
+                    <div class="info-label">Dates:</div>
+                    <div class="info-value">${b.startDate} &rarr; ${b.endDate}</div>
+                    ${userTag}
+                    <div class="info-label total-row">Total:</div>
+                    <div class="info-value total-row" style="font-size: 1.2rem; color: var(--accent);">₹${b.totalAmount}</div>
+                </div>
+            </div>
+            <div class="booking-actions-col">
+                <div style="color: ${statusColor}; font-weight: 800; letter-spacing: 1px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${statusColor};"></span>
+                    ${status}
+                </div>
+                ${actionsHtml}
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+async function cancelBooking(id) {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    try {
+        const response = await apiFetch(`/bookings/${id}/cancel`, { method: 'PUT' });
+        if (response.ok) { alert("Booking cancelled."); loadBookings(); }
+    } catch (error) { console.error(error); }
+}
+
+async function completeBooking(id) {
+    try {
+        const response = await apiFetch(`/bookings/admin/${id}/complete`, { method: 'PUT' });
+        if (response.ok) loadBookings();
+    } catch (error) { console.error(error); }
+}
+
+// Admin Vehicle Management Logic
+async function handleAddVehicle(e) {
+    e.preventDefault();
+    const payload = {
+        make: document.getElementById('addMake').value,
+        model: document.getElementById('addModel').value,
+        dailyRate: document.getElementById('addRate').value,
+        vehicleType: document.getElementById('addType').value,
+        vehicleTransmission: document.getElementById('addTransmission').value,
+        vehicleFuelType: document.getElementById('addFuel').value,
+        seatingCapacity: document.getElementById('addSeats').value,
+        licensePlate: document.getElementById('addPlate').value,
+        imageUrl: document.getElementById('addImage').value || null
+    };
+    try {
+        const response = await apiFetch('/vehicles', { method: 'POST', body: JSON.stringify(payload) });
+        if (response.ok) {
+            alert("Vehicle added!");
+            document.getElementById('addModalOverlay').style.display = 'none';
+            loadCatalog();
+        }
+    } catch (error) { console.error(error); }
+}
+
+function openEditModal(vehicle) {
+    document.getElementById('editCarId').value = vehicle.id;
+    document.getElementById('editMake').value = vehicle.make;
+    document.getElementById('editModel').value = vehicle.model;
+    document.getElementById('editRate').value = vehicle.dailyRate;
+    document.getElementById('editStatus').value = vehicle.status;
+    document.getElementById('editModalOverlay').style.display = 'flex';
+}
+
+async function handleEditVehicle(e) {
+    e.preventDefault();
+    const id = document.getElementById('editCarId').value;
+    const existingVehicle = currentVehicles.find(v => v.id == id);
+    const payload = {
+        make: document.getElementById('editMake').value,
+        model: document.getElementById('editModel').value,
+        dailyRate: document.getElementById('editRate').value,
+        vehicleType: existingVehicle.vehicleType,
+        vehicleTransmission: existingVehicle.vehicleTransmission,
+        vehicleFuelType: existingVehicle.vehicleFuelType,
+        seatingCapacity: existingVehicle.seatingCapacity,
+        licensePlate: existingVehicle.licensePlate,
+        imageUrl: existingVehicle.imageUrl,
+        status: document.getElementById('editStatus').value
+    };
+    try {
+        const response = await apiFetch(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        if (response.ok) {
+            alert("Updated!");
+            document.getElementById('editModalOverlay').style.display = 'none';
+            showCatalogView();
+        }
+    } catch (error) { console.error(error); }
+}
+
+// Reviews Logic 
+function openReviewModal(bookingId) {
+    document.getElementById('reviewBookingId').value = bookingId;
+    document.getElementById('reviewForm').reset();
+    const errorDiv = document.getElementById('reviewError');
+    if (errorDiv) errorDiv.classList.remove('active');
+    document.getElementById('reviewModalOverlay').style.display = 'flex';
+}
+
+async function handleReviewSubmit(e) {
+    e.preventDefault();
+    const errorDiv = document.getElementById('reviewError');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const payload = {
+        bookingId: document.getElementById('reviewBookingId').value,
+        rating: parseInt(document.getElementById('reviewRating').value),
+        comment: document.getElementById('reviewComment').value.trim()
+    };
+    
+    submitBtn.textContent = "Submitting...";
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await apiFetch('/reviews', { method: 'POST', body: JSON.stringify(payload) });
+        if (response.ok) {
+            alert("Review submitted!");
+            document.getElementById('reviewModalOverlay').style.display = 'none';
+            loadBookings();
+        } else {
+            const data = await response.json();
+            showError(errorDiv, data.error || "Submission failed.");
+        }
+    } catch (error) { 
+        showError(errorDiv, "Connection error."); 
+    } finally { 
+        submitBtn.textContent = "Submit Review"; 
+        submitBtn.disabled = false; 
+    }
+}
+
+async function loadVehicleReviews(vehicleId) {
+    const container = document.getElementById('reviewsContainer');
+    container.innerHTML = '<div style="text-align: center; color: var(--text-muted);">Loading reviews...</div>';
+
+    try {
+        const response = await apiFetch(`/reviews/vehicle/${vehicleId}`);
+        if (!response.ok) throw new Error("Failed to fetch reviews");
+
+        const reviews = await response.json();
+
+        if (reviews.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-style: italic;">No reviews yet. Be the first to rent and rate this vehicle!</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        const rawUserEmail = localStorage.getItem('user_email');
+        const currentUserEmail = rawUserEmail ? rawUserEmail.toLowerCase() : '';
+        
+        reviews.forEach(review => {
+            const stars = '⭐'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+            const date = new Date(review.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            const commentHtml = review.comment ? `"${review.comment}"` : '<span style="color: var(--text-muted); font-style: italic;">No comment provided.</span>';
+            const authorEmail = review.reviewerEmail ? review.reviewerEmail.toLowerCase() : '';
+
+            let deleteBtnHtml = '';
+            if (userRole === 'ADMIN' || currentUserEmail === authorEmail) {
+                deleteBtnHtml = `
+                <button onclick="deleteReview(${review.id})" title="Delete Review" class="btn-text-only" style="color: var(--danger); margin-left: 1rem; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>`;
+            }
+
+            const reviewHtml = `
+                <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-soft);">
+                    <div style="margin-bottom: 0.8rem; letter-spacing: 2px; font-size: 1.1rem;">${stars}</div>
+                    <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem; font-style: italic;">
+                        ${commentHtml}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 0.8rem;">
+                        <div style="display: flex; align-items: center;">
+                            <span style="font-weight: 600; color: var(--accent); font-size: 0.9rem;">— ${review.reviewerFirstName || 'User'}</span>
+                            ${deleteBtnHtml} 
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.8rem;">${date}</div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', reviewHtml);
+        });
+
+    } catch (error) {
+        console.error("Error loading reviews:", error);
+        container.innerHTML = '<div style="color: var(--danger); text-align: center;">Failed to load reviews.</div>';
+    }
+}
+
+async function deleteReview(reviewId) {
+    if (!confirm("Are you sure you want to delete this review?")) return;
+
+    try {
+        const response = await apiFetch(`/reviews/${reviewId}`, { method: 'DELETE' });
+
+        if (response.ok || response.status === 204) {
+            alert("Review deleted successfully.");
+            loadVehicleReviews(selectedVehicleId);
+            loadBookings(); // Refreshes booking list to show 'Leave a Review' button again
+        } else {
+            const data = await response.json();
+            alert(data.error || "Failed to delete review.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Connection error.");
+    }
+}
