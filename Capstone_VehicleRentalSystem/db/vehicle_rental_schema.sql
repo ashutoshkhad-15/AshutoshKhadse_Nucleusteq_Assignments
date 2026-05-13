@@ -47,7 +47,7 @@ CREATE TABLE bookings (
     end_date DATE NOT NULL,   
     price_per_day NUMERIC(10,2) NOT NULL,
     total_amount NUMERIC(10,2) NOT NULL,
-    status VARCHAR(20) DEFAULT 'PENDING',
+    status VARCHAR(20) DEFAULT 'CONFIRMED',
     version INT DEFAULT 0, -- Optimistic locking
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
@@ -55,7 +55,7 @@ CREATE TABLE bookings (
     CONSTRAINT fk_bookings_users FOREIGN KEY (user_id) REFERENCES app_users(id),
     CONSTRAINT fk_bookings_vehicles FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
     CONSTRAINT chk_bookings_dates CHECK (end_date > start_date),
-    CONSTRAINT chk_bookings_status CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'))
+    CONSTRAINT chk_bookings_status CHECK (status IN ('ACTIVE', 'CONFIRMED', 'CANCELLED', 'COMPLETED'))
 );
 
 CREATE TABLE reviews (
