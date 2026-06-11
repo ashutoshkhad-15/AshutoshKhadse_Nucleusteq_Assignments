@@ -41,7 +41,7 @@ Represents the rental fleet and its current state.
 The core transactional table handling reservations.
 * **Audit Snapshots:** Stores `price_per_day` at the time of booking to ensure historical accuracy even if rates change.
 * **Integrity:** Enforces `end_date > start_date`.
-* **Flow:** `PENDING` → `CONFIRMED` → `COMPLETED`.
+* **Flow:** `CONFIRMED` → `ACTIVE` → `COMPLETED`.
 
 ### Review System (`reviews`)
 Stores post-booking feedback.
