@@ -9,6 +9,7 @@ from src.core.database import connect_to_mongo, close_mongo_connection
 from src.core.logger import setup_logger
 from src.exceptions.exception_handlers import add_exception_handlers
 from src.schemas.response.common_response import SuccessResponse
+from src.routers.auth_router import router as auth_router
 
 logger = setup_logger()
 
@@ -68,6 +69,8 @@ async def health_check():
         data={"environment": settings.ENVIRONMENT}
     )
 
+
+api_router.include_router(auth_router)
 
 app.include_router(api_router)
 
