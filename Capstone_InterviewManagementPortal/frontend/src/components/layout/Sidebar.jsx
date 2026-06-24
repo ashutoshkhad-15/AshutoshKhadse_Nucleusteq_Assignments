@@ -1,7 +1,15 @@
 import { NavLink } from 'react-router-dom';
 
+/**
+ * Render role-aware navigation links for protected application pages.
+ *
+ * The current role is read from local storage until a centralized auth context
+ * is introduced. Link visibility mirrors the backend authorization model so
+ * users only see sections relevant to their role.
+ *
+ * @returns {JSX.Element} Sidebar navigation.
+ */
 const Sidebar = () => {
-    // In a real app, role will dictate which links are visible
     const role = localStorage.getItem('userRole');
 
     return (
@@ -26,6 +34,12 @@ const Sidebar = () => {
     );
 };
 
+/**
+ * Inline styles used by the early layout scaffold.
+ *
+ * Centralizing these values keeps component markup readable until a shared
+ * design system or stylesheet owns layout styling.
+ */
 const styles = {
     sidebar: { width: '250px', background: '#f4f4f4', height: '100vh', padding: '20px', borderRight: '1px solid #ddd' },
     title: { color: '#333', marginBottom: '30px' },

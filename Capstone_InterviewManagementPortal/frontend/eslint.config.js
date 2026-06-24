@@ -4,6 +4,13 @@ import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
+/**
+ * ESLint flat configuration for the React frontend.
+ *
+ * The rules combine JavaScript, React, hooks, and refresh recommendations while
+ * disabling prop-types because component contracts are documented directly in
+ * JSDoc during this scaffold phase.
+ */
 export default [
   { ignores: ['dist'] },
   {

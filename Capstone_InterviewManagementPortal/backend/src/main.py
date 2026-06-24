@@ -1,26 +1,41 @@
-from fastapi import FastAPI, APIRouter
+"""FastAPI application bootstrap for the Interview Management Portal API."""
+
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, APIRouter
+
 from src.core.config import settings
 from src.core.database import connect_to_mongo, close_mongo_connection
 from src.core.logger import setup_logger
 from src.exceptions.exception_handlers import add_exception_handlers
 from src.schemas.response.common_response import SuccessResponse
 
-# Initialize logger
 logger = setup_logger()
 
-# Manage Application Lifespan (Startup/Shutdown)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup tasks
+    """Manage application startup and shutdown resources.
+
+    The lifespan hook establishes the MongoDB connection before the API starts
+    accepting requests and closes the connection during application shutdown.
+
+    Args:
+        app: FastAPI application instance managed by the ASGI server.
+
+    Yields:
+        None: Control is yielded to FastAPI while the application is running.
+
+    Raises:
+        Exception: Propagates database connection failures during startup.
+    """
     logger.info("Starting up application...")
     await connect_to_mongo()
     yield
-    # Shutdown tasks
     logger.info("Shutting down application...")
     await close_mongo_connection()
 
-# Initialize FastAPI app with Swagger configs
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
@@ -30,21 +45,30 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Register Exception Handlers
+# Register shared exception handlers before routing so every endpoint returns a
+# consistent error contract.
 add_exception_handlers(app)
 
-# Setup Base Router
 api_router = APIRouter(prefix=settings.API_V1_STR)
+
 
 @api_router.get("/health", response_model=SuccessResponse[dict])
 async def health_check():
-    """Health check endpoint to verify API and DB connectivity."""
+    """Return application health metadata.
+
+    This public endpoint expects no request body or authorization headers. It
+    returns a standardized success response containing the active environment
+    so deployment checks can verify that the API process is reachable.
+
+    Returns:
+        SuccessResponse[dict]: Health response with environment metadata.
+    """
     return SuccessResponse(
         message="System is healthy",
         data={"environment": settings.ENVIRONMENT}
     )
 
-# Include Routers
+
 app.include_router(api_router)
 
 if __name__ == "__main__":

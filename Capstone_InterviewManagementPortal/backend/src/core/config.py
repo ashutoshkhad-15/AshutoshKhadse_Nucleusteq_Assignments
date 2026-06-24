@@ -1,7 +1,26 @@
+"""Application configuration loaded from environment variables."""
+
 import os
+
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
+    """Runtime settings for the backend service.
+
+    Values are loaded from process environment variables and the optional
+    ``.env`` file. Required values must be present before application startup
+    so configuration errors surface early.
+
+    Attributes:
+        PROJECT_NAME: Display name used in generated API documentation.
+        API_V1_STR: Prefix applied to versioned API routes.
+        MONGODB_URL: MongoDB connection string.
+        DATABASE_NAME: MongoDB database selected by the application.
+        ENVIRONMENT: Deployment environment label returned by health checks.
+        LOG_LEVEL: Standard Python logging level name.
+    """
+
     PROJECT_NAME: str = "Interview Management Portal"
     API_V1_STR: str = "/api/v1"
     MONGODB_URL: str
@@ -10,7 +29,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     class Config:
+        """Pydantic settings source configuration."""
+
         env_file = ".env"
         case_sensitive = True
+
 
 settings = Settings()
