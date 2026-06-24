@@ -4,6 +4,7 @@ import logging
 
 from fastapi import Request, FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 from src.exceptions.custom_exceptions import AppBaseException
@@ -55,7 +56,7 @@ def add_exception_handlers(app: FastAPI):
         response = ErrorResponse(
             error_code="VALIDATION_ERROR",
             message="Invalid request parameters",
-            details=exc.errors()
+            details=jsonable_encoder(exc.errors())
         )
         return JSONResponse(status_code=422, content=response.model_dump())
 
