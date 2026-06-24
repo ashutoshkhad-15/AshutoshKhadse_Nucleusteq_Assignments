@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     DATABASE_NAME: str
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
+    DEFAULT_ADMIN_PASSWORD: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
