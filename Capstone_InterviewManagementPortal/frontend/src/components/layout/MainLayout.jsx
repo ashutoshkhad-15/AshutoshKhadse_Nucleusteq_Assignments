@@ -9,9 +9,9 @@ import Sidebar from './Sidebar';
  */
 const MainLayout = ({ children }) => {
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', margin: 0 }}>
+        <div className="sidebar-layout">
             <Sidebar />
-            <div style={{ flex: 1, padding: '20px' }}>
+            <div className="main-content">
                 {children}
             </div>
         </div>
