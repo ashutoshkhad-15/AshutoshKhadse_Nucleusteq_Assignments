@@ -60,3 +60,20 @@ async def get_current_user(credentials: HTTPBasicCredentials = Depends(security)
         )
         
     return user
+
+
+def require_role(allowed_roles: list[str]):
+    """Create a FastAPI dependency that enforces role-based access control.
+
+    Args:
+        allowed_roles: Roles permitted to access the protected endpoint.
+
+    Returns:
+        Callable dependency that validates the authenticated user's role.
+    """
+    def role_checker(current_user: dict = Depends(get_current_user)):
+        # Reject the request when the authenticated role is outside the allowed set.
+        if current_user.get("role") not in allowed_roles:
+            raise ForbiddenException("You do not have permission to perform this action")
+        return current_user
+    return role_checker
