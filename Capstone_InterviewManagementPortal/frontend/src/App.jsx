@@ -1,7 +1,11 @@
-import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
+import AdminRoute from './components/routing/AdminRoute';
+import CreateUserScreen from './pages/CreateUserScreen';
+import EditUserScreen from './pages/EditUserScreen';
+import UserListScreen from './pages/UserListScreen';
 
 const Dashboard = () => <h2>Dashboard Placeholder</h2>;
 const NotFound = () => <h2>404 - Page Not Found</h2>;
@@ -71,6 +75,11 @@ function App() {
                         </ProtectedRoute>
                     )}
                 />
+                <Route element={<AdminRoute />}>
+                    <Route path="/users" element={<UserListScreen />} />
+                    <Route path="/users/create" element={<CreateUserScreen />} />
+                    <Route path="/users/edit/:id" element={<EditUserScreen />} />
+                </Route>
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </Router>
