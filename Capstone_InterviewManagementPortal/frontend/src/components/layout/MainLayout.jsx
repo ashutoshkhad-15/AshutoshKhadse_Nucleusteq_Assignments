@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
 /**
@@ -8,11 +10,14 @@ import Sidebar from './Sidebar';
  * @returns {JSX.Element} Layout with persistent navigation and content region.
  */
 const MainLayout = ({ children }) => {
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
     return (
         <div className="sidebar-layout">
-            <Sidebar />
-            <div className="main-content">
-                {children}
+            <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+
+            <div className={`main-content ${isCollapsed ? 'content-expanded' : ''}`}>
+                {children || <Outlet />}
             </div>
         </div>
     );
