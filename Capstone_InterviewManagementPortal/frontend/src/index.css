@@ -77,9 +77,9 @@ body {
 }
 
 .portal-logo-img {
-  max-width: 110px;
+  max-width: 600px;
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: -50px;
 }
 
 .portal-brand-name {

@@ -13,8 +13,8 @@ const AuthLayout = ({ title, tagline, children }) => {
             <div className="portal-brand">
                 <div className="portal-brand-content">
                     <div className="portal-logo-container">
-                        <img src="/logo.png" alt="NucleusTeq Mark" className="portal-logo-img" />
-                        <div className="portal-brand-name">NucleusTeq</div>
+                        <img src="/logo.png" alt="LOGO" className="portal-logo-img" />
+                        <div className="portal-brand-name">TalentFlow</div>
                     </div>
 
                     <h1 className="portal-logo-text">{title}</h1>

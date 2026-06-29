@@ -48,8 +48,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             <div className="sidebar-header">
                 {!isCollapsed && (
                     <div className="sidebar-brand">
-                        <p className="sidebar-eyebrow">Admin Portal</p>
-                        <h3 className="sidebar-title">NucleusTeq</h3>
+                        <p className="sidebar-eyebrow">Interview Portal</p>
+                        <h3 className="sidebar-title">TalentFlow</h3>
                     </div>
                 )}
                 <button
