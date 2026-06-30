@@ -1,55 +1,49 @@
 import axios from 'axios';
 
-/**
- * Base URL for versioned backend API requests.
- *
- * Vite exposes environment variables through import.meta.env, with localhost
- * used as the development fallback.
- */
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const AUTH_LOGIN_PATH = '/auth/login';
+const BASIC_AUTH_STORAGE_KEY = 'basicAuth';
+const USER_ROLE_STORAGE_KEY = 'userRole';
 
-/**
- * Shared Axios client for Interview Management Portal API calls.
- *
- * The client returns response payloads directly and centralizes authentication
- * headers plus unauthorized-session cleanup.
- */
 const apiClient = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: import.meta.env.VITE_API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-apiClient.interceptors.request.use(
-    (config) => {
-        const credentials = localStorage.getItem('basicAuth');
-        if (credentials) {
-            // Attach credentials only when the session has stored Basic Auth data.
-            config.headers['Authorization'] = `Basic ${credentials}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
+/**
+ * Attach the persisted Basic Auth token to authenticated API requests.
+ */
+const attachAuthHeader = (config) => {
+    const token = localStorage.getItem(BASIC_AUTH_STORAGE_KEY);
 
-apiClient.interceptors.response.use(
-    (response) => {
-        return response.data;
-    },
-    (error) => {
-        if (error.response) {
-            if (error.response.status === 401) {
-                // Clear stale credentials before redirecting unauthorized users.
-                localStorage.removeItem('basicAuth');
-                localStorage.removeItem('userRole');
-                window.location.href = '/login';
-            }
-        }
-        return Promise.reject(error);
+    if (token) {
+        config.headers.Authorization = `Basic ${token}`;
     }
+
+    return config;
+};
+
+/**
+ * Clear client-side session state when an authenticated request expires.
+ */
+const handleUnauthorizedResponse = (error) => {
+    const requestUrl = error.config?.url || '';
+    const isLoginRequest = requestUrl.includes(AUTH_LOGIN_PATH);
+
+    if (error.response?.status === 401 && !isLoginRequest) {
+        localStorage.removeItem(BASIC_AUTH_STORAGE_KEY);
+        localStorage.removeItem(USER_ROLE_STORAGE_KEY);
+        window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+};
+
+apiClient.interceptors.request.use(attachAuthHeader, Promise.reject);
+apiClient.interceptors.response.use(
+    (response) => response,
+    handleUnauthorizedResponse
 );
 
 export default apiClient;

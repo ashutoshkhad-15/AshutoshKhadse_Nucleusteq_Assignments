@@ -1,50 +1,84 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import apiClient from '../../services/apiService';
+
+const ADMIN_ROLE = 'ADMIN';
+const HR_ROLE = 'HR';
+const INTERVIEWER_ROLE = 'INTERVIEWER';
 
 /**
- * Render role-aware navigation links for protected application pages.
+ * Render role-aware navigation for authenticated users.
  *
- * The current role is read from local storage until a centralized auth context
- * is introduced. Link visibility mirrors the backend authorization model so
- * users only see sections relevant to their role.
- *
- * @returns {JSX.Element} Sidebar navigation.
+ * @param {object} props
+ * @param {boolean} props.isCollapsed - Determines if the sidebar is shrunk.
+ * @param {function} props.setIsCollapsed - Toggles the sidebar state.
+ * @returns {JSX.Element} Sidebar navigation and logout action.
  */
-const Sidebar = () => {
+const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     const role = localStorage.getItem('userRole');
+    const navigate = useNavigate();
+
+    const navItems = [
+        { to: '/dashboard', label: 'Dashboard', shortLabel: 'DB', visible: true },
+        { to: '/users', label: 'Users', shortLabel: 'US', visible: role === ADMIN_ROLE },
+        { to: '/jobs', label: 'Jobs', shortLabel: 'JB', visible: role === HR_ROLE },
+        { to: '/candidates', label: 'Candidates', shortLabel: 'CD', visible: role === HR_ROLE },
+        {
+            to: '/interviews',
+            label: 'Interviews',
+            shortLabel: 'IN',
+            visible: role === HR_ROLE || role === INTERVIEWER_ROLE,
+        },
+    ];
+
+    const handleLogout = async () => {
+        try {
+            await apiClient.post('/auth/logout');
+        } catch {
+            // Local session cleanup must still run if the backend logout request fails.
+            console.warn('Backend logout failed, clearing local session anyway.');
+        } finally {
+            localStorage.removeItem('basicAuth');
+            localStorage.removeItem('userRole');
+            navigate('/login');
+        }
+    };
 
     return (
-        <div style={styles.sidebar}>
-            <h3 style={styles.title}>Interview Portal</h3>
-            <ul style={styles.navList}>
-                <li><NavLink to="/dashboard" style={styles.link}>Dashboard</NavLink></li>
-                {(role === 'ADMIN' || role === 'HR') && (
-                    <li><NavLink to="/users" style={styles.link}>Users</NavLink></li>
+        <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+            <div className="sidebar-header">
+                {!isCollapsed && (
+                    <div className="sidebar-brand">
+                        <p className="sidebar-eyebrow">Interview Portal</p>
+                        <h3 className="sidebar-title">TalentFlow</h3>
+                    </div>
                 )}
-                {(role === 'HR') && (
-                    <>
-                        <li><NavLink to="/jobs" style={styles.link}>Jobs</NavLink></li>
-                        <li><NavLink to="/candidates" style={styles.link}>Candidates</NavLink></li>
-                    </>
-                )}
-                {(role === 'HR' || role === 'INTERVIEWER') && (
-                    <li><NavLink to="/interviews" style={styles.link}>Interviews</NavLink></li>
-                )}
+                <button
+                    className="toggle-btn"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                    aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                >
+                    {isCollapsed ? '>' : '<'}
+                </button>
+            </div>
+
+            <ul className="nav-menu">
+                {navItems.filter((item) => item.visible).map((item) => (
+                    <li key={item.to}>
+                        <NavLink to={item.to} className="nav-item">
+                            <span className="nav-icon" aria-hidden="true">{item.shortLabel}</span>
+                            {!isCollapsed && <span className="nav-text">{item.label}</span>}
+                        </NavLink>
+                    </li>
+                ))}
             </ul>
+
+            <button onClick={handleLogout} className="logout-btn">
+                <span className="nav-icon" aria-hidden="true">LO</span>
+                {!isCollapsed && <span className="nav-text">Logout</span>}
+            </button>
         </div>
     );
-};
-
-/**
- * Inline styles used by the early layout scaffold.
- *
- * Centralizing these values keeps component markup readable until a shared
- * design system or stylesheet owns layout styling.
- */
-const styles = {
-    sidebar: { width: '250px', background: '#f4f4f4', height: '100vh', padding: '20px', borderRight: '1px solid #ddd' },
-    title: { color: '#333', marginBottom: '30px' },
-    navList: { listStyle: 'none', padding: 0 },
-    link: { textDecoration: 'none', color: '#0056b3', display: 'block', padding: '10px 0' }
 };
 
 export default Sidebar;
