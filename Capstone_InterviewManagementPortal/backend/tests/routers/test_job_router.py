@@ -25,10 +25,6 @@ def client(mock_job_service):
     app.dependency_overrides.clear()
 
 
-def override_get_current_user_admin():
-    return {"email": "admin@nucleusteq.com", "role": UserRole.ADMIN.value}
-
-
 def override_get_current_user_hr():
     return {"email": "hr@nucleusteq.com", "role": UserRole.HR.value}
 

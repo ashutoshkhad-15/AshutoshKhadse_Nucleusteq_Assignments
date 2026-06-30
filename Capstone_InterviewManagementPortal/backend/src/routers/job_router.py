@@ -1,7 +1,7 @@
 """Router layer for Job Description APIs.
 
 This module implements job creation, listing, retrieval, and update routes.
-Role-based access control is enforced for HR, ADMIN, and INTERVIEWER users.
+Role-based access control: HR can create/update; HR, ADMIN, and INTERVIEWER can view.
 """
 
 from fastapi import APIRouter, Depends, status
@@ -23,11 +23,11 @@ def get_job_service() -> JobService:
 async def create_job(
     request: CreateJobRequest,
     job_service: JobService = Depends(get_job_service),
-    _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value]))
+    _current_user: dict = Depends(require_role([UserRole.HR.value]))
 ):
     """Create a new job description.
 
-    Requires HR or ADMIN permission to execute.
+    Requires HR permission to execute.
     """
     data = await job_service.create_job(request)
     return SuccessResponse(message="Job created successfully", data=data)
@@ -65,11 +65,11 @@ async def update_job(
     job_id: str,
     request: UpdateJobRequest,
     job_service: JobService = Depends(get_job_service),
-    _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value]))
+    _current_user: dict = Depends(require_role([UserRole.HR.value]))
 ):
     """Update an existing job description.
 
-    Requires HR or ADMIN permission.
+    Requires HR permission.
     """
     data = await job_service.update_job(job_id, request)
     return SuccessResponse(message="Job updated successfully", data=data)
