@@ -1,3 +1,10 @@
+"""Seed the default administrator account into the database.
+
+This script initializes the application with a default administrator user
+during the initial setup. The administrator account is created only if it
+does not already exist, making the seeding process idempotent.
+"""
+
 import asyncio
 import logging
 from src.core.config import settings
@@ -9,6 +16,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 async def run_seed():
+    """Seed the default administrator account into the users collection.
+
+    Establishes a database connection, verifies whether the default
+    administrator account already exists, and creates it if necessary.
+    The administrator password is securely loaded from the application
+    configuration instead of being hardcoded.
+
+    """
     await connect_to_mongo()
     db = get_database()
     collection = db["users"]

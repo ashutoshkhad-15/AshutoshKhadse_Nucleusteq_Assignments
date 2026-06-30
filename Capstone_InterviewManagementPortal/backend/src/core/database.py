@@ -37,10 +37,12 @@ async def connect_to_mongo():
     try:
         logger.info("Connecting to MongoDB...")
         db_config.client = AsyncIOMotorClient(settings.MONGODB_URL)
+        # Ping the database to verify the connection
+        await db_config.client.admin.command('ping')
         db_config.db = db_config.client[settings.DATABASE_NAME]
         logger.info(f"Connected to MongoDB database: {settings.DATABASE_NAME}")
     except Exception as e:
-        logger.error(f"Could not connect to MongoDB: {e}")
+        logger.exception("Could not connect to MongoDB")
         raise e
 
 
