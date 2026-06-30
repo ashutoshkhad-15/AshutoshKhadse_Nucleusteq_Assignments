@@ -1,45 +1,76 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
+import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 
-/**
- * Placeholder login screen used until the authentication page is implemented.
- *
- * @returns {JSX.Element} Login route content.
- */
-const Login = () => <h2>Login Page</h2>;
-
-/**
- * Placeholder dashboard screen used as the authenticated landing page.
- *
- * @returns {JSX.Element} Dashboard route content.
- */
 const Dashboard = () => <h2>Dashboard Placeholder</h2>;
-
-/**
- * Fallback screen rendered for unmatched routes.
- *
- * @returns {JSX.Element} Not-found route content.
- */
 const NotFound = () => <h2>404 - Page Not Found</h2>;
 
 /**
- * Configure client-side routes for the Interview Management Portal.
+ * Protects pages that require an authenticated browser session.
  *
- * Public routes are rendered directly. Authenticated application routes are
- * wrapped by the shared layout so navigation remains consistent across pages.
- *
- * @returns {JSX.Element} Application router tree.
+ * @param {object} props - Component props.
+ * @param {React.ReactNode} props.children - Protected page content.
+ * @returns {JSX.Element} Protected content or login redirect.
  */
+const ProtectedRoute = ({ children }) => {
+    const isAuthenticated = !!localStorage.getItem('basicAuth');
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+
+    return children;
+};
+
+/**
+ * Keeps authenticated users out of public authentication pages.
+ *
+ * @param {object} props - Component props.
+ * @param {React.ReactNode} props.children - Public page content.
+ * @returns {JSX.Element} Public content or dashboard redirect.
+ */
+const PublicRoute = ({ children }) => {
+    const isAuthenticated = !!localStorage.getItem('basicAuth');
+
+    if (isAuthenticated) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    return children;
+};
+
 function App() {
     return (
         <Router>
             <Routes>
-                {/* Keep login outside the protected layout so authentication can use a focused screen. */}
-                <Route path="/login" element={<Login />} />
-                
                 <Route path="/" element={<Navigate to="/dashboard" />} />
-                <Route path="/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
-                
+                <Route
+                    path="/login"
+                    element={(
+                        <PublicRoute>
+                            <Login />
+                        </PublicRoute>
+                    )}
+                />
+                <Route
+                    path="/reset-password"
+                    element={(
+                        <PublicRoute>
+                            <ResetPassword />
+                        </PublicRoute>
+                    )}
+                />
+                <Route
+                    path="/dashboard"
+                    element={(
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <Dashboard />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    )}
+                />
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </Router>
