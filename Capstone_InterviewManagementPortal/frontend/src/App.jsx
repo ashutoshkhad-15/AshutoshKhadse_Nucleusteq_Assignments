@@ -6,6 +6,10 @@ import AdminRoute from './components/routing/AdminRoute';
 import CreateUserScreen from './pages/CreateUserScreen';
 import EditUserScreen from './pages/EditUserScreen';
 import UserListScreen from './pages/UserListScreen';
+import CreateJobScreen from './pages/CreateJobScreen';
+import EditJobScreen from './pages/EditJobScreen';
+import JobDetailsScreen from './pages/JobDetailsScreen';
+import JobListScreen from './pages/JobListScreen';
 
 const Dashboard = () => <h2>Dashboard Placeholder</h2>;
 const NotFound = () => <h2>404 - Page Not Found</h2>;
@@ -44,6 +48,38 @@ const PublicRoute = ({ children }) => {
     return children;
 };
 
+/**
+ * Restrict protected routes to specific user roles.
+ *
+ * @param {object} props - Component props.
+ * @param {Array<string>} props.allowedRoles - Roles allowed to access the route.
+ * @param {React.ReactNode} props.children - Protected page content.
+ * @returns {JSX.Element} Role-allowed content or redirect.
+ */
+const RoleRoute = ({ allowedRoles, children }) => {
+    const auth = localStorage.getItem('basicAuth');
+    const role = localStorage.getItem('userRole');
+
+    if (!auth || !role) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (!allowedRoles.includes(role)) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    return (
+        <MainLayout>
+            {children}
+        </MainLayout>
+    );
+};
+
+/**
+ * Compose the portal routes and shared access guards.
+ *
+ * @returns {JSX.Element} Application routing shell.
+ */
 function App() {
     return (
         <Router>
@@ -80,6 +116,38 @@ function App() {
                     <Route path="/users/create" element={<CreateUserScreen />} />
                     <Route path="/users/edit/:id" element={<EditUserScreen />} />
                 </Route>
+                <Route
+                    path="/jobs"
+                    element={(
+                        <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
+                            <JobListScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path="/jobs/:id"
+                    element={(
+                        <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
+                            <JobDetailsScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path="/jobs/create"
+                    element={(
+                        <RoleRoute allowedRoles={['HR']}>
+                            <CreateJobScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path="/jobs/edit/:id"
+                    element={(
+                        <RoleRoute allowedRoles={['HR']}>
+                            <EditJobScreen />
+                        </RoleRoute>
+                    )}
+                />
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </Router>

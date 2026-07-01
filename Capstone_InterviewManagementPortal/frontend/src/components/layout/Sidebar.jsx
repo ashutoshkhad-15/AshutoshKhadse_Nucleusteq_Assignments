@@ -20,7 +20,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     const navItems = [
         { to: '/dashboard', label: 'Dashboard', shortLabel: 'DB', visible: true },
         { to: '/users', label: 'Users', shortLabel: 'US', visible: role === ADMIN_ROLE },
-        { to: '/jobs', label: 'Jobs', shortLabel: 'JB', visible: role === HR_ROLE },
+        {
+            to: '/jobs',
+            label: 'Jobs',
+            shortLabel: 'JB',
+            visible: role === HR_ROLE || role === ADMIN_ROLE || role === INTERVIEWER_ROLE,
+        },
         { to: '/candidates', label: 'Candidates', shortLabel: 'CD', visible: role === HR_ROLE },
         {
             to: '/interviews',
@@ -30,6 +35,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         },
     ];
 
+    /**
+     * End the current browser session and clear local authentication state.
+     *
+     * @returns {Promise<void>}
+     */
     const handleLogout = async () => {
         try {
             await apiClient.post('/auth/logout');
