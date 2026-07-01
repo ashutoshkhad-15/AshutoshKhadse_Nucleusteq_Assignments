@@ -38,13 +38,27 @@ class JobService:
 
         return await self.job_repo.create_job(job_data)
 
-    async def get_all_jobs(self) -> list:
+    async def get_all_jobs(self, search: str | None = None, is_active: bool | None = None) -> list:
         """Return all job descriptions sorted newest-first.
 
         This method delegates directly to the repository and does not apply
         additional business rules.
         """
-        return await self.job_repo.get_all_jobs()
+        query: dict = {}
+
+        if search:
+            query["$or"] = [
+                {"title": {"$regex": search, "$options": "i"}},
+                {"department": {"$regex": search, "$options": "i"}},
+                {"location": {"$regex": search, "$options": "i"}},
+                {"experience_required": {"$regex": search, "$options": "i"}},
+                {"skills": {"$elemMatch": {"$regex": search, "$options": "i"}}},
+            ]
+
+        if is_active is not None:
+            query["is_active"] = is_active
+
+        return await self.job_repo.get_all_jobs(query)
 
     async def get_job_by_id(self, job_id: str) -> dict:
         """Fetch a single job by its identifier.

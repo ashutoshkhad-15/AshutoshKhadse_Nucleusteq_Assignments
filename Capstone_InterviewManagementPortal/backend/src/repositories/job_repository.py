@@ -36,14 +36,14 @@ class JobRepository:
         job_data["_id"] = str(result.inserted_id)
         return job_data
 
-    async def get_all_jobs(self) -> list:
+    async def get_all_jobs(self, query: dict | None = None) -> list:
         """Retrieve all job descriptions ordered newest-first.
 
         The cursor is iterated asynchronously to avoid loading the entire
         collection into memory at once in large deployments.
         """
         jobs = []
-        cursor = self.collection.find({}).sort("created_at", -1)  # Newest first
+        cursor = self.collection.find(query or {}).sort("created_at", -1)  # Newest first
         async for document in cursor:
             document["_id"] = str(document["_id"])
             jobs.append(document)
