@@ -1,4 +1,4 @@
-import { Eye, Plus, RefreshCw, Search, SquarePen } from 'lucide-react';
+import { Eye, Plus, RefreshCw, SquarePen } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import JobPageHeader from '../components/jobs/JobPageHeader';
@@ -178,10 +178,9 @@ const JobListScreen = () => {
 
                 <div className="um-toolbar jm-toolbar">
                     <div className="jm-search-field">
-                        <Search size={18} aria-hidden="true" className="jm-search-icon" />
                         <input
                             type="text"
-                            placeholder="Search by title, department, skill, or location..."
+                            placeholder="Search..."
                             value={searchInput}
                             onChange={(event) => setSearchInput(event.target.value)}
                             className="um-search-input jm-search-input"
