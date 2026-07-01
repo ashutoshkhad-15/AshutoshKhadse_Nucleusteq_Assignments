@@ -15,6 +15,7 @@ build/
 
 # Logs
 logs/*.log
+application.log
 
 # Test artifacts
 .pytest_cache/
