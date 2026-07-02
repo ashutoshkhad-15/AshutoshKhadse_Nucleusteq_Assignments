@@ -1,6 +1,7 @@
 """FastAPI application bootstrap for the Interview Management Portal API."""
 
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,8 +13,9 @@ from src.schemas.response.common_response import SuccessResponse
 from src.routers.auth_router import router as auth_router
 from src.routers.user_router import router as user_router
 from src.routers.job_router import router as job_router
+from src.routers.candidate_router import router as candidate_router
 
-logger = setup_logger()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -83,6 +85,7 @@ async def health_check():
 api_router.include_router(auth_router)
 api_router.include_router(user_router)
 app.include_router(job_router)
+app.include_router(candidate_router)
 app.include_router(api_router)
 
 if __name__ == "__main__":
