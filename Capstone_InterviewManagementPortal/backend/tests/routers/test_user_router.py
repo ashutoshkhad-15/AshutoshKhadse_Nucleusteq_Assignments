@@ -66,6 +66,19 @@ class TestUserRouter:
 
         app.dependency_overrides.clear()
 
+    def test_create_user_pydantic_validation_rejects_invalid_format(self):
+        """Reject emails that violate the NucleusTeq corporate format rules."""
+        app.dependency_overrides[get_current_user] = override_get_current_user_admin
+
+        payload = {"email": "bad_actor@nucleusteq.com", "role": "HR"}
+
+        response = client.post("/api/v1/users/", json=payload)
+
+        assert response.status_code == 422
+        assert "valid NucleusTeq" in response.text
+
+        app.dependency_overrides.clear()
+
     @patch('src.routers.user_router.UserService')
     def test_disable_user_endpoint_success(self, mock_user_service_class):
         """Disable a user successfully through the router."""

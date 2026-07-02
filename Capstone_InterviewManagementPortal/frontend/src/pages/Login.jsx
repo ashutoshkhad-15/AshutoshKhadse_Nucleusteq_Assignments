@@ -14,14 +14,20 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        try {
-            setError('');
+        if (isSubmitting) {
+            return;
+        }
 
+        setError('');
+        setIsSubmitting(true);
+
+        try {
             if (!email.trim() || !password.trim()) {
                 setError('Email or password is invalid.');
                 return;
@@ -44,6 +50,8 @@ const Login = () => {
             navigate('/dashboard');
         } catch {
             setError('Email or password is invalid.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -54,7 +62,7 @@ const Login = () => {
 
             {error && <div className="error-text">{error}</div>}
 
-            <form onSubmit={handleLogin} noValidate>
+            <form onSubmit={handleLogin} noValidate aria-busy={isSubmitting}>
                 <div className="form-group">
                     <input
                         type="email"
@@ -62,6 +70,7 @@ const Login = () => {
                         placeholder="name@nucleusteq.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        disabled={isSubmitting}
                     />
                     <input
                         type="password"
@@ -69,9 +78,12 @@ const Login = () => {
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        disabled={isSubmitting}
                     />
                 </div>
-                <button type="submit" className="primary-btn">Sign In</button>
+                <button type="submit" className="primary-btn" disabled={isSubmitting}>
+                    {isSubmitting ? 'Signing in...' : 'Sign In'}
+                </button>
             </form>
         </AuthLayout>
     );

@@ -1,7 +1,11 @@
 """User repository for MongoDB-backed account persistence."""
 
+import logging
+
 from bson import ObjectId
 from src.core.database import get_database
+
+logger = logging.getLogger(__name__)
 
 
 class UserRepository:
@@ -32,7 +36,11 @@ class UserRepository:
         Returns:
             dict: Matching user document, or ``None`` when no user exists.
         """
-        return await self.collection.find_one({"email": email})
+        try:
+            return await self.collection.find_one({"email": email})
+        except Exception:
+            logger.exception("Repository failure while fetching user by email: %s", email)
+            raise
 
     async def create_user(self, user_data: dict) -> dict:
         """Insert a new user document into the users collection.
@@ -43,7 +51,12 @@ class UserRepository:
         Returns:
             dict: Persisted user data including the generated ``_id`` value.
         """
-        result = await self.collection.insert_one(user_data)
+        try:
+            result = await self.collection.insert_one(user_data)
+        except Exception:
+            logger.exception("Repository failure while creating user: %s", user_data.get("email"))
+            raise
+
         user_data["_id"] = str(result.inserted_id)
         return user_data
 
@@ -58,13 +71,39 @@ class UserRepository:
             None: The update is executed against MongoDB without returning the
             modified document.
         """
-        await self.collection.update_one({"email": email}, {"$set": update_data})
+        try:
+            await self.collection.update_one({"email": email}, {"$set": update_data})
+        except Exception:
+            logger.exception("Repository failure while updating user: %s", email)
+            raise
 
     async def get_all_users(self) -> list:
         """Return all user documents without sensitive password material."""
-        # Exclude passwords from the bulk query for security.
         cursor = self.collection.find({}, {"password_base64": 0})
-        users = await cursor.to_list(length=1000)
+        try:
+            users = await cursor.to_list(length=1000)
+        except Exception:
+            logger.exception("Repository failure while fetching all users")
+            raise
+        for user in users:
+            user["_id"] = str(user["_id"])
+        return users
+
+    async def search_users(self, search: str) -> list:
+        """Search user documents across common text fields using a case-insensitive regex."""
+        query = {
+            "$or": [
+                {"email": {"$regex": search, "$options": "i"}},
+                {"employee_id": {"$regex": search, "$options": "i"}},
+                {"role": {"$regex": search, "$options": "i"}},
+            ]
+        }
+        try:
+            cursor = self.collection.find(query, {"password_base64": 0})
+            users = await cursor.to_list(length=1000)
+        except Exception:
+            logger.exception("Repository failure while searching users")
+            raise
         for user in users:
             user["_id"] = str(user["_id"])
         return users
@@ -84,8 +123,11 @@ class UserRepository:
             if user:
                 user["_id"] = str(user["_id"])
             return user
-        except:
-            return None
+        except Exception as exc:
+            if "not a valid ObjectId" in str(exc):
+                return None
+            logger.exception("Repository failure while fetching user by ID: %s", user_id)
+            raise
 
     async def update_user_by_id(self, user_id: str, update_data: dict):
         """Apply a partial update to a user document identified by ObjectId.
@@ -94,4 +136,8 @@ class UserRepository:
             user_id: MongoDB ObjectId string for the target user.
             update_data: Field/value pairs to persist using ``$set``.
         """
-        await self.collection.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
+        try:
+            await self.collection.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
+        except Exception:
+            logger.exception("Repository failure while updating user by ID: %s", user_id)
+            raise
