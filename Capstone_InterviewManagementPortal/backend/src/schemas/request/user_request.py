@@ -31,3 +31,4 @@ class UpdateUserRequest(BaseModel):
 
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
+    email: Optional[str] = None

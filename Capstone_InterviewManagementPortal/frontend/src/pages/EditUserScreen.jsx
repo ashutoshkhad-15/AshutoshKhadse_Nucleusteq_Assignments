@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import UserForm from '../components/users/UserForm';
 import { userService } from '../services/userService';
+import '../styles/user-management.css';
 import {
     getUserManagementErrorMessage,
     isProtectedUser,
     validateUserForm,
 } from '../utils/userManagement';
-import '../styles/user-management.css';
 
 /**
  * Render the administrator workflow for editing an existing user.
@@ -26,26 +26,37 @@ const EditUserScreen = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
+    const emailLocked = isProtectedUser({ email, is_active: isActive });
+
     useEffect(() => {
         /**
          * Load the user data needed to prefill the edit form.
+         * We schedule the request after a short delay so React StrictMode
+         * can mount/unmount the component once without issuing duplicate fetches.
          */
-        const fetchUser = async () => {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(async () => {
             try {
                 setLoading(true);
-                const userData = await userService.getUserById(id);
+                const userData = await userService.getUserById(id, { signal: controller.signal });
                 setEmail(userData.email);
                 setRole(userData.role);
                 setIsActive(userData.is_active);
                 setError(null);
             } catch (err) {
+                if (err?.name === 'CanceledError') {
+                    return;
+                }
                 setError(getUserManagementErrorMessage(err, 'Failed to load user data.'));
             } finally {
                 setLoading(false);
             }
-        };
+        }, 20);
 
-        fetchUser();
+        return () => {
+            window.clearTimeout(timeoutId);
+            controller.abort();
+        };
     }, [id]);
 
     /**
@@ -57,7 +68,7 @@ const EditUserScreen = () => {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError(null);
-        const errors = validateUserForm({ email, role }, { emailReadonly: true });
+        const errors = validateUserForm({ email, role }, { emailReadonly: emailLocked });
 
         if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -67,7 +78,13 @@ const EditUserScreen = () => {
         try {
             setSaving(true);
             setValidationErrors({});
-            await userService.updateUser(id, { role });
+            const payload = { role };
+
+            if (!emailLocked) {
+                payload.email = email.trim();
+            }
+
+            await userService.updateUser(id, payload);
             navigate('/users', {
                 replace: true,
                 state: { successMessage: `User ${email} updated successfully.` },
@@ -83,7 +100,7 @@ const EditUserScreen = () => {
         return <div className="um-state">Loading user details...</div>;
     }
 
-    const roleLocked = isProtectedUser({ email, is_active: isActive });
+    const roleLocked = emailLocked;
     const helperMessage = !isActive
         ? 'Disabled users cannot be reassigned until their account is re-enabled in the backend.'
         : email === 'admin@nucleusteq.com'
@@ -106,7 +123,7 @@ const EditUserScreen = () => {
                 validationErrors={validationErrors}
                 formError={error}
                 helperMessage={helperMessage}
-                emailDisabled
+                emailDisabled={emailLocked}
                 roleDisabled={roleLocked}
                 submitting={saving}
                 submitLabel="Save Changes"
