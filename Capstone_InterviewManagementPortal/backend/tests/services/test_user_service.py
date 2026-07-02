@@ -17,6 +17,7 @@ def user_service():
         mock_repo_instance.get_user_by_email = AsyncMock()
         mock_repo_instance.create_user = AsyncMock()
         mock_repo_instance.get_all_users = AsyncMock()
+        mock_repo_instance.search_users = AsyncMock()
         mock_repo_instance.get_user_by_id = AsyncMock()
         mock_repo_instance.update_user_by_id = AsyncMock()
         
@@ -50,6 +51,15 @@ class TestUserService:
         user_service.user_repo.get_all_users.return_value = [{"email": "test@nucleusteq.com"}]
         result = await user_service.get_all_users()
         assert len(result) == 1
+
+    async def test_search_users_returns_matching_results(self, user_service):
+        """Return repository results for a sanitized search term."""
+        user_service.user_repo.search_users.return_value = [{"email": "ashutosh@nucleusteq.com"}]
+
+        result = await user_service.get_all_users(search="  Ashutosh  ")
+
+        assert len(result) == 1
+        user_service.user_repo.search_users.assert_awaited_once_with("ashutosh")
 
     async def test_get_user_by_id_not_found(self, user_service):
         """Raise a not-found error when the user does not exist."""
