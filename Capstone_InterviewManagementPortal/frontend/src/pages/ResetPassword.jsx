@@ -18,6 +18,7 @@ const ResetPassword = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!email) {
         return <Navigate to="/login" replace />;
@@ -25,19 +26,28 @@ const ResetPassword = () => {
 
     const handleReset = async (e) => {
         e.preventDefault();
+
+        if (isSubmitting) {
+            return;
+        }
+
         setError('');
+        setIsSubmitting(true);
 
         // Match backend password rules before sending the reset request.
         if (!newPassword.trim() || !confirmPassword.trim()) {
             setError('Please fill out both password fields.');
+            setIsSubmitting(false);
             return;
         }
         if (newPassword.length < 6 || newPassword.length > 12) {
             setError('Password must be between 6 and 12 characters.');
+            setIsSubmitting(false);
             return;
         }
         if (newPassword !== confirmPassword) {
             setError('Passwords do not match. Please try again.');
+            setIsSubmitting(false);
             return;
         }
 
@@ -53,6 +63,8 @@ const ResetPassword = () => {
         } catch (err) {
             const serverError = err.response?.data?.details?.[0]?.msg || err.response?.data?.message;
             setError(serverError || 'Failed to reset password. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -63,7 +75,7 @@ const ResetPassword = () => {
 
             {error && <div className="error-text">{error}</div>}
 
-            <form onSubmit={handleReset} noValidate>
+            <form onSubmit={handleReset} noValidate aria-busy={isSubmitting}>
                 <div className="form-group">
                     <input
                         type="password"
@@ -71,6 +83,7 @@ const ResetPassword = () => {
                         placeholder="New Password (6-12 chars)"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
+                        disabled={isSubmitting}
                     />
                     <input
                         type="password"
@@ -78,9 +91,12 @@ const ResetPassword = () => {
                         placeholder="Confirm New Password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={isSubmitting}
                     />
                 </div>
-                <button type="submit" className="primary-btn">Secure My Account</button>
+                <button type="submit" className="primary-btn" disabled={isSubmitting}>
+                    {isSubmitting ? 'Resetting Password...' : 'Secure My Account'}
+                </button>
             </form>
         </AuthLayout>
     );
