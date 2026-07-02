@@ -1,6 +1,10 @@
 """User repository for MongoDB-backed account persistence."""
 
+import logging
+
 from src.core.database import get_database
+
+logger = logging.getLogger(__name__)
 
 
 class UserRepository:
@@ -25,7 +29,11 @@ class UserRepository:
         Returns:
             dict: Matching user document, or ``None`` when no user exists.
         """
-        return await self.collection.find_one({"email": email})
+        try:
+            return await self.collection.find_one({"email": email})
+        except Exception:
+            logger.exception("Repository failure while fetching user by email: %s", email)
+            raise
 
     async def create_user(self, user_data: dict) -> dict:
         """Insert a new user document into the users collection.
@@ -36,7 +44,12 @@ class UserRepository:
         Returns:
             dict: Persisted user data including the generated ``_id`` value.
         """
-        result = await self.collection.insert_one(user_data)
+        try:
+            result = await self.collection.insert_one(user_data)
+        except Exception:
+            logger.exception("Repository failure while creating user: %s", user_data.get("email"))
+            raise
+
         user_data["_id"] = result.inserted_id
         return user_data
 
@@ -51,4 +64,8 @@ class UserRepository:
             None: The update is executed against MongoDB without returning the
             modified document.
         """
-        await self.collection.update_one({"email": email}, {"$set": update_data})
+        try:
+            await self.collection.update_one({"email": email}, {"$set": update_data})
+        except Exception:
+            logger.exception("Repository failure while updating user: %s", email)
+            raise
