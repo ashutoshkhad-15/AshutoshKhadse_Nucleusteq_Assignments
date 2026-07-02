@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import apiClient from '../../services/apiService';
+import apiClient, { clearAuthenticationData } from '../../services/apiService';
 
 const ADMIN_ROLE = 'ADMIN';
 const HR_ROLE = 'HR';
@@ -13,17 +14,34 @@ const INTERVIEWER_ROLE = 'INTERVIEWER';
 const Sidebar = () => {
     const role = localStorage.getItem('userRole');
     const navigate = useNavigate();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [logoutError, setLogoutError] = useState('');
 
+    /**
+     * Sign the user out without allowing duplicate requests or inconsistent auth state.
+     */
     const handleLogout = async () => {
+        if (isLoggingOut) {
+            return;
+        }
+
+        setLogoutError('');
+        setIsLoggingOut(true);
+
         try {
+            if (!localStorage.getItem('basicAuth')) {
+                clearAuthenticationData();
+                navigate('/login', { replace: true });
+                return;
+            }
+
             await apiClient.post('/auth/logout');
+            clearAuthenticationData();
+            navigate('/login', { replace: true });
         } catch {
-            // Local session cleanup must still run if the backend logout request fails.
-            console.warn('Backend logout failed, clearing local session anyway.');
+            setLogoutError('We could not sign you out right now. Please try again.');
         } finally {
-            localStorage.removeItem('basicAuth');
-            localStorage.removeItem('userRole');
-            navigate('/login');
+            setIsLoggingOut(false);
         }
     };
 
@@ -47,8 +65,15 @@ const Sidebar = () => {
                 )}
             </ul>
 
-            <button onClick={handleLogout} className="logout-btn">
-                Logout
+            {logoutError && <div className="error-text">{logoutError}</div>}
+
+            <button
+                onClick={handleLogout}
+                className="logout-btn"
+                disabled={isLoggingOut}
+                aria-busy={isLoggingOut}
+            >
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
             </button>
         </div>
     );
