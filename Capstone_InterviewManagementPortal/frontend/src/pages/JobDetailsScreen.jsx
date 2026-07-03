@@ -29,20 +29,29 @@ const JobDetailsScreen = () => {
          *
          * @returns {Promise<void>}
          */
-        const fetchJob = async () => {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(async () => {
             try {
                 setLoading(true);
-                const data = await jobService.getJobById(id);
+                const data = await jobService.getJobById(id, { signal: controller.signal });
                 setJob(data);
                 setError(null);
             } catch (err) {
+                if (err?.name === 'CanceledError') {
+                    return;
+                }
                 setError(getJobManagementErrorMessage(err, 'Failed to load job details.'));
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
-        };
+        }, 20);
 
-        fetchJob();
+        return () => {
+            window.clearTimeout(timeoutId);
+            controller.abort();
+        };
     }, [id]);
 
     if (loading) {
