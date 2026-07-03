@@ -110,7 +110,7 @@ const UserForm = ({
                 >
                     Cancel
                 </button>
-                <button type="submit" disabled={submitting || roleDisabled} className="btn-primary">
+                <button type="submit" disabled={submitting || (emailDisabled && roleDisabled)} className="btn-primary">
                     {submitting ? submittingLabel : submitLabel}
                 </button>
             </div>

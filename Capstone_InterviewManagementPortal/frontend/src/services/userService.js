@@ -7,12 +7,28 @@ const USERS_BASE_PATH = '/users';
  */
 export const userService = {
     /**
-     * Fetch all application users.
+     * Fetch all application users or perform a backend search.
      *
+     * @param {string} [search=''] - Optional search term for the server-side filter.
+     * @param {object} [config={}] - Optional Axios request configuration.
      * @returns {Promise<Array>} User records returned by the backend.
      */
-    async getAllUsers() {
-        const response = await apiClient.get(`${USERS_BASE_PATH}/`);
+    async getAllUsers(search = '', config = {}) {
+        const params = {};
+
+        if (search?.trim()) {
+            params.search = search.trim();
+        }
+
+        const requestConfig = {
+            ...config,
+            params: {
+                ...(config.params || {}),
+                ...params,
+            },
+        };
+
+        const response = await apiClient.get(`${USERS_BASE_PATH}/`, requestConfig);
         return response.data.data;
     },
 
@@ -22,8 +38,8 @@ export const userService = {
      * @param {string} userId - User identifier.
      * @returns {Promise<object>} User record.
      */
-    async getUserById(userId) {
-        const response = await apiClient.get(`${USERS_BASE_PATH}/${userId}`);
+    async getUserById(userId, config = {}) {
+        const response = await apiClient.get(`${USERS_BASE_PATH}/${userId}`, config);
         return response.data.data;
     },
 

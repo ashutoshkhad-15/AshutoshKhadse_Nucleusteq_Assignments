@@ -4,6 +4,16 @@ const AUTH_LOGIN_PATH = '/auth/login';
 const BASIC_AUTH_STORAGE_KEY = 'basicAuth';
 const USER_ROLE_STORAGE_KEY = 'userRole';
 
+/**
+ * Remove all client-side authentication data that should be cleared on logout or auth expiry.
+ */
+export const clearAuthenticationData = () => {
+    localStorage.removeItem(BASIC_AUTH_STORAGE_KEY);
+    localStorage.removeItem(USER_ROLE_STORAGE_KEY);
+    sessionStorage.removeItem(BASIC_AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(USER_ROLE_STORAGE_KEY);
+};
+
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
     headers: {
@@ -32,8 +42,7 @@ const handleUnauthorizedResponse = (error) => {
     const isLoginRequest = requestUrl.includes(AUTH_LOGIN_PATH);
 
     if (error.response?.status === 401 && !isLoginRequest) {
-        localStorage.removeItem(BASIC_AUTH_STORAGE_KEY);
-        localStorage.removeItem(USER_ROLE_STORAGE_KEY);
+        clearAuthenticationData();
         window.location.href = '/login';
     }
 

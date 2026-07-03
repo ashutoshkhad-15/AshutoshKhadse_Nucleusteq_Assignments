@@ -1,9 +1,13 @@
 """Authentication service for credential validation and password resets."""
 
+import logging
+
 from src.repositories.user_repository import UserRepository
 from src.utils.security import encode_password
 from src.exceptions.custom_exceptions import UnauthorizedException
 from src.schemas.request.auth_request import LoginRequest, ResetPasswordRequest
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -30,13 +34,21 @@ class AuthService:
             UnauthorizedException: If the user does not exist, the password is
                 invalid, or the account is disabled.
         """
-        user = await self.user_repo.get_user_by_email(request.email)
+        try:
+            user = await self.user_repo.get_user_by_email(request.email)
+        except Exception:
+            logger.exception("Repository failure while fetching user for login: %s", request.email)
+            raise
+
         if not user or user.get("password_base64") != encode_password(request.password):
+            logger.warning("Invalid login attempt for email: %s", request.email)
             raise UnauthorizedException("Invalid email or password")
-        
+
         if not user.get("is_active", True):
+            logger.warning("Login attempt rejected for disabled account: %s", request.email)
             raise UnauthorizedException("Account is disabled")
 
+        logger.info("Successful login for user: %s", request.email)
         return {
             "email": user["email"],
             "role": user["role"],
@@ -62,15 +74,27 @@ class AuthService:
             UnauthorizedException: If the user does not exist or the old
                 password does not match the stored password.
         """
-        user = await self.user_repo.get_user_by_email(request.email)
+        try:
+            user = await self.user_repo.get_user_by_email(request.email)
+        except Exception:
+            logger.exception("Repository failure while fetching user for reset-password: %s", request.email)
+            raise
+
         if not user or user.get("password_base64") != encode_password(request.old_password):
+            logger.warning("Password reset attempt failed for user: %s", request.email)
             raise UnauthorizedException("Invalid email or old password")
 
         new_password_encoded = encode_password(request.new_password)
-        await self.user_repo.update_user(
-            email=request.email,
-            update_data={
-                "password_base64": new_password_encoded,
-                "requires_password_reset": False
-            }
-        )
+        try:
+            await self.user_repo.update_user(
+                email=request.email,
+                update_data={
+                    "password_base64": new_password_encoded,
+                    "requires_password_reset": False,
+                },
+            )
+        except Exception:
+            logger.exception("Repository failure while updating password for user: %s", request.email)
+            raise
+
+        logger.info("Password reset completed for user: %s", request.email)

@@ -89,6 +89,47 @@
     cursor: not-allowed;
 }
 
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.icon-inline {
+    display: inline-flex;
+    margin-right: 0.45rem;
+    vertical-align: middle;
+}
+
+.search-input-wrapper {
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+    gap: 0.6rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.user-email-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .btn-secondary {
     background-color: #ffffff;
     border-color: #cbd5e1;
@@ -455,6 +496,31 @@
 .pagination-info {
     font-size: 0.875rem;
     color: #6b7280;
+}
+
+@media (max-width: 780px) {
+    .um-header {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .um-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .um-search-input,
+    .um-filter-select {
+        width: 100%;
+    }
+
+    .um-pagination {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
 }
 
 .pagination-buttons {
