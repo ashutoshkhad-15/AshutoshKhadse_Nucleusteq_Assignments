@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import JobForm from '../components/jobs/JobForm';
 import JobPageHeader from '../components/jobs/JobPageHeader';
@@ -21,6 +21,7 @@ const CreateJobScreen = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const submittingRef = useRef(false);
     const {
         currentErrors,
         handleFieldChange,
@@ -39,12 +40,17 @@ const CreateJobScreen = () => {
         event.preventDefault();
         setError(null);
 
+        if (submittingRef.current) {
+            return;
+        }
+
         if (Object.keys(currentErrors).length > 0) {
             setValidationErrors(currentErrors);
             return;
         }
 
         try {
+            submittingRef.current = true;
             setLoading(true);
             setValidationErrors({});
             const payload = buildJobPayload(values);
@@ -56,6 +62,7 @@ const CreateJobScreen = () => {
         } catch (err) {
             setError(getJobManagementErrorMessage(err, 'Failed to create job. Please try again.'));
         } finally {
+            submittingRef.current = false;
             setLoading(false);
         }
     };

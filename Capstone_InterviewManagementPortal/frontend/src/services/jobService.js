@@ -9,10 +9,15 @@ export const jobService = {
     /**
      * Fetch all job descriptions.
      *
+     * @param {object} [params={}] - Query parameters for filtering and search.
+     * @param {object} [config={}] - Optional Axios request configuration.
      * @returns {Promise<Array>} Job records returned by the backend.
      */
-    async getAllJobs(params = {}) {
-        const response = await apiClient.get(`${JOBS_BASE_PATH}/`, { params });
+    async getAllJobs(params = {}, config = {}) {
+        const response = await apiClient.get(`${JOBS_BASE_PATH}/`, {
+            ...config,
+            params,
+        });
         return response.data.data;
     },
 
@@ -20,10 +25,11 @@ export const jobService = {
      * Fetch a single job description by identifier.
      *
      * @param {string} jobId - Job identifier.
+     * @param {object} [config={}] - Optional Axios request configuration.
      * @returns {Promise<object>} Job record.
      */
-    async getJobById(jobId) {
-        const response = await apiClient.get(`${JOBS_BASE_PATH}/${jobId}`);
+    async getJobById(jobId, config = {}) {
+        const response = await apiClient.get(`${JOBS_BASE_PATH}/${jobId}`, config);
         return response.data.data;
     },
 

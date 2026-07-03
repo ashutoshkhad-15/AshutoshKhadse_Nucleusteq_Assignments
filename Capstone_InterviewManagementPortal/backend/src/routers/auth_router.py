@@ -1,5 +1,7 @@
 """Authentication API routes for login, password reset, and logout."""
 
+import logging
+
 from fastapi import APIRouter, Depends
 
 from src.schemas.request.auth_request import LoginRequest, ResetPasswordRequest
@@ -8,6 +10,7 @@ from src.services.auth_service import AuthService
 from src.utils.security import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=SuccessResponse[dict])
@@ -31,6 +34,7 @@ async def login(request: LoginRequest):
     """
     auth_service = AuthService()
     data = await auth_service.login(request)
+    logger.info("Login endpoint completed successfully for user: %s", request.email)
     return SuccessResponse(message="Login successful", data=data)
 
 
@@ -55,6 +59,7 @@ async def reset_password(request: ResetPasswordRequest):
     """
     auth_service = AuthService()
     await auth_service.reset_password(request)
+    logger.info("Password reset endpoint completed successfully for user: %s", request.email)
     return SuccessResponse(message="Password reset successfully")
 
 

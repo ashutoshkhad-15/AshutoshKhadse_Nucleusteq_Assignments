@@ -4,13 +4,19 @@ This module implements job creation, listing, retrieval, and update routes.
 Role-based access control: HR can create/update; HR, ADMIN, and INTERVIEWER can view.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, status
 from typing import Optional
+
+from src.exceptions.custom_exceptions import AppBaseException
 from src.schemas.request.job_request import CreateJobRequest, UpdateJobRequest
 from src.schemas.response.common_response import SuccessResponse
 from src.services.job_service import JobService
 from src.utils.security import require_role, get_current_user
 from src.enums.app_enums import UserRole
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["Jobs"])
 
@@ -30,7 +36,13 @@ async def create_job(
 
     Requires HR permission to execute.
     """
-    data = await job_service.create_job(request)
+    try:
+        data = await job_service.create_job(request)
+    except Exception as exc:
+        if not isinstance(exc, AppBaseException):
+            logger.exception("Unexpected error while creating job through API")
+        raise
+    logger.info("Job created successfully through API")
     return SuccessResponse(message="Job created successfully", data=data)
 
 
@@ -50,8 +62,14 @@ async def get_all_jobs(
         is_active = True
     elif status_filter == "INACTIVE":
         is_active = False
-
-    data = await job_service.get_all_jobs(search=search, is_active=is_active)
+    
+    try:
+        data = await job_service.get_all_jobs(search=search, is_active=is_active)
+    except Exception as exc:
+        if not isinstance(exc, AppBaseException):
+            logger.exception("Unexpected error while retrieving jobs through API")
+        raise
+    logger.info("Jobs retrieved successfully through API")
     return SuccessResponse(message="Jobs retrieved successfully", data=data)
 
 
@@ -65,7 +83,13 @@ async def get_job(
 
     Accessible by HR, ADMIN, and INTERVIEWER roles.
     """
-    data = await job_service.get_job_by_id(job_id)
+    try:
+        data = await job_service.get_job_by_id(job_id)
+    except Exception as exc:
+        if not isinstance(exc, AppBaseException):
+            logger.exception("Unexpected error while retrieving job %s through API", job_id)
+        raise
+    logger.info("Job retrieved successfully through API: %s", job_id)
     return SuccessResponse(message="Job retrieved successfully", data=data)
 
 
@@ -80,5 +104,11 @@ async def update_job(
 
     Requires HR permission.
     """
-    data = await job_service.update_job(job_id, request)
+    try:
+        data = await job_service.update_job(job_id, request)
+    except Exception as exc:
+        if not isinstance(exc, AppBaseException):
+            logger.exception("Unexpected error while updating job %s through API", job_id)
+        raise
+    logger.info("Job updated successfully through API: %s", job_id)
     return SuccessResponse(message="Job updated successfully", data=data)

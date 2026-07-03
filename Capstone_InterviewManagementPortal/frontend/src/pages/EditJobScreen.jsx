@@ -1,5 +1,5 @@
 import { CircleCheckBig } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import JobForm from '../components/jobs/JobForm';
 import JobPageHeader from '../components/jobs/JobPageHeader';
@@ -25,6 +25,7 @@ const EditJobScreen = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+    const submittingRef = useRef(false);
     const {
         currentErrors,
         handleFieldChange,
@@ -40,21 +41,30 @@ const EditJobScreen = () => {
          *
          * @returns {Promise<void>}
          */
-        const fetchJob = async () => {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(async () => {
             try {
                 setLoading(true);
-                const job = await jobService.getJobById(id);
+                const job = await jobService.getJobById(id, { signal: controller.signal });
                 setValues(mapJobToFormValues(job));
                 setIsActive(Boolean(job.is_active));
                 setError(null);
             } catch (err) {
+                if (err?.name === 'CanceledError') {
+                    return;
+                }
                 setError(getJobManagementErrorMessage(err, 'Failed to load job details.'));
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
-        };
+        }, 20);
 
-        fetchJob();
+        return () => {
+            window.clearTimeout(timeoutId);
+            controller.abort();
+        };
     }, [id, setValues]);
 
     /**
@@ -67,12 +77,17 @@ const EditJobScreen = () => {
         event.preventDefault();
         setError(null);
 
+        if (submittingRef.current) {
+            return;
+        }
+
         if (Object.keys(currentErrors).length > 0) {
             setValidationErrors(currentErrors);
             return;
         }
 
         try {
+            submittingRef.current = true;
             setSaving(true);
             setValidationErrors({});
             const payload = {
@@ -87,6 +102,7 @@ const EditJobScreen = () => {
         } catch (err) {
             setError(getJobManagementErrorMessage(err, 'Failed to update job.'));
         } finally {
+            submittingRef.current = false;
             setSaving(false);
         }
     };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 export const JOB_STATUS_OPTIONS = [
     { value: 'ALL', label: 'All status' },
@@ -223,28 +223,6 @@ export const throttle = (callback, wait) => {
             }, remaining);
         }
     });
-};
-
-/**
- * Return a debounced copy of a value.
- *
- * @template T
- * @param {T} value - Value to debounce.
- * @param {number} delay - Delay in milliseconds.
- * @returns {T} Debounced value.
- */
-export const useDebouncedValue = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-
-    useEffect(() => {
-        const timeoutId = window.setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-
-        return () => window.clearTimeout(timeoutId);
-    }, [delay, value]);
-
-    return debouncedValue;
 };
 
 /**

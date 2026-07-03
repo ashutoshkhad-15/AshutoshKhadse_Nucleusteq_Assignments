@@ -1,8 +1,9 @@
 import { Eye, Plus, RefreshCw, SquarePen } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import JobPageHeader from '../components/jobs/JobPageHeader';
 import JobStatusBadge from '../components/jobs/JobStatusBadge';
+import useDebouncedValue from '../hooks/useDebouncedValue';
 import { jobService } from '../services/jobService';
 import '../styles/job-management.css';
 import {
@@ -12,7 +13,6 @@ import {
     JOB_SEARCH_DEBOUNCE_MS,
     JOB_STATUS_OPTIONS,
     throttle,
-    useDebouncedValue,
 } from '../utils/jobManagement';
 
 const HR_ROLE = 'HR';
@@ -25,7 +25,7 @@ const HR_ROLE = 'HR';
 const JobListScreen = () => {
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [initialLoad, setInitialLoad] = useState(true);
+    const [searching, setSearching] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
     const [searchInput, setSearchInput] = useState('');
@@ -39,44 +39,47 @@ const JobListScreen = () => {
     const role = localStorage.getItem('userRole');
     const canManageJobs = role === HR_ROLE;
     const debouncedSearchTerm = useDebouncedValue(searchInput, JOB_SEARCH_DEBOUNCE_MS);
+    const normalizedSearchTerm = debouncedSearchTerm.trim();
 
-    /**
-     * Load the visible job list using the current search and filter state.
-     *
-     * @returns {Promise<void>}
-     */
-    const loadJobs = useCallback(async () => {
-    try {
-        if (initialLoad) {
-            setLoading(true);
-        } 
-
+    const requestParams = useMemo(() => {
         const params = {};
 
-        if (debouncedSearchTerm.trim()) {
-            params.search = debouncedSearchTerm.trim();
+        if (normalizedSearchTerm) {
+            params.search = normalizedSearchTerm;
         }
 
         if (statusFilter !== 'ALL') {
             params.status_filter = statusFilter;
         }
 
-        const data = await jobService.getAllJobs(params);
+        return params;
+    }, [normalizedSearchTerm, statusFilter]);
 
-        setJobs(Array.isArray(data) ? data : []);
-        setError(null);
-    } catch (err) {
-        setError(
-            getJobManagementErrorMessage(
-                err,
-                'Failed to load job descriptions.'
-            )
-        );
-    } finally {
-        setLoading(false);
-        setInitialLoad(false);
-    }
-}, [debouncedSearchTerm, statusFilter, initialLoad]);
+    /**
+     * Load the visible job list using the current search and filter state.
+     *
+     * @param {AbortSignal} signal - Cancellation signal for stale requests.
+     * @returns {Promise<void>}
+     */
+    const loadJobs = async (signal) => {
+        try {
+            const data = await jobService.getAllJobs(requestParams, { signal });
+
+            setJobs(Array.isArray(data) ? data : []);
+            setError(null);
+        } catch (err) {
+            if (err?.name === 'CanceledError') {
+                return;
+            }
+
+            setError(getJobManagementErrorMessage(err, 'Failed to load job descriptions.'));
+        } finally {
+            if (!signal?.aborted) {
+                setLoading(false);
+                setSearching(false);
+            }
+        }
+    };
 
     useEffect(() => {
         if (!location.state?.successMessage) return;
@@ -85,13 +88,28 @@ const JobListScreen = () => {
     }, [location.pathname, location.state, navigate]);
 
     useEffect(() => {
-        loadJobs();
-    }, [loadJobs]);
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => {
+            if (Object.keys(requestParams).length === 0 && loading) {
+                setLoading(true);
+            } else {
+                setSearching(true);
+            }
+
+            loadJobs(controller.signal);
+        }, 20);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            controller.abort();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [requestParams]);
 
     useEffect(() => {
         // Reset pagination whenever the active search or filter changes.
         setCurrentPage(1);
-    }, [debouncedSearchTerm, statusFilter]);
+    }, [normalizedSearchTerm, statusFilter]);
 
     useEffect(() => {
         const handleResize = throttle(() => {
@@ -150,7 +168,15 @@ const JobListScreen = () => {
         return (
             <div className="um-state">
                 <div className="error-banner">{error}</div>
-                <button type="button" className="btn-secondary jm-button-with-icon" onClick={loadJobs}>
+                <button
+                    type="button"
+                    className="btn-secondary jm-button-with-icon"
+                    onClick={() => {
+                        const controller = new AbortController();
+                        setLoading(true);
+                        loadJobs(controller.signal);
+                    }}
+                >
                     <RefreshCw size={16} aria-hidden="true" />
                     Retry
                 </button>
@@ -199,7 +225,9 @@ const JobListScreen = () => {
                     </select>
                 </div>
 
-                {jobs.length === 0 ? (
+                {searching ? (
+                    <div className="empty-state jm-empty-state">Searching jobs...</div>
+                ) : jobs.length === 0 ? (
                     <div className="empty-state jm-empty-state">
                         <h2>No jobs found</h2>
                         <p>Try broadening the search or changing the status filter.</p>
