@@ -2,7 +2,6 @@ import { ArrowLeft, BriefcaseBusiness, Building2, MapPin, SquarePen } from 'luci
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import JobPageHeader from '../components/jobs/JobPageHeader';
-import JobStatusBadge from '../components/jobs/JobStatusBadge';
 import { jobService } from '../services/jobService';
 import { getJobManagementErrorMessage } from '../utils/jobManagement';
 import '../styles/job-management.css';
@@ -76,8 +75,8 @@ const JobDetailsScreen = () => {
         <div className="um-container">
             <JobPageHeader
                 eyebrow="Hiring"
-                title={job.title}
-                description={`${job.department} | ${job.location}`}
+                title={job.jobTitle || job.title}
+                description={`${job.jobRole || job.department} | ${job.location}`}
                 actions={(
                     <>
                         <button type="button" onClick={() => navigate('/jobs')} className="btn-secondary jm-button-with-icon">
@@ -103,21 +102,17 @@ const JobDetailsScreen = () => {
 
                     <div className="jm-detail-grid">
                         <div className="jm-detail-item">
-                            <span className="jm-detail-label">Status</span>
-                            <JobStatusBadge isActive={job.is_active} />
-                        </div>
-                        <div className="jm-detail-item">
                             <span className="jm-detail-label">Experience</span>
                             <span className="jm-detail-value">
                                 <BriefcaseBusiness size={16} aria-hidden="true" />
-                                {job.experience_required}
+                                {job.experienceRequired ?? job.experience_required}
                             </span>
                         </div>
                         <div className="jm-detail-item">
-                            <span className="jm-detail-label">Department</span>
+                            <span className="jm-detail-label">Job Role</span>
                             <span className="jm-detail-value">
                                 <Building2 size={16} aria-hidden="true" />
-                                {job.department}
+                                {job.jobRole || job.department}
                             </span>
                         </div>
                         <div className="jm-detail-item">
@@ -137,7 +132,7 @@ const JobDetailsScreen = () => {
                     </div>
 
                     <div className="jm-skill-list jm-skill-list-spacious">
-                        {(job.skills || []).map((skill) => (
+                        {(job.requiredSkills || job.skills || []).map((skill) => (
                             <span key={skill} className="jm-skill-pill">{skill}</span>
                         ))}
                     </div>
@@ -150,7 +145,7 @@ const JobDetailsScreen = () => {
                     </div>
 
                     <div className="jm-rich-copy">
-                        {job.description}
+                        {job.jobDetails || job.description}
                     </div>
                 </section>
             </div>

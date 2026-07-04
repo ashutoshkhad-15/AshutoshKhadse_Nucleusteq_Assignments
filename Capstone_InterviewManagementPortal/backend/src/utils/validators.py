@@ -66,6 +66,10 @@ EXPERIENCE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+JOB_EXPERIENCE_PATTERN = re.compile(
+    r"^(?:\d{1,2}\s+year|\d{1,2}\s+years|\d{1,2}\+\s+years|\d{1,2}-\d{1,2}\s+years)$"
+)
+
 
 def validate_experience_text(experience: str) -> str:
     """Validate a human-readable experience string such as '3 years' or '6 months'."""
@@ -84,4 +88,26 @@ def validate_experience_text(experience: str) -> str:
         value = int(months)
         if value < 1 or value > 11:
             raise ValueError("Months of experience must be between 1 and 11")
+    return normalized
+
+
+def normalize_required_text(value: str, field_name: str, min_length: int, max_length: int) -> str:
+    """Normalize a required text field and validate its size bounds."""
+    normalized_value = validate_required_text(value, field_name)
+    if len(normalized_value) < min_length or len(normalized_value) > max_length:
+        raise ValueError(f"{field_name} must be between {min_length} and {max_length} characters")
+    return normalized_value
+
+
+def normalize_string_list(values) -> list[str]:
+    """Trim, deduplicate, and discard empty values from a string list."""
+    normalized: list[str] = []
+    for value in values or []:
+        if not isinstance(value, str):
+            continue
+        item = value.strip()
+        if not item:
+            continue
+        if item.lower() not in {existing.lower() for existing in normalized}:
+            normalized.append(item)
     return normalized

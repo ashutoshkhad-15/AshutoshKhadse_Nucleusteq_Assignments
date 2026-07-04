@@ -1,22 +1,21 @@
-"""Router tests for the Job Description API.
-
-Includes integration-style coverage for endpoint authorization and
-request handling using FastAPI dependency overrides.
-"""
+"""Router tests for the Job Description API."""
 
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock
+
+from src.enums.app_enums import UserRole
 from src.main import app
 from src.routers.job_router import get_job_service
 from src.services.job_service import JobService
 from src.utils.security import get_current_user
-from src.enums.app_enums import UserRole
+
 
 @pytest.fixture
 def mock_job_service():
     service = AsyncMock(spec=JobService)
     return service
+
 
 @pytest.fixture
 def client(mock_job_service):
@@ -32,38 +31,39 @@ def override_get_current_user_hr():
 def override_get_current_user_interviewer():
     return {"email": "int@nucleusteq.com", "role": UserRole.INTERVIEWER.value}
 
+
 class TestJobRouter:
-    
     def test_create_job_endpoint(self, client, mock_job_service):
-        """Return HTTP 201 and created job metadata for valid HR requests."""
         app.dependency_overrides[get_current_user] = override_get_current_user_hr
-        mock_job_service.create_job.return_value = {"_id": "123", "title": "Data Engineer"}
-        
+        mock_job_service.create_job.return_value = {"_id": "123", "jobTitle": "Data Engineer"}
+
         payload = {
-            "title": "Data Engineer",
-            "department": "Data",
-            "description": "Build pipelines.",
-            "skills": ["Hadoop", "Python", "SQL"],
-            "experience_required": "2 years",
-            "location": "Remote"
+            "jobTitle": "Data Engineer",
+            "jobDetails": "Build pipelines and data services.",
+            "jobRole": "Data Engineering",
+            "requiredSkills": ["Hadoop", "Python", "SQL"],
+            "experienceRequired": "2 years",
+            "employmentType": "Full Time",
+            "location": "Remote",
         }
-        
+
         response = client.post("/api/v1/jobs/", json=payload)
-        
+
         assert response.status_code == 201
         assert response.json()["message"] == "Job created successfully"
-        assert response.json()["data"]["title"] == "Data Engineer"
+        assert response.json()["data"]["jobTitle"] == "Data Engineer"
         mock_job_service.create_job.assert_called_once()
 
     def test_create_job_validation_error(self, client, mock_job_service):
-        """Return HTTP 422 when required job fields are missing."""
         app.dependency_overrides[get_current_user] = override_get_current_user_hr
         payload = {
-            "title": "Data Engineer",
-            "department": "Data",
-            "description": "Build pipelines.",
-            "experience_required": "2 years",
-            "location": "Remote"
+            "jobTitle": "  ",
+            "jobDetails": "Build pipelines and data services.",
+            "jobRole": "Data Engineering",
+            "requiredSkills": ["Python"],
+            "experienceRequired": "2 years",
+            "employmentType": "Full Time",
+            "location": "Remote",
         }
 
         response = client.post("/api/v1/jobs/", json=payload)
@@ -72,52 +72,49 @@ class TestJobRouter:
         mock_job_service.create_job.assert_not_called()
 
     def test_get_all_jobs_endpoint(self, client, mock_job_service):
-        """Return HTTP 200 and a list of jobs for authorized users."""
         app.dependency_overrides[get_current_user] = override_get_current_user_interviewer
-        mock_job_service.get_all_jobs.return_value = [{"_id": "1"}, {"_id": "2"}]
-        
+        mock_job_service.get_all_jobs.return_value = ([{"_id": "1"}, {"_id": "2"}], {"page": 1, "limit": 10, "total_items": 2, "total_pages": 1})
+
         response = client.get("/api/v1/jobs/")
-        
+
         assert response.status_code == 200
         assert len(response.json()["data"]) == 2
         mock_job_service.get_all_jobs.assert_called_once()
 
     def test_get_job_by_id_endpoint(self, client, mock_job_service):
-        """Return HTTP 200 and job details for a valid job ID."""
         app.dependency_overrides[get_current_user] = override_get_current_user_interviewer
-        mock_job_service.get_job_by_id.return_value = {"_id": "123", "title": "Data Engineer"}
-        
+        mock_job_service.get_job_by_id.return_value = {"_id": "123", "jobTitle": "Data Engineer"}
+
         response = client.get("/api/v1/jobs/123")
-        
+
         assert response.status_code == 200
-        assert response.json()["data"]["title"] == "Data Engineer"
+        assert response.json()["data"]["jobTitle"] == "Data Engineer"
         mock_job_service.get_job_by_id.assert_called_once_with("123")
 
     def test_update_job_endpoint(self, client, mock_job_service):
-        """Return HTTP 200 and updated job data for authorized update requests."""
         app.dependency_overrides[get_current_user] = override_get_current_user_hr
-        mock_job_service.update_job.return_value = {"_id": "123", "is_active": False}
+        mock_job_service.update_job.return_value = {"_id": "123", "jobTitle": "Data Engineer"}
 
-        payload = {"is_active": False}
+        payload = {"jobTitle": "Platform Engineer"}
 
         response = client.patch("/api/v1/jobs/123", json=payload)
 
         assert response.status_code == 200
         assert response.json()["message"] == "Job updated successfully"
-        assert response.json()["data"]["is_active"] is False
+        assert response.json()["data"]["jobTitle"] == "Data Engineer"
         mock_job_service.update_job.assert_called_once()
-        
+
     def test_interviewer_cannot_create_job(self, client, mock_job_service):
-        """Return HTTP 403 when an interviewer attempts to create a job."""
         app.dependency_overrides[get_current_user] = override_get_current_user_interviewer
 
         payload = {
-            "title": "Data Engineer",
-            "department": "Data",
-            "description": "Build pipelines.",
-            "skills": ["Hadoop"],
-            "experience_required": "2 years",
-            "location": "Remote"
+            "jobTitle": "Data Engineer",
+            "jobDetails": "Build pipelines and data services.",
+            "jobRole": "Data Engineering",
+            "requiredSkills": ["Python"],
+            "experienceRequired": "2 years",
+            "employmentType": "Full Time",
+            "location": "Remote",
         }
 
         response = client.post("/api/v1/jobs/", json=payload)
@@ -126,10 +123,9 @@ class TestJobRouter:
         mock_job_service.create_job.assert_not_called()
 
     def test_interviewer_cannot_update_job(self, client, mock_job_service):
-        """Return HTTP 403 when an interviewer attempts to update a job."""
         app.dependency_overrides[get_current_user] = override_get_current_user_interviewer
-        
-        response = client.patch("/api/v1/jobs/123", json={"is_active": False})
-        
+
+        response = client.patch("/api/v1/jobs/123", json={"jobTitle": "Platform Engineer"})
+
         assert response.status_code == 403
         mock_job_service.update_job.assert_not_called()

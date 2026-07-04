@@ -1,44 +1,117 @@
-"""Pydantic request schemas for Job Description APIs.
+"""Request schemas for job description endpoints."""
 
-Defines the payloads accepted by the job creation and update endpoints.
-These models apply the same validation rules used by the production API.
-"""
+from enum import Enum
+from typing import Optional
+import re
 
-from pydantic import BaseModel, Field
-from typing import List, Optional
+from pydantic import BaseModel, Field, field_validator
+
+from src.utils.validators import normalize_required_text, normalize_string_list
+
+
+class EmploymentType(str, Enum):
+    """Supported employment types for job descriptions."""
+
+    FULL_TIME = "Full Time"
+    INTERNSHIP = "Internship"
+
+
+def _validate_experience_required(value: str) -> str:
+    """Validate the canonical job experience string format."""
+    if not isinstance(value, str):
+        raise ValueError("Experience Required must be a string.")
+
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError("Experience Required is required.")
+
+    if not re.fullmatch(r"^(?:\d{1,2}\s+year|\d{1,2}\s+years|\d{1,2}\+\s+years|\d{1,2}-\d{1,2}\s+years)$", normalized):
+        raise ValueError('Experience Required must use formats like "0 year", "1 year", "2 years", "3+ years", or "5-7 years".')
+
+    return normalized
 
 
 class CreateJobRequest(BaseModel):
-    """Request body for creating a new job description.
+    """Validate the payload used to create a new job description."""
 
-    Attributes:
-        title: Human-friendly job title.
-        department: Owning department or team name.
-        description: Full job description text; must be reasonably long.
-        skills: Required technical skills list; at least one item.
-        experience_required: Short experience expectation string.
-        location: Location text (city/state or 'Remote').
-    """
+    jobTitle: str = Field(..., min_length=3, max_length=120)
+    jobDetails: str = Field(..., min_length=10, max_length=4000)
+    jobRole: str = Field(..., min_length=2, max_length=80)
+    requiredSkills: list[str] = Field(..., min_length=1)
+    experienceRequired: str = Field(...)
+    employmentType: EmploymentType
+    location: str = Field(..., min_length=2, max_length=120)
 
-    title: str = Field(..., min_length=3, max_length=100, description="Job title, e.g., Senior Data Engineer")
-    department: str = Field(..., min_length=2, max_length=50)
-    description: str = Field(..., min_length=10)
-    skills: List[str] = Field(..., min_length=1, description="List of required technical skills")
-    experience_required: str = Field(..., description="e.g., 2-4 years")
-    location: str = Field(..., description="e.g., Indore, MP or Remote")
+    @field_validator("jobTitle")
+    @classmethod
+    def validate_job_title(cls, value: str) -> str:
+        return normalize_required_text(value, "Job Title", 3, 120)
+
+    @field_validator("jobDetails")
+    @classmethod
+    def validate_job_details(cls, value: str) -> str:
+        return normalize_required_text(value, "Job Details", 10, 4000)
+
+    @field_validator("jobRole")
+    @classmethod
+    def validate_job_role(cls, value: str) -> str:
+        return normalize_required_text(value, "Job Role", 2, 80)
+
+    @field_validator("location")
+    @classmethod
+    def validate_location(cls, value: str) -> str:
+        return normalize_required_text(value, "Location", 2, 120)
+
+    @field_validator("requiredSkills", mode="before")
+    @classmethod
+    def normalize_skills(cls, value):
+        """Normalize skill chips by trimming and removing duplicates."""
+        skills = normalize_string_list(value)
+        if not skills:
+            raise ValueError("At least one required skill is needed.")
+        return skills
+
+    @field_validator("experienceRequired", mode="before")
+    @classmethod
+    def validate_experience_required(cls, value):
+        return _validate_experience_required(value)
 
 
 class UpdateJobRequest(BaseModel):
-    """Patch-style request for updating fields on an existing job.
+    """Validate the payload used to update an existing job description."""
 
-    All fields are optional to support partial updates via `PATCH`.
-    Use `is_active` to open or close a posting without changing other fields.
-    """
+    jobTitle: Optional[str] = Field(None, min_length=3, max_length=120)
+    jobDetails: Optional[str] = Field(None, min_length=10, max_length=4000)
+    jobRole: Optional[str] = Field(None, min_length=2, max_length=80)
+    requiredSkills: Optional[list[str]] = None
+    experienceRequired: Optional[str] = None
+    employmentType: Optional[EmploymentType] = None
+    location: Optional[str] = Field(None, min_length=2, max_length=120)
+    @field_validator("jobTitle", "jobDetails", "jobRole", "location", mode="before")
+    @classmethod
+    def trim_optional_text(cls, value):
+        if value is None:
+            return value
+        if not isinstance(value, str):
+            raise ValueError("Field must be a string.")
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Field cannot be empty.")
+        return normalized
 
-    title: Optional[str] = None
-    department: Optional[str] = None
-    description: Optional[str] = None
-    skills: Optional[List[str]] = None
-    experience_required: Optional[str] = None
-    location: Optional[str] = None
-    is_active: Optional[bool] = None  # Used to open/close a job posting
+    @field_validator("requiredSkills", mode="before")
+    @classmethod
+    def normalize_optional_skills(cls, value):
+        if value is None:
+            return value
+        skills = normalize_string_list(value)
+        if not skills:
+            raise ValueError("At least one required skill is needed.")
+        return skills
+
+    @field_validator("experienceRequired", mode="before")
+    @classmethod
+    def validate_optional_experience_required(cls, value):
+        if value is None:
+            return value
+        return _validate_experience_required(value)

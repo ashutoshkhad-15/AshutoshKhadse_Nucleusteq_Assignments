@@ -1,5 +1,5 @@
 import { CircleCheckBig } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import JobForm from '../components/jobs/JobForm';
 import JobPageHeader from '../components/jobs/JobPageHeader';
@@ -11,29 +11,31 @@ import {
     mapJobToFormValues,
     useJobFormState,
 } from '../utils/jobManagement';
+import useJobFormSubmission from '../hooks/useJobFormSubmission';
 import '../styles/job-management.css';
 
 /**
- * Render the HR workflow for editing an existing job description.
+ * Render the edit-job workflow with existing values prefilled from the API.
  *
  * @returns {JSX.Element} Edit job screen.
  */
 const EditJobScreen = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [isActive, setIsActive] = useState(true);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
-    const submittingRef = useRef(false);
     const {
         currentErrors,
         handleFieldChange,
+        addSkill,
+        removeSkill,
         setValidationErrors,
         setValues,
         validationErrors,
         values,
     } = useJobFormState(JOB_FORM_DEFAULTS);
+    const [skillDraft, setSkillDraft] = useState('');
 
     useEffect(() => {
         /**
@@ -47,7 +49,6 @@ const EditJobScreen = () => {
                 setLoading(true);
                 const job = await jobService.getJobById(id, { signal: controller.signal });
                 setValues(mapJobToFormValues(job));
-                setIsActive(Boolean(job.is_active));
                 setError(null);
             } catch (err) {
                 if (err?.name === 'CanceledError') {
@@ -67,45 +68,26 @@ const EditJobScreen = () => {
         };
     }, [id, setValues]);
 
-    /**
-     * Persist job changes after validation succeeds.
-     *
-     * @param {React.FormEvent<HTMLFormElement>} event - Form submission event.
-     * @returns {Promise<void>}
-     */
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setError(null);
-
-        if (submittingRef.current) {
-            return;
-        }
-
-        if (Object.keys(currentErrors).length > 0) {
-            setValidationErrors(currentErrors);
-            return;
-        }
-
-        try {
-            submittingRef.current = true;
+    const { handleSubmit } = useJobFormSubmission({
+        getValidationErrors: () => currentErrors,
+        setValidationErrors,
+        setFormError: setError,
+        onSubmitValid: async () => {
             setSaving(true);
-            setValidationErrors({});
-            const payload = {
-                ...buildJobPayload(values),
-                is_active: isActive,
-            };
-            await jobService.updateJob(id, payload);
-            navigate('/jobs', {
-                replace: true,
-                state: { successMessage: `Job "${payload.title}" updated successfully.` },
-            });
-        } catch (err) {
-            setError(getJobManagementErrorMessage(err, 'Failed to update job.'));
-        } finally {
-            submittingRef.current = false;
-            setSaving(false);
-        }
-    };
+            try {
+                const payload = buildJobPayload(values);
+                await jobService.updateJob(id, payload);
+                navigate('/jobs', {
+                    replace: true,
+                    state: { successMessage: `Job "${payload.jobTitle}" updated successfully.` },
+                });
+            } catch (err) {
+                setError(getJobManagementErrorMessage(err, 'Failed to update job.'));
+            } finally {
+                setSaving(false);
+            }
+        },
+    });
 
     if (loading) {
         return <div className="um-state">Loading job details...</div>;
@@ -116,7 +98,7 @@ const EditJobScreen = () => {
             <JobPageHeader
                 eyebrow="Hiring"
                 title="Edit Job"
-                description="Update responsibilities, required skills, and posting status for this role."
+                description="Update responsibilities, required skills, and hiring requirements for this role."
                 actions={(
                     <span className="jm-header-pill">
                         <CircleCheckBig size={16} aria-hidden="true" />
@@ -130,15 +112,15 @@ const EditJobScreen = () => {
                 validationErrors={validationErrors}
                 formError={error}
                 submitting={saving}
-                submitDisabled={saving || Object.keys(currentErrors).length > 0}
-                showStatusToggle
-                isActive={isActive}
                 submitLabel="Save Changes"
                 submittingLabel="Saving..."
                 onChange={handleFieldChange}
-                onActiveChange={setIsActive}
                 onCancel={() => navigate('/jobs')}
                 onSubmit={handleSubmit}
+                onAddSkill={() => { addSkill(skillDraft); setSkillDraft(''); }}
+                onRemoveSkill={removeSkill}
+                skillDraft={skillDraft}
+                setSkillDraft={setSkillDraft}
             />
         </div>
     );

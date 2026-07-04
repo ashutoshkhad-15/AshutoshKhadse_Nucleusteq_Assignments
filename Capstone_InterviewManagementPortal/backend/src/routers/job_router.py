@@ -6,7 +6,7 @@ Role-based access control: HR can create/update; HR, ADMIN, and INTERVIEWER can 
 
 import logging
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from typing import Optional
 
 from src.exceptions.custom_exceptions import AppBaseException
@@ -49,7 +49,8 @@ async def create_job(
 @router.get("/", response_model=SuccessResponse[list], status_code=status.HTTP_200_OK)
 async def get_all_jobs(
     search: Optional[str] = None,
-    status_filter: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
     job_service: JobService = Depends(get_job_service),
     _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value]))
 ):
@@ -57,20 +58,19 @@ async def get_all_jobs(
 
     Accessible by HR, ADMIN, and INTERVIEWER roles.
     """
-    is_active = None
-    if status_filter == "ACTIVE":
-        is_active = True
-    elif status_filter == "INACTIVE":
-        is_active = False
-    
     try:
-        data = await job_service.get_all_jobs(search=search, is_active=is_active)
+        result = await job_service.get_all_jobs(search=search, page=page, limit=limit)
+        if isinstance(result, tuple) and len(result) == 2:
+            data, meta = result
+        else:
+            data = result
+            meta = {"page": page, "limit": limit, "total_items": len(data or []), "total_pages": 1}
     except Exception as exc:
         if not isinstance(exc, AppBaseException):
             logger.exception("Unexpected error while retrieving jobs through API")
         raise
     logger.info("Jobs retrieved successfully through API")
-    return SuccessResponse(message="Jobs retrieved successfully", data=data)
+    return SuccessResponse(message="Jobs retrieved successfully", data=data, meta=meta)
 
 
 @router.get("/{job_id}", response_model=SuccessResponse[dict], status_code=status.HTTP_200_OK)

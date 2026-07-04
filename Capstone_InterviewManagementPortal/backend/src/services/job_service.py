@@ -18,32 +18,23 @@ class JobService:
     """Coordinate job description business rules and persistence operations."""
 
     def __init__(self):
-        # Repository instance used for all persistence operations.
+        """Initialize the service with the job repository dependency."""
         self.job_repo = JobRepository()
 
     async def create_job(self, request: CreateJobRequest) -> dict:
         """Create a new job description after applying default business rules.
 
         Converts the validated Pydantic `CreateJobRequest` to a plain dictionary
-        and enforces service-level defaults. Currently the only default applied
-        is `is_active = True` so newly created postings are open by default.
-
-        Args:
-            request: Validated create-job payload.
-
-        Returns:
-            The persisted job document as a dictionary (includes `_id`).
+        and delegates persistence to the repository.
         """
         logger.info("Creating job description")
         try:
-            job_data = request.model_dump()
-            job_data["is_active"] = True
-            return await self.job_repo.create_job(job_data)
+            return await self.job_repo.create_job(request.model_dump())
         except Exception:
             logger.exception("Unexpected error while creating job")
             raise
 
-    async def get_all_jobs(self, search: str | None = None, is_active: bool | None = None) -> list:
+    async def get_all_jobs(self, search: str | None = None, page: int = 1, limit: int = 10) -> tuple[list, dict]:
         """Return all job descriptions sorted newest-first.
 
         This method delegates directly to the repository and does not apply
@@ -51,21 +42,24 @@ class JobService:
         """
         logger.info("Fetching all job descriptions")
         query: dict = {}
-        
-        if search:
+
+        search_term = (search or "").strip()
+        if search_term:
             query["$or"] = [
-                {"title": {"$regex": search, "$options": "i"}},
-                {"department": {"$regex": search, "$options": "i"}},
-                {"location": {"$regex": search, "$options": "i"}},
-                {"experience_required": {"$regex": search, "$options": "i"}},
-                {"skills": {"$elemMatch": {"$regex": search, "$options": "i"}}},
+                {"jobTitle": {"$regex": search_term, "$options": "i"}},
+                {"jobRole": {"$regex": search_term, "$options": "i"}},
+                {"location": {"$regex": search_term, "$options": "i"}},
+                {"requiredSkills": {"$elemMatch": {"$regex": search_term, "$options": "i"}}},
             ]
 
-        if is_active is not None:
-            query["is_active"] = is_active
-            
         try:
-            return await self.job_repo.get_all_jobs(query)
+            result = await self.job_repo.get_all_jobs(query, page=page, limit=limit)
+            if isinstance(result, tuple) and len(result) == 2:
+                jobs, total_items = result
+            else:
+                jobs, total_items = result, len(result or [])
+            total_pages = max(1, (total_items + limit - 1) // limit)
+            return jobs, {"page": page, "limit": limit, "total_items": total_items, "total_pages": total_pages}
         except Exception:
             logger.exception("Unexpected error while fetching all jobs")
             raise

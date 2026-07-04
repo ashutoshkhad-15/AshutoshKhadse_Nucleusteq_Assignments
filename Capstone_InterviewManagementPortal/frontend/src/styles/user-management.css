@@ -1,8 +1,8 @@
 .um-container {
     width: 100%;
-    max-width: 1240px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: clamp(1rem, 2vw, 2rem) clamp(1rem, 2.25vw, 2.25rem) clamp(1.25rem, 2.5vw, 2.5rem);
+    padding: clamp(1rem, 2vw, 2.25rem) clamp(1rem, 2.25vw, 2.5rem) clamp(1.25rem, 2.5vw, 2.5rem);
     font-family: inherit;
 }
 
@@ -14,15 +14,15 @@
     display: grid;
     gap: 1rem;
     justify-items: center;
-    padding: 4rem 1.5rem;
+    padding: 4.5rem 1.5rem;
     text-align: center;
 }
 
 .um-header {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 1.25rem;
     margin-bottom: clamp(1rem, 2vw, 1.75rem);
 }
 
@@ -106,16 +106,28 @@
     align-items: center;
     width: 100%;
     gap: 0.6rem;
-    padding: 0.45rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
+    min-height: 46px;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
     background: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input-wrapper:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
 .user-email-cell {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
+}
+
+.user-primary {
+    font-weight: 700;
+    color: #0f172a;
 }
 
 .visually-hidden {
@@ -273,6 +285,14 @@
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
 }
 
+.action-edit-disabled {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .action-edit {
     background: #eff6ff;
     border-color: #bfdbfe;
@@ -356,6 +376,10 @@
     display: grid;
     gap: 0.55rem;
     margin: 0;
+}
+
+.form-group-full {
+    grid-column: 1 / -1;
 }
 
 .form-label {
@@ -448,39 +472,23 @@
 .um-toolbar {
     display: flex;
     gap: 1rem;
-    padding: 1rem 1.5rem;
+    padding: 1.1rem 1.5rem;
     border-bottom: 1px solid #e5e7eb;
     background-color: #ffffff;
 }
 
 .um-search-input {
     flex: 1;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
+    padding: 0.55rem 0;
+    border: none;
+    border-radius: 0;
     font-size: 0.875rem;
     color: #111827;
+    background: transparent;
 }
 
 .um-search-input:focus {
     outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 1px #2563eb;
-}
-
-.um-filter-select {
-    padding: 0.5rem 2rem 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    color: #374151;
-    background-color: white;
-    cursor: pointer;
-}
-
-.um-filter-select:focus {
-    outline: none;
-    border-color: #2563eb;
 }
 
 
@@ -488,6 +496,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
     padding: 1rem 1.5rem;
     border-top: 1px solid #e5e7eb;
     background-color: #f9fafb;
@@ -509,11 +518,6 @@
         align-items: stretch;
         gap: 0.75rem;
         padding: 1rem;
-    }
-
-    .um-search-input,
-    .um-filter-select {
-        width: 100%;
     }
 
     .um-pagination {
@@ -582,16 +586,54 @@
     }
 
     .table-card {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow: hidden;
     }
 
-    .um-table {
-        min-width: 640px;
+    .um-table thead {
+        display: none;
+    }
+
+    .um-table,
+    .um-table tbody,
+    .um-table tr,
+    .um-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .um-table tr {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: grid;
+        gap: 0.3rem;
+    }
+
+    .um-table td {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.6rem 0;
+        border-bottom: 0;
+    }
+
+    .um-table td::before {
+        content: attr(data-label);
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        flex-shrink: 0;
+    }
+
+    .align-right {
+        text-align: left;
     }
 
     .table-actions {
-        min-width: 140px;
+        min-width: 0;
+        justify-content: flex-start;
+        width: 100%;
     }
 
     .form-card {

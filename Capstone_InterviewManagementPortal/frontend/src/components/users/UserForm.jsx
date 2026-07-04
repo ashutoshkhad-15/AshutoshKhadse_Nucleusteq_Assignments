@@ -4,33 +4,39 @@ import { USER_ROLE_OPTIONS } from '../../utils/userManagement';
  * Render the shared create/edit user form fields and actions.
  *
  * @param {object} props - Component props.
+ * @param {string} props.name - Current name value.
  * @param {string} props.email - Current email value.
  * @param {string} props.role - Current role value.
- * @param {{ email?: string, role?: string }} props.validationErrors - Field validation errors.
+ * @param {{ name?: string, email?: string, role?: string }} props.validationErrors - Field validation errors.
  * @param {string | null} props.formError - Form-level error message.
  * @param {string | null} props.helperMessage - Optional guidance shown beneath the form.
+ * @param {boolean} props.nameDisabled - Whether the name field is read-only.
  * @param {boolean} props.emailDisabled - Whether the email field is read-only.
  * @param {boolean} props.roleDisabled - Whether the role field is read-only.
  * @param {boolean} props.submitting - Whether the form is being submitted.
  * @param {string} props.submitLabel - Idle submit button label.
  * @param {string} props.submittingLabel - Busy submit button label.
  * @param {(value: string) => void} props.onEmailChange - Email update callback.
+ * @param {(value: string) => void} props.onNameChange - Name update callback.
  * @param {(value: string) => void} props.onRoleChange - Role update callback.
  * @param {() => void} props.onCancel - Cancel action.
  * @param {(event: React.FormEvent<HTMLFormElement>) => void} props.onSubmit - Submit handler.
  * @returns {JSX.Element} Shared user form UI.
  */
 const UserForm = ({
+    name,
     email,
     role,
     validationErrors,
     formError,
     helperMessage,
+    nameDisabled,
     emailDisabled,
     roleDisabled,
     submitting,
     submitLabel,
     submittingLabel,
+    onNameChange,
     onEmailChange,
     onRoleChange,
     onCancel,
@@ -46,6 +52,28 @@ const UserForm = ({
                 </div>
 
                 <div className="form-grid">
+                    <div className="form-group form-group-full">
+                        <label className="form-label" htmlFor="user-name">
+                            Full Name <span className="required-indicator">*</span>
+                        </label>
+                        <input
+                            id="user-name"
+                            type="text"
+                            value={name}
+                            onChange={(event) => onNameChange(event.target.value)}
+                            disabled={submitting || nameDisabled}
+                            className={`form-control ${validationErrors.name ? 'form-control-error' : ''}`}
+                            placeholder="Aarav Sharma"
+                            maxLength={100}
+                            aria-invalid={Boolean(validationErrors.name)}
+                            aria-describedby={validationErrors.name ? 'user-name-error' : undefined}
+                        />
+                        {validationErrors.name ? (
+                            <p id="user-name-error" className="field-error">{validationErrors.name}</p>
+                        ) : null}
+                        {nameDisabled ? <p className="field-helper">The default administrator name cannot be changed.</p> : null}
+                    </div>
+
                     <div className="form-group">
                         <label className="form-label" htmlFor="user-email">
                             Employee Email <span className="required-indicator">*</span>
@@ -66,9 +94,7 @@ const UserForm = ({
                                 {validationErrors.email}
                             </p>
                         ) : null}
-                        {emailDisabled ? (
-                            <p className="field-helper">Email addresses cannot be modified after account creation.</p>
-                        ) : null}
+                        {emailDisabled ? <p className="field-helper">Email addresses cannot be modified after account creation.</p> : null}
                     </div>
 
                     <div className="form-group">

@@ -13,12 +13,16 @@ export const jobService = {
      * @param {object} [config={}] - Optional Axios request configuration.
      * @returns {Promise<Array>} Job records returned by the backend.
      */
-    async getAllJobs(params = {}, config = {}) {
+    async getAllJobs(search = '', config = {}) {
+        const params = { ...(config.params || {}) };
+        if (search?.trim()) {
+            params.search = search.trim();
+        }
         const response = await apiClient.get(`${JOBS_BASE_PATH}/`, {
             ...config,
             params,
         });
-        return response.data.data;
+        return response.data;
     },
 
     /**

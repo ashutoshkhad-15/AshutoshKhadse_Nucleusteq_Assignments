@@ -24,6 +24,21 @@ class JobRepository:
         self.db = get_database()
         self.collection = self.db["jobs"]
 
+    def _normalize_job(self, job_data: dict) -> dict:
+        """Return a response-ready job document with stringified identifiers."""
+        if not job_data:
+            return job_data
+        normalized = dict(job_data)
+        normalized["_id"] = str(normalized["_id"])
+        normalized["experienceRequired"] = str(normalized.get("experienceRequired", ""))
+        normalized["requiredSkills"] = normalized.get("requiredSkills", [])
+        return normalized
+
+    @staticmethod
+    def _build_job_query(query: dict | None = None) -> dict:
+        """Normalize an incoming query payload for MongoDB lookups."""
+        return query or {}
+
     async def create_job(self, job_data: dict) -> dict:
         """Insert a new job description into the database.
 
@@ -34,27 +49,31 @@ class JobRepository:
             job_data["created_at"] = datetime.now(timezone.utc)
             job_data["updated_at"] = datetime.now(timezone.utc)
             result = await self.collection.insert_one(job_data)
-            job_data["_id"] = str(result.inserted_id)
+            job_data["_id"] = result.inserted_id
+            job_data = self._normalize_job(job_data)
             logger.info("Job created successfully: %s", job_data.get("_id"))
             return job_data
         except Exception:
             logger.exception("Repository failure while creating job")
             raise
 
-    async def get_all_jobs(self, query: dict | None = None) -> list:
+    async def get_all_jobs(self, query: dict | None = None, page: int = 1, limit: int = 10) -> tuple[list, int]:
         """Retrieve all job descriptions ordered newest-first.
 
         The cursor is iterated asynchronously to avoid loading the entire
         collection into memory at once in large deployments.
         """
         try:
+            normalized_query = self._build_job_query(query)
+            total_items = await self.collection.count_documents(normalized_query)
             jobs = []
-            cursor = self.collection.find(query or {}).sort("created_at", -1)
+            cursor = self.collection.find(normalized_query).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
             async for document in cursor:
                 document["_id"] = str(document["_id"])
+                document = self._normalize_job(document)
                 jobs.append(document)
             logger.info("Job list retrieved successfully")
-            return jobs
+            return jobs, total_items
         except Exception:
             logger.exception("Repository failure while fetching all jobs")
             raise
@@ -73,7 +92,7 @@ class JobRepository:
         try:
             job = await self.collection.find_one({"_id": ObjectId(job_id)})
             if job:
-                job["_id"] = str(job["_id"])
+                job = self._normalize_job(job)
             else:
                 logger.warning("Job not found for ID: %s", job_id)
             return job
