@@ -4,6 +4,7 @@ import UserForm from '../components/users/UserForm';
 import { userService } from '../services/userService';
 import '../styles/user-management.css';
 import {
+    DEFAULT_ADMIN_EMAIL,
     getUserManagementErrorMessage,
     isProtectedUser,
     validateUserForm,
@@ -19,6 +20,7 @@ const EditUserScreen = () => {
     const navigate = useNavigate();
 
     const [email, setEmail] = useState('');
+    const [name, setName] = useState('');
     const [role, setRole] = useState('');
     const [isActive, setIsActive] = useState(true);
     const [validationErrors, setValidationErrors] = useState({});
@@ -26,7 +28,10 @@ const EditUserScreen = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
+    const isDefaultAdmin = email === DEFAULT_ADMIN_EMAIL;
     const emailLocked = isProtectedUser({ email, is_active: isActive });
+    const nameLocked = isDefaultAdmin;
+    const roleLocked = emailLocked;
 
     useEffect(() => {
         /**
@@ -39,6 +44,7 @@ const EditUserScreen = () => {
             try {
                 setLoading(true);
                 const userData = await userService.getUserById(id, { signal: controller.signal });
+                setName(userData.name || '');
                 setEmail(userData.email);
                 setRole(userData.role);
                 setIsActive(userData.is_active);
@@ -68,7 +74,7 @@ const EditUserScreen = () => {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError(null);
-        const errors = validateUserForm({ email, role }, { emailReadonly: emailLocked });
+        const errors = validateUserForm({ name, email, role }, { emailReadonly: emailLocked });
 
         if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -78,10 +84,17 @@ const EditUserScreen = () => {
         try {
             setSaving(true);
             setValidationErrors({});
-            const payload = { role };
+            const payload = {};
+            if (!nameLocked) {
+                payload.name = name.trim();
+            }
 
             if (!emailLocked) {
                 payload.email = email.trim();
+            }
+
+            if (!roleLocked) {
+                payload.role = role;
             }
 
             await userService.updateUser(id, payload);
@@ -100,11 +113,10 @@ const EditUserScreen = () => {
         return <div className="um-state">Loading user details...</div>;
     }
 
-    const roleLocked = emailLocked;
-    const helperMessage = !isActive
-        ? 'Disabled users cannot be reassigned until their account is re-enabled in the backend.'
-        : email === 'admin@nucleusteq.com'
-            ? 'The primary administrator role is protected from frontend edits.'
+    const helperMessage = isDefaultAdmin
+        ? 'The default administrator account is locked to preserve system access.'
+        : !isActive
+            ? 'Disabled users cannot be reassigned until their account is re-enabled in the backend.'
             : null;
 
     return (
@@ -118,16 +130,19 @@ const EditUserScreen = () => {
             </div>
 
             <UserForm
+                name={name}
                 email={email}
                 role={role}
                 validationErrors={validationErrors}
                 formError={error}
                 helperMessage={helperMessage}
+                nameDisabled={nameLocked}
                 emailDisabled={emailLocked}
                 roleDisabled={roleLocked}
                 submitting={saving}
                 submitLabel="Save Changes"
                 submittingLabel="Saving..."
+                onNameChange={setName}
                 onEmailChange={setEmail}
                 onRoleChange={setRole}
                 onCancel={() => navigate('/users')}

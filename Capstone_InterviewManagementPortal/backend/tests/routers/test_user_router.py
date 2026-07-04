@@ -41,9 +41,9 @@ class TestUserRouter:
         app.dependency_overrides[get_current_user] = override_get_current_user_admin
 
         mock_instance = mock_user_service_class.return_value
-        mock_instance.create_user = AsyncMock(return_value={"email": "new@nucleusteq.com", "role": "HR"})
+        mock_instance.create_user = AsyncMock(return_value={"name": "New User", "email": "new@nucleusteq.com", "role": "HR"})
 
-        payload = {"email": "new@nucleusteq.com", "role": "HR"}
+        payload = {"name": "New User", "email": "new@nucleusteq.com", "role": "HR"}
 
         response = client.post("/api/v1/users/", json=payload)
 
@@ -57,7 +57,7 @@ class TestUserRouter:
         """Surface validation errors before the request reaches the service."""
         app.dependency_overrides[get_current_user] = override_get_current_user_admin
 
-        payload = {"email": "bad_actor@gmail.com", "role": "HR"}
+        payload = {"name": "Bad Actor", "email": "bad_actor@gmail.com", "role": "HR"}
 
         response = client.post("/api/v1/users/", json=payload)
 
@@ -70,7 +70,7 @@ class TestUserRouter:
         """Reject emails that violate the NucleusTeq corporate format rules."""
         app.dependency_overrides[get_current_user] = override_get_current_user_admin
 
-        payload = {"email": "bad_actor@nucleusteq.com", "role": "HR"}
+        payload = {"name": "Bad Actor", "email": "bad_actor@nucleusteq.com", "role": "HR"}
 
         response = client.post("/api/v1/users/", json=payload)
 

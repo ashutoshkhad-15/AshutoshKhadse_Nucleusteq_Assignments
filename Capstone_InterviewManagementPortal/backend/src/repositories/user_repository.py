@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 class UserRepository:
     """Provide database operations for user account records."""
 
+    DEFAULT_ADMIN_EMAIL = "admin@nucleusteq.com"
+
     def __init__(self):
         """Initialize the repository with the active MongoDB users collection.
 
@@ -20,12 +22,13 @@ class UserRepository:
         """
         self.db = get_database()
         self.collection = self.db["users"]
-    
-    def _serialize_doc(self, doc: dict) -> dict:
-        """Safely convert MongoDB ObjectId to a string for FastAPI/Pydantic."""
-        if doc and "_id" in doc:
-            doc["_id"] = str(doc["_id"])
-        return doc
+
+    @staticmethod
+    def _stringify_ids(users: list[dict]) -> list[dict]:
+        """Convert MongoDB ObjectId values into strings for API responses."""
+        for user in users:
+            user["_id"] = str(user["_id"])
+        return users
 
     async def get_user_by_email(self, email: str) -> dict:
         """Fetch a user document by email address.
@@ -77,36 +80,35 @@ class UserRepository:
             logger.exception("Repository failure while updating user: %s", email)
             raise
 
-    async def get_all_users(self) -> list:
+    async def get_all_users(self, page: int = 1, limit: int = 10) -> tuple[list, int]:
         """Return all user documents without sensitive password material."""
-        cursor = self.collection.find({}, {"password_base64": 0})
+        query = {}
         try:
+            total_items = await self.collection.count_documents(query)
+            cursor = self.collection.find(query, {"password_base64": 0}).sort("name", 1).skip((page - 1) * limit).limit(limit)
             users = await cursor.to_list(length=1000)
         except Exception:
             logger.exception("Repository failure while fetching all users")
             raise
-        for user in users:
-            user["_id"] = str(user["_id"])
-        return users
+        return self._stringify_ids(users), total_items
 
-    async def search_users(self, search: str) -> list:
+    async def search_users(self, search: str, page: int = 1, limit: int = 10) -> tuple[list, int]:
         """Search user documents across common text fields using a case-insensitive regex."""
         query = {
             "$or": [
+                {"name": {"$regex": search, "$options": "i"}},
                 {"email": {"$regex": search, "$options": "i"}},
-                {"employee_id": {"$regex": search, "$options": "i"}},
                 {"role": {"$regex": search, "$options": "i"}},
             ]
         }
         try:
-            cursor = self.collection.find(query, {"password_base64": 0})
-            users = await cursor.to_list(length=1000)
+            total_items = await self.collection.count_documents(query)
+            cursor = self.collection.find(query, {"password_base64": 0}).sort("name", 1).skip((page - 1) * limit).limit(limit)
+            users = await cursor.to_list(length=limit)
         except Exception:
             logger.exception("Repository failure while searching users")
             raise
-        for user in users:
-            user["_id"] = str(user["_id"])
-        return users
+        return self._stringify_ids(users), total_items
 
     async def get_user_by_id(self, user_id: str) -> dict:
         """Fetch a user document by MongoDB identifier.
@@ -120,9 +122,7 @@ class UserRepository:
         """
         try:
             user = await self.collection.find_one({"_id": ObjectId(user_id)}, {"password_base64": 0})
-            if user:
-                user["_id"] = str(user["_id"])
-            return user
+            return self._stringify_ids([user])[0] if user else None
         except Exception as exc:
             if "not a valid ObjectId" in str(exc):
                 return None
@@ -140,4 +140,13 @@ class UserRepository:
             await self.collection.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
         except Exception:
             logger.exception("Repository failure while updating user by ID: %s", user_id)
+            raise
+
+    async def get_default_admin(self) -> dict | None:
+        """Return the seeded default admin account, if it exists."""
+        try:
+            user = await self.collection.find_one({"email": self.DEFAULT_ADMIN_EMAIL}, {"password_base64": 0})
+            return self._stringify_ids([user])[0] if user else None
+        except Exception:
+            logger.exception("Repository failure while fetching default admin account")
             raise

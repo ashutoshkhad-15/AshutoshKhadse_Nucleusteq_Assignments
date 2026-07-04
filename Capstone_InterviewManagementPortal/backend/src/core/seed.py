@@ -38,6 +38,7 @@ async def run_seed():
         secure_password = settings.DEFAULT_ADMIN_PASSWORD
         
         admin_user = {
+            "name": "System Administrator",
             "email": admin_email,
             "password_base64": encode_password(secure_password),
             "role": UserRole.ADMIN.value,

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/auth/AuthLayout';
+import PasswordField from '../components/auth/PasswordField';
 import apiClient from '../services/apiService';
+import { getAuthErrorMessage, validatePasswordReset } from '../utils/auth';
 
 const RESET_PASSWORD_TAGLINE = 'As part of our standard security protocol, please establish a new, secure password for your account to access the Interview Portal.';
 
@@ -19,6 +21,8 @@ const ResetPassword = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     if (!email) {
         return <Navigate to="/login" replace />;
@@ -34,19 +38,9 @@ const ResetPassword = () => {
         setError('');
         setIsSubmitting(true);
 
-        // Match backend password rules before sending the reset request.
-        if (!newPassword.trim() || !confirmPassword.trim()) {
-            setError('Please fill out both password fields.');
-            setIsSubmitting(false);
-            return;
-        }
-        if (newPassword.length < 6 || newPassword.length > 12) {
-            setError('Password must be between 6 and 12 characters.');
-            setIsSubmitting(false);
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            setError('Passwords do not match. Please try again.');
+        const validationError = validatePasswordReset(newPassword, confirmPassword);
+        if (validationError) {
+            setError(validationError);
             setIsSubmitting(false);
             return;
         }
@@ -61,8 +55,7 @@ const ResetPassword = () => {
             alert('Password reset successfully. Please log in with your new password.');
             navigate('/login');
         } catch (err) {
-            const serverError = err.response?.data?.details?.[0]?.msg || err.response?.data?.message;
-            setError(serverError || 'Failed to reset password. Please try again.');
+            setError(getAuthErrorMessage(err, 'Failed to reset password. Please try again.'));
         } finally {
             setIsSubmitting(false);
         }
@@ -77,21 +70,23 @@ const ResetPassword = () => {
 
             <form onSubmit={handleReset} noValidate aria-busy={isSubmitting}>
                 <div className="form-group">
-                    <input
-                        type="password"
-                        className="input-field"
-                        placeholder="New Password (6-12 chars)"
+                    <PasswordField
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={setNewPassword}
+                        placeholder="New Password (6-12 chars)"
+                        visible={showNewPassword}
+                        onToggleVisibility={() => setShowNewPassword((value) => !value)}
                         disabled={isSubmitting}
+                        toggleLabel={showNewPassword ? 'Hide new password' : 'Show new password'}
                     />
-                    <input
-                        type="password"
-                        className="input-field"
-                        placeholder="Confirm New Password"
+                    <PasswordField
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={setConfirmPassword}
+                        placeholder="Confirm New Password"
+                        visible={showConfirmPassword}
+                        onToggleVisibility={() => setShowConfirmPassword((value) => !value)}
                         disabled={isSubmitting}
+                        toggleLabel={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                     />
                 </div>
                 <button type="submit" className="primary-btn" disabled={isSubmitting}>

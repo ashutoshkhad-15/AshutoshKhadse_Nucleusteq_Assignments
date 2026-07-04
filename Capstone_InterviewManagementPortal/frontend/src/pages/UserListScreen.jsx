@@ -4,7 +4,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useDebouncedValue from '../hooks/useDebouncedValue';
 import { userService } from '../services/userService';
 import '../styles/user-management.css';
-import { getUserManagementErrorMessage, USER_ROLE_OPTIONS } from '../utils/userManagement';
+import {
+    DEFAULT_ADMIN_EMAIL,
+    formatUserRange,
+    getUserManagementErrorMessage,
+    isProtectedUser,
+} from '../utils/userManagement';
 
 /**
  * Displays the list of application users and provides
@@ -21,13 +26,14 @@ const UserListScreen = () => {
     const [successMessage, setSuccessMessage] = useState('');
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterRole, setFilterRole] = useState('ALL');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, total_items: 0, total_pages: 1 });
 
     const debouncedSearchTerm = useDebouncedValue(searchTerm, 800);
     const navigate = useNavigate();
     const location = useLocation();
+    const requestSearch = debouncedSearchTerm.trim();
 
     useEffect(() => {
         if (!location.state?.successMessage) return;
@@ -37,16 +43,12 @@ const UserListScreen = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [debouncedSearchTerm, filterRole]);
+    }, [debouncedSearchTerm]);
 
     useEffect(() => {
         const controller = new AbortController();
 
         const loadUsers = async () => {
-            const searchQuery = [debouncedSearchTerm.trim(), filterRole !== 'ALL' ? filterRole : '']
-                .filter(Boolean)
-                .join(' ');
-
             try {
                 setError(null);
                 if (loading && users.length === 0) {
@@ -55,8 +57,12 @@ const UserListScreen = () => {
                     setSearching(true);
                 }
 
-                const data = await userService.getAllUsers(searchQuery, { signal: controller.signal });
-                setUsers(data);
+                const response = await userService.getAllUsers(requestSearch, {
+                    signal: controller.signal,
+                    params: { page: currentPage, limit: itemsPerPage },
+                });
+                setUsers(Array.isArray(response?.data) ? response.data : []);
+                setPagination(response?.meta || { page: 1, limit: 10, total_items: 0, total_pages: 1 });
             } catch (err) {
                 if (err?.name === 'CanceledError') {
                     return;
@@ -74,7 +80,7 @@ const UserListScreen = () => {
             controller.abort();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedSearchTerm, filterRole]);
+    }, [requestSearch, currentPage, itemsPerPage]);
 
     const handleToggleStatus = async (userId, email, isActive) => {
         const nextStatus = !isActive;
@@ -88,11 +94,11 @@ const UserListScreen = () => {
         try {
             setStatusUpdatingId(userId);
             await userService.updateUser(userId, { is_active: nextStatus });
-            const searchQuery = [debouncedSearchTerm.trim(), filterRole !== 'ALL' ? filterRole : '']
-                .filter(Boolean)
-                .join(' ');
-            const data = await userService.getAllUsers(searchQuery);
-            setUsers(data);
+            const response = await userService.getAllUsers(requestSearch, {
+                params: { page: currentPage, limit: itemsPerPage },
+            });
+            setUsers(Array.isArray(response?.data) ? response.data : []);
+            setPagination(response?.meta || pagination);
             setSuccessMessage(`User ${email} ${actionLabel}d successfully.`);
             setError(null);
         } catch (err) {
@@ -102,9 +108,8 @@ const UserListScreen = () => {
         }
     };
 
-    const totalPages = Math.ceil(users.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentUsers = users.slice(startIndex, startIndex + itemsPerPage);
+    const totalPages = pagination.total_pages || 1;
+    const currentUsers = users;
 
     const renderState = () => {
         if (loading) {
@@ -135,31 +140,19 @@ const UserListScreen = () => {
                         <input
                             id="user-search-input"
                             type="text"
-                            placeholder="Search by email or role"
+                            placeholder="Search by name, email, or role"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="um-search-input"
                         />
                     </div>
-                    <select
-                        value={filterRole}
-                        onChange={(e) => setFilterRole(e.target.value)}
-                        className="um-filter-select"
-                    >
-                        <option value="ALL">All Roles</option>
-                        {USER_ROLE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
                 </div>
 
                 {searching ? (
                     <div className="empty-state">Searching users...</div>
                 ) : currentUsers.length === 0 ? (
                     <div className="empty-state">
-                        {searchTerm.trim() || filterRole !== 'ALL'
+                        {searchTerm.trim()
                             ? 'No users match your search criteria.'
                             : 'No users are available yet.'}
                     </div>
@@ -168,6 +161,7 @@ const UserListScreen = () => {
                         <table className="um-table">
                             <thead>
                                 <tr>
+                                    <th>Name</th>
                                     <th>Email</th>
                                     <th>Role</th>
                                     <th>Status</th>
@@ -177,30 +171,45 @@ const UserListScreen = () => {
                             <tbody>
                                 {currentUsers.map((user) => (
                                     <tr key={user._id}>
-                                        <td className="um-user-email">
+                                        <td className="user-table-cell" data-label="Name">
+                                            <div className="user-primary">{user.name}</div>
+                                        </td>
+                                        <td className="um-user-email" data-label="Email">
                                             <div className="user-email-cell">
                                                 <Users size={16} className="icon-inline" aria-hidden="true" />
                                                 {user.email}
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="Role">
                                             <span className="badge-role">{user.role}</span>
                                         </td>
-                                        <td>
+                                        <td data-label="Status">
                                             <span className={`badge-status ${user.is_active ? 'active' : 'disabled'}`}>
                                                 <BadgeCheck size={14} className="icon-inline" aria-hidden="true" />
                                                 {user.is_active ? 'Active' : 'Disabled'}
                                             </span>
                                         </td>
-                                        <td className="align-right">
+                                        <td className="align-right" data-label="Actions">
                                             <div className="table-actions">
-                                                <Link to={`/users/edit/${user._id}`} className="action-edit">
-                                                    <Pencil size={14} className="icon-inline" aria-hidden="true" />
-                                                    Edit
-                                                </Link>
+                                                {isProtectedUser(user) ? (
+                                                    <button
+                                                        type="button"
+                                                        className="action-disable action-edit-disabled"
+                                                        title="The default administrator account cannot be modified."
+                                                        disabled
+                                                    >
+                                                        <Pencil size={14} className="icon-inline" aria-hidden="true" />
+                                                        Edit
+                                                    </button>
+                                                ) : (
+                                                    <Link to={`/users/edit/${user._id}`} className="action-edit">
+                                                        <Pencil size={14} className="icon-inline" aria-hidden="true" />
+                                                        Edit
+                                                    </Link>
+                                                )}
                                                 <button
                                                     onClick={() => handleToggleStatus(user._id, user.email, user.is_active)}
-                                                    disabled={statusUpdatingId === user._id || user.email === 'admin@nucleusteq.com'}
+                                                    disabled={statusUpdatingId === user._id || user.email === DEFAULT_ADMIN_EMAIL}
                                                     className={user.is_active ? 'action-disable' : 'action-enable'}
                                                 >
                                                     {user.is_active ? 'Disable' : 'Enable'}
@@ -215,7 +224,7 @@ const UserListScreen = () => {
                         {totalPages > 1 && (
                             <div className="um-pagination">
                                 <span className="pagination-info">
-                                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, users.length)} of {users.length} users
+                                    Showing {formatUserRange(pagination.page || currentPage, pagination.limit || itemsPerPage, users.length)} of {pagination.total_items} users
                                 </span>
                                 <div className="pagination-buttons">
                                     <button

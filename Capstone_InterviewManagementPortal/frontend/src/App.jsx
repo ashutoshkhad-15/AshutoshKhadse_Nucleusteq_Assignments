@@ -1,8 +1,13 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
 import MainLayout from './components/layout/MainLayout';
 import AdminRoute from './components/routing/AdminRoute';
 import CreateJobScreen from './pages/CreateJobScreen';
+import CreateCandidateScreen from './pages/CreateCandidateScreen';
 import CreateUserScreen from './pages/CreateUserScreen';
+import CandidateDetailsScreen from './pages/CandidateDetailsScreen';
+import CandidateListScreen from './pages/CandidateListScreen';
+import EditCandidateScreen from './pages/EditCandidateScreen';
 import EditJobScreen from './pages/EditJobScreen';
 import EditUserScreen from './pages/EditUserScreen';
 import JobDetailsScreen from './pages/JobDetailsScreen';
@@ -81,6 +86,10 @@ const RoleRoute = ({ allowedRoles, children }) => {
  * @returns {JSX.Element} Application routing shell.
  */
 function App() {
+    useEffect(() => {
+        document.title = 'TalentFlow Interview Portal';
+    }, []);
+
     return (
         <Router>
             <Routes>
@@ -116,6 +125,38 @@ function App() {
                     <Route path="/users/create" element={<CreateUserScreen />} />
                     <Route path="/users/edit/:id" element={<EditUserScreen />} />
                 </Route>
+                <Route
+                    path="/candidates"
+                    element={(
+                        <RoleRoute allowedRoles={['HR']}>
+                            <CandidateListScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path="/candidates/create"
+                    element={(
+                        <RoleRoute allowedRoles={['HR']}>
+                            <CreateCandidateScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path="/candidates/:id"
+                    element={(
+                        <RoleRoute allowedRoles={['HR']}>
+                            <CandidateDetailsScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path="/candidates/edit/:id"
+                    element={(
+                        <RoleRoute allowedRoles={['HR']}>
+                            <EditCandidateScreen />
+                        </RoleRoute>
+                    )}
+                />
                 <Route
                     path="/jobs"
                     element={(

@@ -13,6 +13,11 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 logger = logging.getLogger(__name__)
 
 
+def _build_success_response(message: str, data: dict | None = None) -> SuccessResponse:
+    """Create the shared success payload for authentication endpoints."""
+    return SuccessResponse(message=message, data=data)
+
+
 @router.post("/login", response_model=SuccessResponse[dict])
 async def login(request: LoginRequest):
     """Authenticate a user with email and password credentials.
@@ -35,7 +40,7 @@ async def login(request: LoginRequest):
     auth_service = AuthService()
     data = await auth_service.login(request)
     logger.info("Login endpoint completed successfully for user: %s", request.email)
-    return SuccessResponse(message="Login successful", data=data)
+    return _build_success_response("Login successful", data)
 
 
 @router.post("/reset-password", response_model=SuccessResponse[None])
@@ -60,7 +65,7 @@ async def reset_password(request: ResetPasswordRequest):
     auth_service = AuthService()
     await auth_service.reset_password(request)
     logger.info("Password reset endpoint completed successfully for user: %s", request.email)
-    return SuccessResponse(message="Password reset successfully")
+    return _build_success_response("Password reset successfully")
 
 
 @router.post("/logout", response_model=SuccessResponse[None])
@@ -86,6 +91,4 @@ async def logout(current_user: dict = Depends(get_current_user)):
         AppBaseException: If a password reset is required before protected
             access is granted.
     """
-    return SuccessResponse(
-        message="Logout successful. Please clear client credentials."
-    )
+    return _build_success_response("Logout successful. Please clear client credentials.")

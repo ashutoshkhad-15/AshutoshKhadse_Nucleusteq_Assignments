@@ -1,6 +1,7 @@
 """Shared API response schemas."""
 
-from pydantic import BaseModel
+from datetime import datetime, timezone
+from pydantic import BaseModel, Field
 from typing import Generic, TypeVar, Optional, Any
 
 T = TypeVar("T")
@@ -33,6 +34,17 @@ class ErrorResponse(BaseModel):
     """
 
     success: bool = False
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    status: int
     error_code: str
     message: str
     details: Optional[Any] = None
+
+
+class PaginationMeta(BaseModel):
+    """Metadata describing a paginated list response."""
+
+    page: int
+    limit: int
+    total_items: int
+    total_pages: int

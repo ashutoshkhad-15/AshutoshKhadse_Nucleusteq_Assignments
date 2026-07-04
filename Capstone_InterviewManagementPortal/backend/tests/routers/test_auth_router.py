@@ -82,12 +82,13 @@ class TestLoginApi:
         )
 
         assert response.status_code == 401
-        assert response.json() == {
-            "success": False,
-            "error_code": "UNAUTHORIZED",
-            "message": "Invalid email or password",
-            "details": None,
-        }
+        body = response.json()
+        assert body["success"] is False
+        assert body["error_code"] == "UNAUTHORIZED"
+        assert body["message"] == "Invalid email or password"
+        assert body["status"] == 401
+        assert body["timestamp"]
+        assert body["details"] is None
 
     @patch("src.routers.auth_router.AuthService")
     def test_login_returns_unauthorized_for_nonexistent_user(

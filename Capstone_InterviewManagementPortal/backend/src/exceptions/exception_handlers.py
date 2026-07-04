@@ -6,6 +6,7 @@ from fastapi import Request, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from datetime import datetime, timezone
 
 from src.exceptions.custom_exceptions import AppBaseException
 from src.schemas.response.common_response import ErrorResponse
@@ -36,10 +37,12 @@ def add_exception_handlers(app: FastAPI):
         """
         logger.warning(f"AppException: {exc.error_code} - {exc.message}")
         response = ErrorResponse(
+            timestamp=datetime.now(timezone.utc),
+            status=exc.status_code,
             error_code=exc.error_code,
             message=exc.message
         )
-        return JSONResponse(status_code=exc.status_code, content=response.model_dump())
+        return JSONResponse(status_code=exc.status_code, content=jsonable_encoder(response))
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -54,11 +57,13 @@ def add_exception_handlers(app: FastAPI):
         """
         logger.error(f"Validation Error: {exc.errors()}")
         response = ErrorResponse(
+            timestamp=datetime.now(timezone.utc),
+            status=422,
             error_code="VALIDATION_ERROR",
             message="Invalid request parameters",
             details=jsonable_encoder(exc.errors())
         )
-        return JSONResponse(status_code=422, content=response.model_dump())
+        return JSONResponse(status_code=422, content=jsonable_encoder(response))
 
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
@@ -74,7 +79,9 @@ def add_exception_handlers(app: FastAPI):
         logger.critical(f"Unhandled Exception: {str(exc)}", exc_info=True)
         # Avoid leaking stack traces or infrastructure details to API clients.
         response = ErrorResponse(
+            timestamp=datetime.now(timezone.utc),
+            status=500,
             error_code="INTERNAL_SERVER_ERROR",
             message="An unexpected error occurred."
         )
-        return JSONResponse(status_code=500, content=response.model_dump())
+        return JSONResponse(status_code=500, content=jsonable_encoder(response))

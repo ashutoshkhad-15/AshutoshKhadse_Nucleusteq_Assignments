@@ -29,7 +29,7 @@ export const userService = {
         };
 
         const response = await apiClient.get(`${USERS_BASE_PATH}/`, requestConfig);
-        return response.data.data;
+        return response.data;
     },
 
     /**
@@ -62,7 +62,14 @@ export const userService = {
      * @returns {Promise<object>} Updated user details.
      */
     async updateUser(userId, updateData) {
-        const response = await apiClient.patch(`${USERS_BASE_PATH}/${userId}`, updateData);
+        const payload = { ...updateData };
+        if (payload.name !== undefined && typeof payload.name === 'string') {
+            payload.name = payload.name.trim();
+        }
+        if (payload.email !== undefined && typeof payload.email === 'string') {
+            payload.email = payload.email.trim();
+        }
+        const response = await apiClient.patch(`${USERS_BASE_PATH}/${userId}`, payload);
         return response.data.data;
     },
 

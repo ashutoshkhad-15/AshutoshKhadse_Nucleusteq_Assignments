@@ -13,6 +13,7 @@ import '../styles/user-management.css';
 const CreateUserScreen = () => {
     const navigate = useNavigate();
 
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [role, setRole] = useState('');
     const [validationErrors, setValidationErrors] = useState({});
@@ -29,7 +30,7 @@ const CreateUserScreen = () => {
         event.preventDefault();
         setError(null);
         const trimmedEmail = email.trim();
-        const errors = validateUserForm({ email: trimmedEmail, role });
+        const errors = validateUserForm({ name, email: trimmedEmail, role });
 
         if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -39,10 +40,10 @@ const CreateUserScreen = () => {
         try {
             setLoading(true);
             setValidationErrors({});
-            await userService.createUser({ email: trimmedEmail, role });
+            await userService.createUser({ name: name.trim(), email: trimmedEmail, role });
             navigate('/users', {
                 replace: true,
-                state: { successMessage: `User ${trimmedEmail} created successfully.` },
+                state: { successMessage: `User ${name.trim()} created successfully.` },
             });
         } catch (err) {
             setError(getUserManagementErrorMessage(err, 'Failed to create user. Please try again.'));
@@ -62,6 +63,7 @@ const CreateUserScreen = () => {
             </div>
 
             <UserForm
+                name={name}
                 email={email}
                 role={role}
                 validationErrors={validationErrors}
@@ -71,6 +73,7 @@ const CreateUserScreen = () => {
                 submitting={loading}
                 submitLabel="Create User"
                 submittingLabel="Creating..."
+                onNameChange={setName}
                 onEmailChange={setEmail}
                 onRoleChange={setRole}
                 onCancel={() => navigate('/users')}

@@ -31,7 +31,7 @@ class TestUserService:
         user_service.user_repo.get_user_by_email.return_value = None
         user_service.user_repo.create_user.return_value = {"_id": "123", "email": "interviewer@nucleusteq.com", "password_base64": "hash"}
 
-        request = CreateUserRequest(email="interviewer@nucleusteq.com", role=UserRole.INTERVIEWER)
+        request = CreateUserRequest(name="Interviewer User", email="interviewer@nucleusteq.com", role=UserRole.INTERVIEWER)
         result = await user_service.create_user(request)
 
         assert result["email"] == "interviewer@nucleusteq.com"
@@ -40,7 +40,7 @@ class TestUserService:
     async def test_create_user_duplicate(self, user_service):
         """Reject duplicate user creation requests."""
         user_service.user_repo.get_user_by_email.return_value = {"email": "hr@nucleusteq.com"}
-        request = CreateUserRequest(email="hr@nucleusteq.com", role=UserRole.HR)
+        request = CreateUserRequest(name="HR User", email="hr@nucleusteq.com", role=UserRole.HR)
 
         with pytest.raises(AppBaseException) as excinfo:
             await user_service.create_user(request)
@@ -50,7 +50,7 @@ class TestUserService:
         """Return the full user list from the repository."""
         user_service.user_repo.get_all_users.return_value = [{"email": "test@nucleusteq.com"}]
         result = await user_service.get_all_users()
-        assert len(result) == 1
+        assert len(result[0]) == 1
 
     async def test_search_users_returns_matching_results(self, user_service):
         """Return repository results for a sanitized search term."""
@@ -58,8 +58,8 @@ class TestUserService:
 
         result = await user_service.get_all_users(search="  Ashutosh  ")
 
-        assert len(result) == 1
-        user_service.user_repo.search_users.assert_awaited_once_with("ashutosh")
+        assert len(result[0]) == 1
+        user_service.user_repo.search_users.assert_awaited_once_with("ashutosh", page=1, limit=10)
 
     async def test_get_user_by_id_not_found(self, user_service):
         """Raise a not-found error when the user does not exist."""

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/auth/AuthLayout';
+import PasswordField from '../components/auth/PasswordField';
 import apiClient from '../services/apiService';
 
 const LOGIN_TAGLINE = 'Streamline your recruitment process, schedule interviews, and track candidate progress all in one place.';
@@ -15,6 +16,7 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
@@ -36,13 +38,11 @@ const Login = () => {
             const response = await apiClient.post('/auth/login', { email, password });
             const userData = response.data.data;
 
-            // First-time users must set a new password before entering the dashboard.
             if (userData.requires_password_reset) {
                 navigate('/reset-password', { state: { email, old_password: password } });
                 return;
             }
 
-            // Persist authentication details for route guards and authenticated API calls.
             const token = btoa(`${email}:${password}`);
             localStorage.setItem('basicAuth', token);
             localStorage.setItem('userRole', userData.role);
@@ -72,13 +72,14 @@ const Login = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={isSubmitting}
                     />
-                    <input
-                        type="password"
-                        className="input-field"
-                        placeholder="Password"
+                    <PasswordField
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={setPassword}
+                        placeholder="Password"
+                        visible={showPassword}
+                        onToggleVisibility={() => setShowPassword((value) => !value)}
                         disabled={isSubmitting}
+                        toggleLabel={showPassword ? 'Hide password' : 'Show password'}
                     />
                 </div>
                 <button type="submit" className="primary-btn" disabled={isSubmitting}>
