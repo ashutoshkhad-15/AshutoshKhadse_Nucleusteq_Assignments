@@ -1,7 +1,6 @@
 """Reusable validation helpers shared across request schemas."""
 
 import re
-from dataclasses import dataclass
 
 from src.constants.app_constants import AppConstants
 
@@ -97,6 +96,38 @@ def normalize_required_text(value: str, field_name: str, min_length: int, max_le
     if len(normalized_value) < min_length or len(normalized_value) > max_length:
         raise ValueError(f"{field_name} must be between {min_length} and {max_length} characters")
     return normalized_value
+
+
+def normalize_text_with_pattern(
+    value: str,
+    field_name: str,
+    min_length: int,
+    max_length: int,
+    pattern: re.Pattern[str],
+    invalid_message: str,
+    allow_multiple_spaces: bool = True,
+) -> str:
+    """Normalize a text field and enforce a content pattern."""
+    normalized_value = validate_required_text(value, field_name)
+    normalized_value = re.sub(r"\s+", " ", normalized_value).strip() if allow_multiple_spaces else normalized_value
+    if len(normalized_value) < min_length or len(normalized_value) > max_length:
+        raise ValueError(f"{field_name} must be between {min_length} and {max_length} characters")
+    if not pattern.fullmatch(normalized_value):
+        raise ValueError(invalid_message)
+    return normalized_value
+
+
+def normalize_skill_text(value: str) -> str:
+    """Normalize and validate a single skill chip value."""
+    normalized = validate_required_text(value, "Skill")
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    if len(normalized) < 2 or len(normalized) > 30:
+        raise ValueError("Skill must be between 2 and 30 characters")
+    if not re.search(r"[A-Za-z]", normalized):
+        raise ValueError("Skill must contain at least one alphabetic character")
+    if not re.fullmatch(r"[A-Za-z0-9 .&()/+\-]+", normalized):
+        raise ValueError("Skill can contain letters, numbers, spaces, and common symbols only")
+    return normalized
 
 
 def normalize_string_list(values) -> list[str]:

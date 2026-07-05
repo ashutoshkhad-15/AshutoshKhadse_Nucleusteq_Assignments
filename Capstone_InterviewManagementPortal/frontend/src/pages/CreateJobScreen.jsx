@@ -28,6 +28,15 @@ const CreateJobScreen = () => {
     } = useJobFormState(JOB_FORM_DEFAULTS);
     const [skillDraft, setSkillDraft] = useState('');
 
+    const handleAddSkill = () => {
+        const message = addSkill(skillDraft);
+        if (message) {
+            setValidationErrors((current) => ({ ...current, requiredSkills: message }));
+            return;
+        }
+        setSkillDraft('');
+    };
+
     const { handleSubmit } = useJobFormSubmission({
         getValidationErrors: () => currentErrors,
         setValidationErrors,
@@ -73,7 +82,7 @@ const CreateJobScreen = () => {
                 onChange={handleFieldChange}
                 onCancel={() => navigate('/jobs')}
                 onSubmit={handleSubmit}
-                onAddSkill={() => { addSkill(skillDraft); setSkillDraft(''); }}
+                onAddSkill={handleAddSkill}
                 onRemoveSkill={removeSkill}
                 skillDraft={skillDraft}
                 setSkillDraft={setSkillDraft}

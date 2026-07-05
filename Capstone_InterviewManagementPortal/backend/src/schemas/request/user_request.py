@@ -1,5 +1,6 @@
 """Request schemas for user management endpoints."""
 
+import re
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -7,6 +8,9 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from src.constants.app_constants import AppConstants
 from src.enums.app_enums import UserRole
 from src.utils.validators import validate_nucleusteq_email, validate_required_text
+
+
+NAME_PATTERN = re.compile(r"^[A-Za-z]+(?: [A-Za-z]+)*$")
 
 
 def _validate_user_email(value: str) -> str:
@@ -29,7 +33,12 @@ class CreateUserRequest(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
-        return validate_required_text(value, "Name")
+        normalized = validate_required_text(value, "Name")
+        if len(normalized) < 2 or len(normalized) > 100:
+            raise ValueError("Name must be between 2 and 100 characters")
+        if not NAME_PATTERN.fullmatch(normalized):
+            raise ValueError("Name must contain alphabets only")
+        return normalized
 
     @field_validator("email")
     @classmethod
@@ -51,7 +60,12 @@ class UpdateUserRequest(BaseModel):
     def validate_name(cls, value: Optional[str]) -> Optional[str]:
         if value is None:
             return value
-        return validate_required_text(value, "Name")
+        normalized = validate_required_text(value, "Name")
+        if len(normalized) < 2 or len(normalized) > 100:
+            raise ValueError("Name must be between 2 and 100 characters")
+        if not NAME_PATTERN.fullmatch(normalized):
+            raise ValueError("Name must contain alphabets only")
+        return normalized
 
     @field_validator("email")
     @classmethod

@@ -37,6 +37,15 @@ const EditJobScreen = () => {
     } = useJobFormState(JOB_FORM_DEFAULTS);
     const [skillDraft, setSkillDraft] = useState('');
 
+    const handleAddSkill = () => {
+        const message = addSkill(skillDraft);
+        if (message) {
+            setValidationErrors((current) => ({ ...current, requiredSkills: message }));
+            return;
+        }
+        setSkillDraft('');
+    };
+
     useEffect(() => {
         /**
          * Load the selected job and prefill the edit form.
@@ -117,7 +126,7 @@ const EditJobScreen = () => {
                 onChange={handleFieldChange}
                 onCancel={() => navigate('/jobs')}
                 onSubmit={handleSubmit}
-                onAddSkill={() => { addSkill(skillDraft); setSkillDraft(''); }}
+                onAddSkill={handleAddSkill}
                 onRemoveSkill={removeSkill}
                 skillDraft={skillDraft}
                 setSkillDraft={setSkillDraft}

@@ -10,37 +10,55 @@ export const JOB_FORM_DEFAULTS = {
     location: '',
 };
 
+export const JOB_LIST_SKELETON_COUNT = 6;
+export const JOB_SEARCH_DEBOUNCE_MS = 500;
+
 export const EMPLOYMENT_TYPE_OPTIONS = [
     { value: 'Full Time', label: 'Full Time' },
     { value: 'Internship', label: 'Internship' },
 ];
 
-export const JOB_LIST_SKELETON_COUNT = 6;
-export const JOB_SEARCH_DEBOUNCE_MS = 500;
 export const JOB_TEXT_MIN_LENGTH = {
     jobTitle: 3,
-    jobDetails: 10,
+    jobDetails: 20,
     jobRole: 2,
     location: 2,
+    skill: 2,
 };
-export const JOB_TEXT_MAX_LENGTH = {
-    jobTitle: 120,
-    jobDetails: 4000,
-    jobRole: 80,
-    location: 120,
-};
-export const EXPERIENCE_REQUIRED_PATTERN = /^(?:\d{1,2}\s+year|\d{1,2}\s+years|\d{1,2}\+\s+years|\d{1,2}-\d{1,2}\s+years)$/;
 
-const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
+export const JOB_TEXT_MAX_LENGTH = {
+    jobTitle: 100,
+    jobDetails: 1000,
+    jobRole: 60,
+    location: 80,
+    skill: 30,
+};
+
+export const EXPERIENCE_REQUIRED_PATTERN = /^(?:0 year|1 year|2 years|3\+ years|5-7 years)$/;
+export const JOB_TITLE_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9&()/+\- ]{3,100}$/;
+export const JOB_ROLE_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9 ]{2,60}$/;
+export const LOCATION_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9.,'()\- ]{2,80}$/;
+
+const normalizeText = (value) => (typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '');
+
+const hasAlphabetic = (value) => /[A-Za-z]/.test(value);
+
+export const validateSkillText = (value) => {
+    const normalized = normalizeText(value);
+    if (!normalized) return 'Skill is required.';
+    if (normalized.length < 2 || normalized.length > 30) return 'Skill must be between 2 and 30 characters.';
+    if (!hasAlphabetic(normalized)) return 'Skill must contain at least one alphabetic character.';
+    if (!/^[A-Za-z0-9 .&()/+-]+$/.test(normalized)) return 'Skill can contain letters, numbers, spaces, and common symbols only.';
+    return '';
+};
 
 export const normalizeSkills = (skills = []) => {
     const source = Array.isArray(skills) ? skills : String(skills).split(/[\n,]/);
     const deduped = [];
     source.forEach((skill) => {
-        const normalized = normalizeText(skill).replace(/\s+/g, ' ');
-        if (!normalized || deduped.some((item) => item.toLowerCase() === normalized.toLowerCase())) {
-            return;
-        }
+        const normalized = normalizeText(skill);
+        if (!normalized || deduped.some((item) => item.toLowerCase() === normalized.toLowerCase())) return;
+        if (validateSkillText(normalized)) return;
         deduped.push(normalized);
     });
     return deduped;
@@ -68,14 +86,13 @@ export const buildJobPayload = (values) => ({
     location: normalizeText(values.location),
 });
 
-const validateTextField = (value, fieldName, minLength, maxLength) => {
+const validateTextField = (value, fieldName, minLength, maxLength, pattern, invalidMessage) => {
     const normalized = normalizeText(value);
-    if (!normalized) {
-        return `${fieldName} is required.`;
-    }
+    if (!normalized) return `${fieldName} is required.`;
     if (normalized.length < minLength || normalized.length > maxLength) {
         return `${fieldName} must be between ${minLength} and ${maxLength} characters.`;
     }
+    if (pattern && !pattern.test(normalized)) return invalidMessage;
     return '';
 };
 
@@ -83,30 +100,55 @@ export const validateJobForm = (values) => {
     const errors = {};
     const payload = buildJobPayload(values);
 
-    const jobTitleError = validateTextField(payload.jobTitle, 'Job Title', JOB_TEXT_MIN_LENGTH.jobTitle, JOB_TEXT_MAX_LENGTH.jobTitle);
+    const jobTitleError = validateTextField(
+        payload.jobTitle,
+        'Job Title',
+        JOB_TEXT_MIN_LENGTH.jobTitle,
+        JOB_TEXT_MAX_LENGTH.jobTitle,
+        JOB_TITLE_PATTERN,
+        'Job Title must contain at least one letter and may include numbers, spaces, and symbols like - / & ( ) +.',
+    );
     if (jobTitleError) errors.jobTitle = jobTitleError;
+
+    const jobRoleError = validateTextField(
+        payload.jobRole,
+        'Job Role',
+        JOB_TEXT_MIN_LENGTH.jobRole,
+        JOB_TEXT_MAX_LENGTH.jobRole,
+        JOB_ROLE_PATTERN,
+        'Job Role must contain letters and can include digits and spaces only.',
+    );
+    if (jobRoleError) errors.jobRole = jobRoleError;
 
     const jobDetailsError = validateTextField(payload.jobDetails, 'Job Details', JOB_TEXT_MIN_LENGTH.jobDetails, JOB_TEXT_MAX_LENGTH.jobDetails);
     if (jobDetailsError) errors.jobDetails = jobDetailsError;
 
-    const jobRoleError = validateTextField(payload.jobRole, 'Job Role', JOB_TEXT_MIN_LENGTH.jobRole, JOB_TEXT_MAX_LENGTH.jobRole);
-    if (jobRoleError) errors.jobRole = jobRoleError;
-
     if (!payload.requiredSkills.length) {
         errors.requiredSkills = 'At least one required skill is needed.';
+    } else if (payload.requiredSkills.length > 20) {
+        errors.requiredSkills = 'A maximum of 20 skills is allowed.';
+    } else if (payload.requiredSkills.some((skill) => validateSkillText(skill))) {
+        errors.requiredSkills = 'Each skill must be 2 to 30 characters and include at least one letter.';
     }
 
     if (!payload.experienceRequired) {
         errors.experienceRequired = 'Experience Required is required.';
     } else if (!EXPERIENCE_REQUIRED_PATTERN.test(payload.experienceRequired)) {
-        errors.experienceRequired = 'Use formats like "0 year", "1 year", "2 years", "3+ years", or "5-7 years".';
+        errors.experienceRequired = 'Use only: "0 year", "1 year", "2 years", "3+ years", or "5-7 years".';
     }
 
     if (!payload.employmentType) {
         errors.employmentType = 'Employment Type is required.';
     }
 
-    const locationError = validateTextField(payload.location, 'Location', JOB_TEXT_MIN_LENGTH.location, JOB_TEXT_MAX_LENGTH.location);
+    const locationError = validateTextField(
+        payload.location,
+        'Location',
+        JOB_TEXT_MIN_LENGTH.location,
+        JOB_TEXT_MAX_LENGTH.location,
+        LOCATION_PATTERN,
+        'Location must contain at least one alphabetic character and may include commas, periods, hyphens, apostrophes, parentheses, and spaces.',
+    );
     if (locationError) errors.location = locationError;
 
     return errors;
@@ -157,9 +199,12 @@ export const useJobFormState = (initialValues = JOB_FORM_DEFAULTS) => {
     };
 
     const addSkill = (skill) => {
-        const normalized = normalizeText(skill).replace(/\s+/g, ' ');
-        if (!normalized) return;
+        const normalized = normalizeText(skill);
+        if (!normalized) return 'Skill is required.';
+        const validationError = validateSkillText(normalized);
+        if (validationError) return validationError;
         setValues((current) => ({ ...current, requiredSkills: normalizeSkills([...current.requiredSkills, normalized]) }));
+        return '';
     };
 
     const removeSkill = (skill) => {

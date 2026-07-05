@@ -3,6 +3,8 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 
+from pydantic import ValidationError
+
 from src.exceptions.custom_exceptions import AppBaseException
 from src.schemas.request.job_request import CreateJobRequest, UpdateJobRequest
 from src.services.job_service import JobService
@@ -24,6 +26,31 @@ def job_service():
 
 @pytest.mark.asyncio
 class TestJobService:
+    async def test_create_job_request_rejects_invalid_skills(self):
+        with pytest.raises(ValidationError):
+            CreateJobRequest(
+                jobTitle="Senior Backend Engineer",
+                jobDetails="Design and implement scalable backend services.",
+                jobRole="Backend Development",
+                requiredSkills=["12345", "@@@@"],
+                experienceRequired="3+ years",
+                employmentType="Full Time",
+                location="Indore, MP",
+            )
+
+    async def test_create_job_request_trims_and_deduplicates_skills(self):
+        request = CreateJobRequest(
+            jobTitle="Senior Backend Engineer",
+            jobDetails="Design and implement scalable backend services.",
+            jobRole="Backend Development",
+            requiredSkills=[" Python ", "python", "FastAPI"],
+            experienceRequired="3+ years",
+            employmentType="Full Time",
+            location="Indore, MP",
+        )
+
+        assert request.requiredSkills == ["Python", "FastAPI"]
+
     async def test_create_job_success(self, job_service):
         request_data = CreateJobRequest(
             jobTitle="Senior Backend Engineer",
