@@ -34,7 +34,8 @@ export const JOB_TEXT_MAX_LENGTH = {
     skill: 30,
 };
 
-export const EXPERIENCE_REQUIRED_PATTERN = /^(?:0 year|1 year|2 years|3\+ years|5-7 years)$/;
+export const EXPERIENCE_REQUIRED_PATTERN =
+  /^(?:\d+ year|\d+ years|\d+\+ years|\d+-\d+ years)$/;
 export const JOB_TITLE_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9&()/+\- ]{3,100}$/;
 export const JOB_ROLE_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9 ]{2,60}$/;
 export const LOCATION_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9.,'()\- ]{2,80}$/;

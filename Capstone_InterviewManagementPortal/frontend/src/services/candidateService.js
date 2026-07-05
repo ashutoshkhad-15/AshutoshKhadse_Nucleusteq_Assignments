@@ -1,0 +1,34 @@
+import apiClient from './apiService';
+
+const CANDIDATES_BASE_PATH = '/candidates';
+
+export const candidateService = {
+    async getAllCandidates(search = '', config = {}) {
+        const params = { ...(config.params || {}) };
+        if (search?.trim()) params.search = search.trim();
+        const response = await apiClient.get(`${CANDIDATES_BASE_PATH}/`, { ...config, params });
+        return response.data;
+    },
+
+    async getCandidateById(candidateId, config = {}) {
+        const response = await apiClient.get(`${CANDIDATES_BASE_PATH}/${candidateId}`, config);
+        return response.data.data;
+    },
+
+    async createCandidate(candidateData) {
+        const response = await apiClient.post(`${CANDIDATES_BASE_PATH}/`, candidateData);
+        return response.data.data;
+    },
+
+    async updateCandidate(candidateId, updateData) {
+        const response = await apiClient.patch(`${CANDIDATES_BASE_PATH}/${candidateId}`, updateData);
+        return response.data.data;
+    },
+
+    async searchJobs(search = '', config = {}) {
+        const params = { ...(config.params || {}) };
+        if (search?.trim()) params.search = search.trim();
+        const response = await apiClient.get(`${CANDIDATES_BASE_PATH}/jobs/search`, { ...config, params });
+        return response.data;
+    },
+};

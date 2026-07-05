@@ -574,6 +574,11 @@
     .um-table td {
         padding-inline: 1rem;
     }
+
+    .candidate-select-menu {
+        position: static;
+        margin-top: 0.35rem;
+    }
 }
 
 @media (max-width: 768px) {

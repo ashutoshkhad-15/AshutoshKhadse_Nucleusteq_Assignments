@@ -25,7 +25,9 @@ JOB_TITLE_PATTERN = re.compile(r"^(?=.*[A-Za-z])[A-Za-z0-9&()/+\- ]{3,100}$")
 JOB_ROLE_PATTERN = re.compile(r"^(?=.*[A-Za-z])[A-Za-z0-9 ]{2,60}$")
 JOB_DETAILS_PATTERN = re.compile(r"^.{20,1000}$", re.DOTALL)
 LOCATION_PATTERN = re.compile(r"^(?=.*[A-Za-z])[A-Za-z0-9.,'()\- ]{2,80}$")
-EXPERIENCE_PATTERN = re.compile(r"^(?:0 year|1 year|2 years|3\+ years|5-7 years)$")
+EXPERIENCE_PATTERN = re.compile(
+    r"^(?:\d+ year|\d+ years|\d+\+ years|\d+-\d+ years)$"
+)
 
 
 def _validate_experience_required(value: str) -> str:

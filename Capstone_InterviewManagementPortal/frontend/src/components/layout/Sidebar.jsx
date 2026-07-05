@@ -1,3 +1,4 @@
+import { BriefcaseBusiness, ChevronLeft, ChevronRight, LayoutDashboard, LogOut, ShieldUser, Users } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import apiClient, { clearAuthenticationData } from '../../services/apiService';
@@ -6,14 +7,6 @@ const ADMIN_ROLE = 'ADMIN';
 const HR_ROLE = 'HR';
 const INTERVIEWER_ROLE = 'INTERVIEWER';
 
-/**
- * Render role-aware navigation for authenticated users.
- *
- * @param {object} props
- * @param {boolean} props.isCollapsed - Determines if the sidebar is shrunk.
- * @param {function} props.setIsCollapsed - Toggles the sidebar state.
- * @returns {JSX.Element} Sidebar navigation and logout action.
- */
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     const role = localStorage.getItem('userRole');
     const navigate = useNavigate();
@@ -21,101 +14,71 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     const [logoutError, setLogoutError] = useState('');
 
     const navItems = [
-        { to: '/dashboard', label: 'Dashboard', shortLabel: 'DB', visible: true },
-        { to: '/users', label: 'Users', shortLabel: 'US', visible: role === ADMIN_ROLE },
-        {
-            to: '/jobs',
-            label: 'Jobs',
-            shortLabel: 'JB',
-            visible: role === HR_ROLE || role === ADMIN_ROLE || role === INTERVIEWER_ROLE,
-        },
-        { to: '/candidates', label: 'Candidates', shortLabel: 'CD', visible: role === HR_ROLE },
-        {
-            to: '/interviews',
-            label: 'Interviews',
-            shortLabel: 'IN',
-            visible: role === HR_ROLE || role === INTERVIEWER_ROLE,
-        },
+        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, visible: true },
+        { to: '/users', label: 'Users', icon: ShieldUser, visible: role === ADMIN_ROLE },
+        { to: '/jobs', label: 'Jobs', icon: BriefcaseBusiness, visible: [HR_ROLE, ADMIN_ROLE, INTERVIEWER_ROLE].includes(role) },
+        { to: '/candidates', label: 'Candidates', icon: Users, visible: role === HR_ROLE },
     ];
 
-    /**
-     * Sign the user out without allowing duplicate requests or inconsistent auth state.
-     */
     const handleLogout = async () => {
-        if (isLoggingOut) {
-            return;
-        }
-
+        if (isLoggingOut) return;
         setLogoutError('');
         setIsLoggingOut(true);
-
         try {
-            if (!localStorage.getItem('basicAuth')) {
-                clearAuthenticationData();
-                navigate('/login', { replace: true });
-                return;
+            if (localStorage.getItem('basicAuth')) {
+                await apiClient.post('/auth/logout');
             }
-
-            await apiClient.post('/auth/logout');
-            clearAuthenticationData();
-            navigate('/login', { replace: true });
         } catch {
             setLogoutError('We could not sign you out right now. Please try again.');
-        } finally {
             setIsLoggingOut(false);
+            return;
         }
+        clearAuthenticationData();
+        navigate('/login', { replace: true });
+        setIsLoggingOut(false);
     };
 
     return (
-        <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+        <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
-                {!isCollapsed && (
-                    <div className="sidebar-brand">
-                        <p className="sidebar-eyebrow">Interview Portal</p>
-                        <h3 className="sidebar-title">TalentFlow</h3>
-                    </div>
-                )}
+                <div className="sidebar-brand">
+                    {!isCollapsed ? (
+                        <div>
+                            <p className="sidebar-eyebrow">Interview Portal</p>
+                            <h3 className="sidebar-title">TalentFlow</h3>
+                        </div>
+                    ) : null}
+                </div>
                 <button
-                    className="toggle-btn"
+                    type="button"
+                    className="sidebar-toggle-btn"
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-                    aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                    aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 >
-                    {isCollapsed ? '>' : '<'}
+                    {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
                 </button>
             </div>
 
-            <ul className="nav-menu">
-                {navItems.filter((item) => item.visible).map((item) => (
-                    <li key={item.to}>
-                        <NavLink to={item.to} className="nav-item">
-                            <span className="nav-icon" aria-hidden="true">{item.shortLabel}</span>
-                            {!isCollapsed && <span className="nav-text">{item.label}</span>}
+            <nav className="sidebar-nav" aria-label="Primary">
+                {navItems.filter((item) => item.visible).map((item) => {
+                    const Icon = item.icon;
+                    return (
+                        <NavLink key={item.to} to={item.to} className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}>
+                            <Icon size={18} aria-hidden="true" />
+                            {!isCollapsed ? <span>{item.label}</span> : null}
                         </NavLink>
-                    </li>
-                ))}
-            </ul>
+                    );
+                })}
+            </nav>
 
-            {logoutError && <div className="error-text">{logoutError}</div>}
-
-            <button
-                onClick={handleLogout}
-                className="logout-btn"
-                disabled={isLoggingOut}
-                aria-busy={isLoggingOut}
-            >
-                <span className="nav-icon" aria-hidden="true">
-                    LO
-                </span>
-
-                {!isCollapsed && (
-                    <span className="nav-text">
-                        {isLoggingOut ? 'Logging out...' : 'Logout'}
-                    </span>
-                )}
-
-            </button>
-        </div>
+            <div className="sidebar-footer">
+                {logoutError ? <div className="sidebar-error">{logoutError}</div> : null}
+                <button type="button" onClick={handleLogout} className="sidebar-logout-btn" disabled={isLoggingOut}>
+                    <LogOut size={18} aria-hidden="true" />
+                    {!isCollapsed ? <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span> : null}
+                </button>
+            </div>
+        </aside>
     );
 };
 
