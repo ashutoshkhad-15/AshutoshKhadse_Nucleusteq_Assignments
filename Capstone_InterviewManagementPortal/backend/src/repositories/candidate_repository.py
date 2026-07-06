@@ -1,8 +1,10 @@
-"""Repository layer for candidate persistence and search operations."""
+"""Repository layer for candidate persistence, resume storage, and status history."""
 
+import base64
 import logging
 from datetime import datetime, timezone
 
+from bson.binary import Binary
 from bson.objectid import ObjectId
 
 from src.core.database import get_database
@@ -18,15 +20,19 @@ class CandidateRepository:
         self.db = get_database()
         self.collection = self.db["candidates"]
         self.job_collection = self.db["jobs"]
+        self.resume_collection = self.db["candidate_resumes"]
+        self.status_history_collection = self.db["candidate_status_history"]
 
     async def ensure_indexes(self) -> None:
-        """Create the indexes used by search and uniqueness checks."""
+        """Create the indexes used by search, uniqueness, and audit queries."""
         try:
             await self.collection.create_index("email", unique=True, background=True)
             await self.collection.create_index("mobile", unique=True, background=True)
             await self.collection.create_index([("first_name", 1), ("last_name", 1)], background=True)
             await self.collection.create_index("current_company", background=True)
             await self.collection.create_index("applied_job_id", background=True)
+            await self.resume_collection.create_index("candidate_id", unique=True, background=True)
+            await self.status_history_collection.create_index([("candidate_id", 1), ("timestamp", -1)], background=True)
             await self.job_collection.create_index("jobTitle", background=True)
         except Exception:
             logger.exception("Failed to ensure candidate indexes")
@@ -46,6 +52,32 @@ class CandidateRepository:
             serialized["applied_job"] = applied_job
         return serialized
 
+    @staticmethod
+    def _serialize_resume_document(document: dict | None) -> dict | None:
+        """Return a JSON-safe copy of a stored resume metadata document."""
+        if not document:
+            return document
+        serialized = dict(document)
+        serialized["_id"] = str(serialized["_id"])
+        serialized["candidate_id"] = str(serialized["candidate_id"])
+        if "file_data" in serialized and serialized["file_data"] is not None:
+            serialized["resume_content_base64"] = base64.b64encode(bytes(serialized.pop("file_data"))).decode("ascii")
+        if "uploaded_by" in serialized and serialized["uploaded_by"] is not None:
+            serialized["uploaded_by"] = str(serialized["uploaded_by"])
+        return serialized
+
+    @staticmethod
+    def _serialize_status_history(document: dict | None) -> dict | None:
+        """Return a JSON-safe status history row."""
+        if not document:
+            return document
+        serialized = dict(document)
+        serialized["_id"] = str(serialized["_id"])
+        serialized["candidate_id"] = str(serialized["candidate_id"])
+        if "updated_by" in serialized and serialized["updated_by"] is not None:
+            serialized["updated_by"] = str(serialized["updated_by"])
+        return serialized
+
     async def _hydrate_applied_job(self, candidate: dict) -> dict:
         """Attach a compact applied-job summary when the job exists."""
         if not candidate:
@@ -63,6 +95,7 @@ class CandidateRepository:
     async def create_candidate(self, candidate_data: dict) -> dict:
         """Insert a new candidate document."""
         candidate_data = dict(candidate_data)
+        candidate_data["status"] = candidate_data.get("status", "PROFILE_CREATED")
         candidate_data["created_at"] = datetime.now(timezone.utc)
         candidate_data["updated_at"] = datetime.now(timezone.utc)
         result = await self.collection.insert_one(candidate_data)
@@ -133,3 +166,60 @@ class CandidateRepository:
         async for job in cursor:
             jobs.append({"_id": str(job["_id"]), "jobTitle": job.get("jobTitle", "")})
         return jobs
+
+    async def get_resume_metadata(self, candidate_id: str) -> dict | None:
+        """Return stored resume metadata for a candidate."""
+        if not ObjectId.is_valid(candidate_id):
+            return None
+        document = await self.resume_collection.find_one({"candidate_id": ObjectId(candidate_id)})
+        return self._serialize_resume_document(document)
+
+    async def upsert_resume(self, candidate_id: str, file_name: str, content_type: str, file_bytes: bytes, uploaded_by: str | None = None) -> dict:
+        """Store resume bytes and metadata for a candidate."""
+        if not ObjectId.is_valid(candidate_id):
+            return None
+        payload = {
+            "candidate_id": ObjectId(candidate_id),
+            "original_filename": file_name,
+            "stored_filename": f"{candidate_id}_{file_name}",
+            "content_type": content_type,
+            "file_data": Binary(file_bytes),
+            "uploaded_at": datetime.now(timezone.utc),
+            "uploaded_by": ObjectId(uploaded_by) if uploaded_by and ObjectId.is_valid(uploaded_by) else uploaded_by,
+        }
+        existing = await self.get_resume_metadata(candidate_id)
+        if existing:
+            await self.resume_collection.update_one({"candidate_id": ObjectId(candidate_id)}, {"$set": payload})
+        else:
+            await self.resume_collection.insert_one(payload)
+        return await self.get_resume_metadata(candidate_id)
+
+    async def get_resume_file(self, candidate_id: str) -> dict | None:
+        """Return stored resume bytes and metadata for a candidate."""
+        if not ObjectId.is_valid(candidate_id):
+            return None
+        document = await self.resume_collection.find_one({"candidate_id": ObjectId(candidate_id)})
+        return self._serialize_resume_document(document)
+
+    async def add_status_history(self, candidate_id: str, previous_status: str | None, new_status: str, updated_by: str | None = None) -> dict:
+        """Append an immutable candidate status history row."""
+        payload = {
+            "candidate_id": ObjectId(candidate_id),
+            "previous_status": previous_status,
+            "new_status": new_status,
+            "timestamp": datetime.now(timezone.utc),
+            "updated_by": ObjectId(updated_by) if updated_by and ObjectId.is_valid(updated_by) else updated_by,
+        }
+        result = await self.status_history_collection.insert_one(payload)
+        payload["_id"] = result.inserted_id
+        return self._serialize_status_history(payload)
+
+    async def get_status_history(self, candidate_id: str) -> list[dict]:
+        """Return the full status history for a candidate."""
+        if not ObjectId.is_valid(candidate_id):
+            return []
+        history: list[dict] = []
+        cursor = self.status_history_collection.find({"candidate_id": ObjectId(candidate_id)}).sort("timestamp", 1)
+        async for document in cursor:
+            history.append(self._serialize_status_history(document))
+        return history
