@@ -103,6 +103,42 @@ class TestCandidateRouter:
         assert response.status_code == 200
         assert response.json()["data"][0]["jobTitle"] == "Backend Developer"
 
+    def test_upload_resume_endpoint_success(self, client, mock_candidate_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_hr
+        mock_candidate_service.upload_resume.return_value = {"candidate_id": "123"}
+        response = client.post(
+            "/api/v1/candidates/123/resume",
+            files={"resume_file": ("resume.pdf", b"%PDF-1.4 test", "application/pdf")},
+        )
+        assert response.status_code == 201
+        assert response.json()["message"] == "Resume uploaded successfully"
+
+    def test_get_resume_endpoint_success(self, client, mock_candidate_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_admin
+        mock_candidate_service.get_resume.return_value = {"candidate_id": "123", "resume_content_base64": "JVBERi0xLjQK"}
+        response = client.get("/api/v1/candidates/123/resume")
+        assert response.status_code == 200
+        assert response.json()["data"]["candidate_id"] == "123"
+
+    def test_update_candidate_status_endpoint_success(self, client, mock_candidate_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_hr
+        mock_candidate_service.update_candidate_status.return_value = {"_id": "123", "status": "INTERVIEW_SCHEDULED"}
+        response = client.patch("/api/v1/candidates/123/status?status=INTERVIEW_SCHEDULED")
+        assert response.status_code == 200
+        assert response.json()["message"] == "Candidate status updated successfully"
+
+    def test_update_candidate_status_endpoint_invalid_status(self, client, mock_candidate_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_hr
+        response = client.patch("/api/v1/candidates/123/status?status=INVALID_STATUS")
+        assert response.status_code == 422
+
+    def test_get_status_history_endpoint_success(self, client, mock_candidate_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_admin
+        mock_candidate_service.get_candidate_status_history.return_value = [{"candidate_id": "123", "new_status": "PROFILE_CREATED"}]
+        response = client.get("/api/v1/candidates/123/status-history")
+        assert response.status_code == 200
+        assert response.json()["data"][0]["new_status"] == "PROFILE_CREATED"
+
     def test_update_candidate_endpoint_success(self, client, mock_candidate_service):
         app.dependency_overrides[get_current_user] = override_get_current_user_hr
         mock_candidate_service.update_candidate.return_value = {"_id": "123"}
