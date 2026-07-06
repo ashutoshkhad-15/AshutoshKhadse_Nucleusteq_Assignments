@@ -1,4 +1,3 @@
-import { Eye, Pencil, Plus, Search, Users } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useDebouncedValue from '../hooks/useDebouncedValue';
@@ -8,6 +7,9 @@ import { formatCandidateDate, getCandidateAppliedJobLabel, getCandidateManagemen
 
 const HR_ROLE = 'HR';
 
+/**
+ * Renders the candidate list page.
+ */
 const CandidateListScreen = () => {
     const [candidates, setCandidates] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -77,17 +79,13 @@ const CandidateListScreen = () => {
                     <h1>Candidate Management</h1>
                     <p>Search candidates by name, email, mobile, company, or applied job.</p>
                 </div>
-                {canManageCandidates ? <button type="button" onClick={() => navigate('/candidates/create')} className="btn-primary btn-icon"><Plus size={18} className="icon-inline" /> Register Candidate</button> : null}
+                {canManageCandidates ? <button type="button" onClick={() => navigate('/candidates/create')} className="btn-primary">Register Candidate</button> : null}
             </div>
             <div className="table-card">
                 {successMessage ? <div className="success-banner">{successMessage}</div> : null}
                 {error ? <div className="error-banner">{error}</div> : null}
                 <div className="um-toolbar">
-                    <label className="visually-hidden" htmlFor="candidate-search-input">Search candidates</label>
-                    <div className="search-input-wrapper">
-                        <Search size={18} className="icon-inline" />
-                        <input id="candidate-search-input" type="text" placeholder="Search by name, email, mobile, company, or job" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="um-search-input" />
-                    </div>
+                    <input id="candidate-search-input" type="text" placeholder="Search by name, email, mobile, company, or job" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="um-search-input" />
                 </div>
                 {searching ? <div className="empty-state">Searching candidates...</div> : candidates.length === 0 ? <div className="empty-state">{normalizedSearchTerm ? 'No candidates match your search criteria.' : 'No candidates are available yet.'}</div> : (
                     <>
@@ -107,7 +105,7 @@ const CandidateListScreen = () => {
                             <tbody>
                                 {candidates.map((candidate) => (
                                     <tr key={candidate._id}>
-                                        <td data-label="Candidate" className="um-user-email"><div className="user-email-cell"><Users size={16} className="icon-inline" /> {candidate.first_name} {candidate.last_name}</div></td>
+                                        <td data-label="Candidate">{candidate.first_name} {candidate.last_name}</td>
                                         <td data-label="Email">{candidate.email}</td>
                                         <td data-label="Mobile">{candidate.mobile}</td>
                                         <td data-label="Current Company">{candidate.current_company || 'Not specified'}</td>
@@ -116,8 +114,8 @@ const CandidateListScreen = () => {
                                         <td data-label="Registration Date">{formatCandidateDate(candidate.created_at || candidate.createdAt)}</td>
                                         <td data-label="Actions" className="align-right">
                                             <div className="table-actions">
-                                                <Link to={`/candidates/${candidate._id}`} className="action-edit"><Eye size={14} className="icon-inline" /> View</Link>
-                                                {canManageCandidates ? <Link to={`/candidates/edit/${candidate._id}`} className="action-edit"><Pencil size={14} className="icon-inline" /> Edit</Link> : null}
+                                                <Link to={`/candidates/${candidate._id}`} className="btn-secondary">View</Link>
+                                                {canManageCandidates ? <Link to={`/candidates/edit/${candidate._id}`} className="btn-secondary">Edit</Link> : null}
                                             </div>
                                         </td>
                                     </tr>

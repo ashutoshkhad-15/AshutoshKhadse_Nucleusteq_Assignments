@@ -1,4 +1,3 @@
-import { ArrowLeft, BriefcaseBusiness, Building2, MapPin, SquarePen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import JobPageHeader from '../components/jobs/JobPageHeader';
@@ -62,10 +61,7 @@ const JobDetailsScreen = () => {
             <div className="um-state">
                 <div className="error-banner">{error || 'Job description not found.'}</div>
                 <div className="form-actions jm-centered-actions">
-                    <button type="button" className="btn-secondary jm-button-with-icon" onClick={() => navigate('/jobs')}>
-                        <ArrowLeft size={16} aria-hidden="true" />
-                        Back to Jobs
-                    </button>
+                    <button type="button" className="btn-secondary" onClick={() => navigate('/jobs')}>Back to Jobs</button>
                 </div>
             </div>
         );
@@ -79,15 +75,9 @@ const JobDetailsScreen = () => {
                 description={`${job.jobRole || job.department} | ${job.location}`}
                 actions={(
                     <>
-                        <button type="button" onClick={() => navigate('/jobs')} className="btn-secondary jm-button-with-icon">
-                            <ArrowLeft size={16} aria-hidden="true" />
-                            Back to Jobs
-                        </button>
+                        <button type="button" onClick={() => navigate('/jobs')} className="btn-secondary">Back to Jobs</button>
                         {canManageJobs ? (
-                            <Link to={`/jobs/edit/${job._id}`} className="btn-primary jm-link-button jm-button-with-icon">
-                                <SquarePen size={16} aria-hidden="true" />
-                                Edit Job
-                            </Link>
+                            <Link to={`/jobs/edit/${job._id}`} className="btn-primary">Edit Job</Link>
                         ) : null}
                     </>
                 )}
@@ -103,24 +93,15 @@ const JobDetailsScreen = () => {
                     <div className="jm-detail-grid">
                         <div className="jm-detail-item">
                             <span className="jm-detail-label">Experience</span>
-                            <span className="jm-detail-value">
-                                <BriefcaseBusiness size={16} aria-hidden="true" />
-                                {job.experienceRequired ?? job.experience_required}
-                            </span>
+                            <span className="jm-detail-value">{job.experienceRequired ?? job.experience_required}</span>
                         </div>
                         <div className="jm-detail-item">
                             <span className="jm-detail-label">Job Role</span>
-                            <span className="jm-detail-value">
-                                <Building2 size={16} aria-hidden="true" />
-                                {job.jobRole || job.department}
-                            </span>
+                            <span className="jm-detail-value">{job.jobRole || job.department}</span>
                         </div>
                         <div className="jm-detail-item">
                             <span className="jm-detail-label">Location</span>
-                            <span className="jm-detail-value">
-                                <MapPin size={16} aria-hidden="true" />
-                                {job.location}
-                            </span>
+                            <span className="jm-detail-value">{job.location}</span>
                         </div>
                     </div>
                 </section>

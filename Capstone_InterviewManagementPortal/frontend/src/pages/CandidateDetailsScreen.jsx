@@ -1,4 +1,3 @@
-import { ArrowLeft, Mail, Phone, SquarePen, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { candidateService } from '../services/candidateService';
@@ -38,9 +37,7 @@ const CandidateDetailsScreen = () => {
             <div className="um-state">
                 <div className="error-banner">{error || 'Candidate profile not found.'}</div>
                 <div className="form-actions jm-centered-actions">
-                    <button type="button" className="btn-secondary jm-button-with-icon" onClick={() => navigate('/candidates')}>
-                        <ArrowLeft size={16} aria-hidden="true" /> Back to Candidates
-                    </button>
+                    <button type="button" className="btn-secondary" onClick={() => navigate('/candidates')}>Back to Candidates</button>
                 </div>
             </div>
         );
@@ -55,13 +52,9 @@ const CandidateDetailsScreen = () => {
                     <p>Candidate profile and applied job details.</p>
                 </div>
                 <div className="table-actions jm-header-actions">
-                    <button type="button" onClick={() => navigate('/candidates')} className="btn-secondary jm-button-with-icon">
-                        <ArrowLeft size={16} aria-hidden="true" /> Back to Candidates
-                    </button>
+                    <button type="button" onClick={() => navigate('/candidates')} className="btn-secondary">Back to Candidates</button>
                     {canManageCandidates ? (
-                        <Link to={`/candidates/edit/${candidate._id}`} className="btn-primary jm-link-button jm-button-with-icon">
-                            <SquarePen size={16} aria-hidden="true" /> Edit Candidate
-                        </Link>
+                        <Link to={`/candidates/edit/${candidate._id}`} className="btn-primary">Edit Candidate</Link>
                     ) : null}
                 </div>
             </div>
@@ -71,9 +64,9 @@ const CandidateDetailsScreen = () => {
                         <h2 className="form-section-title">Profile Overview</h2>
                     </div>
                     <div className="jm-detail-grid">
-                        <div className="jm-detail-item"><span className="jm-detail-label">Email</span><span className="jm-detail-value"><Mail size={16} />{candidate.email}</span></div>
-                        <div className="jm-detail-item"><span className="jm-detail-label">Mobile</span><span className="jm-detail-value"><Phone size={16} />{candidate.mobile}</span></div>
-                        <div className="jm-detail-item"><span className="jm-detail-label">Current Company</span><span className="jm-detail-value"><Users size={16} />{candidate.current_company || 'Not specified'}</span></div>
+                        <div className="jm-detail-item"><span className="jm-detail-label">Email</span><span className="jm-detail-value">{candidate.email}</span></div>
+                        <div className="jm-detail-item"><span className="jm-detail-label">Mobile</span><span className="jm-detail-value">{candidate.mobile}</span></div>
+                        <div className="jm-detail-item"><span className="jm-detail-label">Current Company</span><span className="jm-detail-value">{candidate.current_company || 'Not specified'}</span></div>
                         <div className="jm-detail-item"><span className="jm-detail-label">Total Experience</span><span className="jm-detail-value">{candidate.total_experience}</span></div>
                         <div className="jm-detail-item"><span className="jm-detail-label">Applied Job</span><span className="jm-detail-value">{getCandidateAppliedJobLabel(candidate)}</span></div>
                         <div className="jm-detail-item"><span className="jm-detail-label">Registration Date</span><span className="jm-detail-value">{formatCandidateDate(candidate.created_at || candidate.createdAt)}</span></div>

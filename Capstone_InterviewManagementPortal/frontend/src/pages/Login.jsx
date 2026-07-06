@@ -63,25 +63,28 @@ const Login = () => {
             {error && <div className="error-text">{error}</div>}
 
             <form onSubmit={handleLogin} noValidate aria-busy={isSubmitting}>
-                <div className="form-group">
-                    <input
-                        type="email"
-                        className="input-field"
-                        placeholder="name@nucleusteq.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        disabled={isSubmitting}
-                    />
-                    <PasswordField
-                        value={password}
-                        onChange={setPassword}
-                        placeholder="Password"
-                        visible={showPassword}
-                        onToggleVisibility={() => setShowPassword((value) => !value)}
-                        disabled={isSubmitting}
-                        toggleLabel={showPassword ? 'Hide password' : 'Show password'}
-                    />
-                </div>
+                <label className="field-label" htmlFor="login-email">Email</label>
+                <input
+                    id="login-email"
+                    type="email"
+                    className="input-field"
+                    placeholder="name@nucleusteq.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isSubmitting}
+                />
+
+                <label className="field-label" htmlFor="login-password">Password</label>
+                <PasswordField
+                    id="login-password"
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="Password"
+                    visible={showPassword}
+                    onToggleVisibility={() => setShowPassword((value) => !value)}
+                    disabled={isSubmitting}
+                    toggleLabel={showPassword ? 'Hide password' : 'Show password'}
+                />
                 <button type="submit" className="primary-btn" disabled={isSubmitting}>
                     {isSubmitting ? 'Signing in...' : 'Sign In'}
                 </button>

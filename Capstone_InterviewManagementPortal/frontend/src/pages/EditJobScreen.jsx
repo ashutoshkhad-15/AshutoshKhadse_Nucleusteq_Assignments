@@ -1,4 +1,3 @@
-import { CircleCheckBig } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import JobForm from '../components/jobs/JobForm';
@@ -108,12 +107,6 @@ const EditJobScreen = () => {
                 eyebrow="Hiring"
                 title="Edit Job"
                 description="Update responsibilities, required skills, and hiring requirements for this role."
-                actions={(
-                    <span className="jm-header-pill">
-                        <CircleCheckBig size={16} aria-hidden="true" />
-                        Change Management
-                    </span>
-                )}
             />
 
             <JobForm

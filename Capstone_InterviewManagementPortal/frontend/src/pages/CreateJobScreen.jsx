@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import JobForm from '../components/jobs/JobForm';
@@ -64,12 +63,6 @@ const CreateJobScreen = () => {
                 eyebrow="Hiring"
                 title="Create Job"
                 description="Publish a complete job description so recruiters and interviewers work from the same brief."
-                actions={(
-                    <span className="jm-header-pill">
-                        <Plus size={16} aria-hidden="true" />
-                        New Opening
-                    </span>
-                )}
             />
 
             <JobForm

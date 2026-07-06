@@ -69,26 +69,28 @@ const ResetPassword = () => {
             {error && <div className="error-text">{error}</div>}
 
             <form onSubmit={handleReset} noValidate aria-busy={isSubmitting}>
-                <div className="form-group">
-                    <PasswordField
-                        value={newPassword}
-                        onChange={setNewPassword}
-                        placeholder="New Password (6-12 chars)"
-                        visible={showNewPassword}
-                        onToggleVisibility={() => setShowNewPassword((value) => !value)}
-                        disabled={isSubmitting}
-                        toggleLabel={showNewPassword ? 'Hide new password' : 'Show new password'}
-                    />
-                    <PasswordField
-                        value={confirmPassword}
-                        onChange={setConfirmPassword}
-                        placeholder="Confirm New Password"
-                        visible={showConfirmPassword}
-                        onToggleVisibility={() => setShowConfirmPassword((value) => !value)}
-                        disabled={isSubmitting}
-                        toggleLabel={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-                    />
-                </div>
+                <label className="field-label" htmlFor="new-password">New password</label>
+                <PasswordField
+                    id="new-password"
+                    value={newPassword}
+                    onChange={setNewPassword}
+                    placeholder="New Password (6-12 chars)"
+                    visible={showNewPassword}
+                    onToggleVisibility={() => setShowNewPassword((value) => !value)}
+                    disabled={isSubmitting}
+                    toggleLabel={showNewPassword ? 'Hide new password' : 'Show new password'}
+                />
+                <label className="field-label" htmlFor="confirm-password">Confirm password</label>
+                <PasswordField
+                    id="confirm-password"
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    placeholder="Confirm New Password"
+                    visible={showConfirmPassword}
+                    onToggleVisibility={() => setShowConfirmPassword((value) => !value)}
+                    disabled={isSubmitting}
+                    toggleLabel={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                />
                 <button type="submit" className="primary-btn" disabled={isSubmitting}>
                     {isSubmitting ? 'Resetting Password...' : 'Secure My Account'}
                 </button>

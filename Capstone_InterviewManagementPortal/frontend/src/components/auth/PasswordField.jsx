@@ -14,6 +14,7 @@ import { Eye, EyeOff } from 'lucide-react';
  * @returns {JSX.Element} Password input control.
  */
 const PasswordField = ({
+    id,
     value,
     onChange,
     placeholder,
@@ -24,6 +25,7 @@ const PasswordField = ({
 }) => (
     <div className="password-field">
         <input
+            id={id}
             type={visible ? 'text' : 'password'}
             className="input-field"
             placeholder={placeholder}

@@ -1,4 +1,3 @@
-import { CircleCheckBig } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import CandidateForm from '../components/candidates/CandidateForm';
@@ -84,7 +83,6 @@ const EditCandidateScreen = () => {
                     <h1>Edit Candidate</h1>
                     <p>Update candidate profile details and applied job selection.</p>
                 </div>
-                <span className="jm-header-pill"><CircleCheckBig size={16} aria-hidden="true" /> Profile Review</span>
             </div>
             <CandidateForm
                 values={values}

@@ -16,8 +16,8 @@ import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import UserListScreen from './pages/UserListScreen';
 
-const Dashboard = () => <h2>Dashboard Placeholder</h2>;
-const NotFound = () => <h2>404 - Page Not Found</h2>;
+const Dashboard = () => <h2>Dashboard</h2>;
+const NotFound = () => <h2>Page not found</h2>;
 
 /**
  * Protects pages that require an authenticated browser session.
@@ -26,15 +26,7 @@ const NotFound = () => <h2>404 - Page Not Found</h2>;
  * @param {React.ReactNode} props.children - Protected page content.
  * @returns {JSX.Element} Protected content or login redirect.
  */
-const ProtectedRoute = ({ children }) => {
-    const isAuthenticated = !!localStorage.getItem('basicAuth');
-
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
-
-    return children;
-};
+const ProtectedRoute = ({ children }) => (localStorage.getItem('basicAuth') ? children : <Navigate to="/login" replace />);
 
 /**
  * Keeps authenticated users out of public authentication pages.
@@ -43,15 +35,7 @@ const ProtectedRoute = ({ children }) => {
  * @param {React.ReactNode} props.children - Public page content.
  * @returns {JSX.Element} Public content or dashboard redirect.
  */
-const PublicRoute = ({ children }) => {
-    const isAuthenticated = !!localStorage.getItem('basicAuth');
-
-    if (isAuthenticated) {
-        return <Navigate to="/dashboard" replace />;
-    }
-
-    return children;
-};
+const PublicRoute = ({ children }) => (localStorage.getItem('basicAuth') ? <Navigate to="/dashboard" replace /> : children);
 
 /**
  * Restrict protected routes to specific user roles.
@@ -65,19 +49,10 @@ const RoleRoute = ({ allowedRoles, children }) => {
     const auth = localStorage.getItem('basicAuth');
     const role = localStorage.getItem('userRole');
 
-    if (!auth || !role) {
-        return <Navigate to="/login" replace />;
-    }
+    if (!auth || !role) return <Navigate to="/login" replace />;
+    if (!allowedRoles.includes(role)) return <Navigate to="/dashboard" replace />;
 
-    if (!allowedRoles.includes(role)) {
-        return <Navigate to="/dashboard" replace />;
-    }
-
-    return (
-        <MainLayout>
-            {children}
-        </MainLayout>
-    );
+    return <MainLayout>{children}</MainLayout>;
 };
 
 /**

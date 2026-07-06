@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CandidateForm from '../components/candidates/CandidateForm';
@@ -56,7 +55,6 @@ const CreateCandidateScreen = () => {
                     <h1>Register Candidate</h1>
                     <p>Create a new candidate profile for interview tracking and workflow management.</p>
                 </div>
-                <span className="jm-header-pill"><Plus size={16} aria-hidden="true" /> Candidate Intake</span>
             </div>
             <CandidateForm
                 values={values}
