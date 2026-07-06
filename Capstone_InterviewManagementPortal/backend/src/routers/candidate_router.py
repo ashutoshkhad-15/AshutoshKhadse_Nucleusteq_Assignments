@@ -3,9 +3,9 @@
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 
-from src.enums.app_enums import UserRole
+from src.enums.app_enums import CandidateStatus, UserRole
 from src.schemas.request.candidate_request import CandidateCreateRequest, CandidateUpdateRequest
 from src.schemas.response.common_response import SuccessResponse
 from src.services.candidate_service import CandidateService
@@ -81,3 +81,53 @@ async def search_jobs_for_candidates(
     logger.info("Candidate job search request received")
     data = await candidate_service.get_jobs_for_dropdown(search)
     return SuccessResponse(message="Jobs retrieved successfully", data=data)
+
+
+@router.post("/{candidate_id}/resume", response_model=SuccessResponse[dict], status_code=status.HTTP_201_CREATED)
+async def upload_resume(
+    candidate_id: str,
+    resume_file: UploadFile = File(...),
+    candidate_service: CandidateService = Depends(get_candidate_service),
+    current_user: dict = Depends(require_role([UserRole.HR.value])),
+):
+    """Upload a candidate resume and store it separately from the profile."""
+    logger.info("Candidate resume upload request received")
+    data = await candidate_service.upload_resume(candidate_id, resume_file, uploaded_by=current_user.get("_id") or current_user.get("id"))
+    return SuccessResponse(message="Resume uploaded successfully", data=data)
+
+
+@router.get("/{candidate_id}/resume", response_model=SuccessResponse[dict], status_code=status.HTTP_200_OK)
+async def get_resume(
+    candidate_id: str,
+    candidate_service: CandidateService = Depends(get_candidate_service),
+    _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value])),
+):
+    """Return stored resume metadata and binary payload for a candidate."""
+    logger.info("Candidate resume view request received")
+    data = await candidate_service.get_resume(candidate_id)
+    return SuccessResponse(message="Resume retrieved successfully", data=data)
+
+
+@router.patch("/{candidate_id}/status", response_model=SuccessResponse[dict], status_code=status.HTTP_200_OK)
+async def update_candidate_status(
+    candidate_id: str,
+    status: CandidateStatus,
+    candidate_service: CandidateService = Depends(get_candidate_service),
+    current_user: dict = Depends(require_role([UserRole.HR.value])),
+):
+    """Update a candidate status and record the transition history."""
+    logger.info("Candidate status update request received")
+    data = await candidate_service.update_candidate_status(candidate_id, status, updated_by=current_user.get("_id") or current_user.get("id"))
+    return SuccessResponse(message="Candidate status updated successfully", data=data)
+
+
+@router.get("/{candidate_id}/status-history", response_model=SuccessResponse[list], status_code=status.HTTP_200_OK)
+async def get_candidate_status_history(
+    candidate_id: str,
+    candidate_service: CandidateService = Depends(get_candidate_service),
+    _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value])),
+):
+    """Return the complete candidate status audit trail."""
+    logger.info("Candidate status history request received")
+    data = await candidate_service.get_candidate_status_history(candidate_id)
+    return SuccessResponse(message="Candidate status history retrieved successfully", data=data)
