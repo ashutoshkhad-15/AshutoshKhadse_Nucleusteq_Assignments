@@ -16,7 +16,7 @@ const Sidebar = () => {
         { to: '/dashboard', label: 'Dashboard', visible: true },
         { to: '/users', label: 'Users', visible: role === ADMIN_ROLE },
         { to: '/jobs', label: 'Jobs', visible: [HR_ROLE, ADMIN_ROLE, INTERVIEWER_ROLE].includes(role) },
-        { to: '/candidates', label: 'Candidates', visible: role === HR_ROLE },
+        { to: '/candidates', label: 'Candidates', visible: [ADMIN_ROLE, HR_ROLE].includes(role) },
     ];
 
     const handleLogout = async () => {

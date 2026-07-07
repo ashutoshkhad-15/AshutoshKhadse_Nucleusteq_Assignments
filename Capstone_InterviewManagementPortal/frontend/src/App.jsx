@@ -14,6 +14,8 @@ import JobDetailsScreen from './pages/JobDetailsScreen';
 import JobListScreen from './pages/JobListScreen';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
+import CandidateResumePreviewScreen from './pages/CandidateResumePreviewScreen';
+import CandidateStatusHistoryScreen from './pages/CandidateStatusHistoryScreen';
 import UserListScreen from './pages/UserListScreen';
 
 const Dashboard = () => <h2>Dashboard</h2>;
@@ -103,7 +105,7 @@ function App() {
                 <Route
                     path="/candidates"
                     element={(
-                        <RoleRoute allowedRoles={['HR']}>
+                        <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
                             <CandidateListScreen />
                         </RoleRoute>
                     )}
@@ -119,8 +121,24 @@ function App() {
                 <Route
                     path="/candidates/:id"
                     element={(
-                        <RoleRoute allowedRoles={['HR']}>
+                        <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
                             <CandidateDetailsScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path="/candidates/:id/resume"
+                    element={(
+                        <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
+                            <CandidateResumePreviewScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path="/candidates/:id/status-history"
+                    element={(
+                        <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
+                            <CandidateStatusHistoryScreen />
                         </RoleRoute>
                     )}
                 />

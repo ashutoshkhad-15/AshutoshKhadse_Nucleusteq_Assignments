@@ -3,9 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useDebouncedValue from '../hooks/useDebouncedValue';
 import { candidateService } from '../services/candidateService';
 import '../styles/candidate-management.css';
-import { formatCandidateDate, getCandidateAppliedJobLabel, getCandidateManagementErrorMessage } from '../utils/candidateManagement';
-
-const HR_ROLE = 'HR';
+import { canEditCandidates, canViewCandidates, getCandidateAppliedJobLabel, getCandidateDisplayName, getCandidateManagementErrorMessage } from '../utils/candidateManagement';
 
 /**
  * Renders the candidate list page.
@@ -23,8 +21,8 @@ const CandidateListScreen = () => {
     const didInitRef = useRef(false);
     const navigate = useNavigate();
     const location = useLocation();
-    const role = localStorage.getItem('userRole');
-    const canManageCandidates = role === HR_ROLE;
+    const canView = canViewCandidates();
+    const canEdit = canEditCandidates();
     const debouncedSearchTerm = useDebouncedValue(searchInput, 500);
     const normalizedSearchTerm = debouncedSearchTerm.trim();
     const requestParams = useMemo(() => ({ search: normalizedSearchTerm }), [normalizedSearchTerm]);
@@ -70,6 +68,7 @@ const CandidateListScreen = () => {
     const startIndex = ((pagination.page || currentPage) - 1) * (pagination.limit || itemsPerPage);
 
     if (loading) return <div className="um-state">Loading candidates...</div>;
+    if (!canView) return <div className="um-state"><div className="error-banner">You do not have permission to view candidates.</div></div>;
 
     return (
         <div className="um-container">
@@ -79,7 +78,7 @@ const CandidateListScreen = () => {
                     <h1>Candidate Management</h1>
                     <p>Search candidates by name, email, mobile, company, or applied job.</p>
                 </div>
-                {canManageCandidates ? <button type="button" onClick={() => navigate('/candidates/create')} className="btn-primary">Register Candidate</button> : null}
+                {canEdit ? <button type="button" onClick={() => navigate('/candidates/create')} className="btn-primary">Register Candidate</button> : null}
             </div>
             <div className="table-card">
                 {successMessage ? <div className="success-banner">{successMessage}</div> : null}
@@ -98,24 +97,22 @@ const CandidateListScreen = () => {
                                     <th>Current Company</th>
                                     <th>Applied Job</th>
                                     <th>Experience</th>
-                                    <th>Registration Date</th>
                                     <th className="align-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {candidates.map((candidate) => (
                                     <tr key={candidate._id}>
-                                        <td data-label="Candidate">{candidate.first_name} {candidate.last_name}</td>
-                                        <td data-label="Email">{candidate.email}</td>
-                                        <td data-label="Mobile">{candidate.mobile}</td>
-                                        <td data-label="Current Company">{candidate.current_company || 'Not specified'}</td>
-                                        <td data-label="Applied Job">{getCandidateAppliedJobLabel(candidate)}</td>
+                                        <td data-label="Candidate" className="candidate-list-name" title={getCandidateDisplayName(candidate)}>{getCandidateDisplayName(candidate)}</td>
+                                        <td data-label="Email" className="candidate-nowrap" title={candidate.email}>{candidate.email}</td>
+                                        <td data-label="Mobile" className="candidate-nowrap" title={candidate.mobile}>{candidate.mobile}</td>
+                                        <td data-label="Current Company" title={candidate.current_company || 'Not specified'}>{candidate.current_company || 'Not specified'}</td>
+                                        <td data-label="Applied Job" title={getCandidateAppliedJobLabel(candidate)}>{getCandidateAppliedJobLabel(candidate)}</td>
                                         <td data-label="Experience">{candidate.total_experience}</td>
-                                        <td data-label="Registration Date">{formatCandidateDate(candidate.created_at || candidate.createdAt)}</td>
                                         <td data-label="Actions" className="align-right">
-                                            <div className="table-actions">
+                                            <div className="table-actions candidate-table-actions">
                                                 <Link to={`/candidates/${candidate._id}`} className="btn-secondary">View</Link>
-                                                {canManageCandidates ? <Link to={`/candidates/edit/${candidate._id}`} className="btn-secondary">Edit</Link> : null}
+                                                {canEdit ? <Link to={`/candidates/edit/${candidate._id}`} className="btn-secondary">Edit</Link> : null}
                                             </div>
                                         </td>
                                     </tr>
