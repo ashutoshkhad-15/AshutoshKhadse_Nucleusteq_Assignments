@@ -1,0 +1,212 @@
+"""Repository layer for interview scheduling and feedback persistence."""
+
+import logging
+from datetime import datetime, timezone
+
+from bson.objectid import ObjectId
+
+from src.core.database import get_database
+
+logger = logging.getLogger(__name__)
+
+
+class InterviewRepository:
+    """Provide MongoDB data access operations for interviews."""
+
+    def __init__(self):
+        """Initialize the repository with active MongoDB collections."""
+        self.db = get_database()
+        self.collection = self.db["interviews"]
+        self.candidates = self.db["candidates"]
+        self.jobs = self.db["jobs"]
+        self.users = self.db["users"]
+
+    @staticmethod
+    def _serialize(document: dict | None) -> dict | None:
+        """Return a JSON-friendly interview document."""
+        if not document:
+            return document
+        serialized = dict(document)
+        serialized["_id"] = str(serialized["_id"])
+        for field in ("candidate_id", "job_id", "interviewer_id", "feedback_by"):
+            if serialized.get(field) is not None:
+                serialized[field] = str(serialized[field])
+        return serialized
+
+    async def create_interview(self, interview_data: dict) -> dict:
+        """Insert a new interview document."""
+        try:
+            interview_data = dict(interview_data)
+            interview_data["created_at"] = datetime.now(timezone.utc)
+            interview_data["updated_at"] = datetime.now(timezone.utc)
+            result = await self.collection.insert_one(interview_data)
+            interview_data["_id"] = result.inserted_id
+            logger.info("Interview created successfully")
+            return self._serialize(interview_data)
+        except Exception:
+            logger.exception("Repository failure while creating interview")
+            raise
+
+    async def update_interview(self, interview_id: str, update_data: dict) -> dict | None:
+        """Apply a partial interview update."""
+        if not ObjectId.is_valid(interview_id):
+            logger.warning("Invalid interview ID provided for update: %s", interview_id)
+            return None
+        try:
+            update_data = dict(update_data)
+            update_data["updated_at"] = datetime.now(timezone.utc)
+            result = await self.collection.update_one({"_id": ObjectId(interview_id)}, {"$set": update_data})
+            if result.matched_count == 0:
+                logger.warning("Interview not found for update: %s", interview_id)
+                return None
+            logger.info("Interview updated successfully: %s", interview_id)
+            return await self.get_interview_by_id(interview_id)
+        except Exception:
+            logger.exception("Repository failure while updating interview: %s", interview_id)
+            raise
+
+    async def get_interview_by_id(self, interview_id: str) -> dict | None:
+        """Fetch an interview by identifier."""
+        if not ObjectId.is_valid(interview_id):
+            logger.warning("Invalid interview ID provided: %s", interview_id)
+            return None
+        try:
+            document = await self.collection.find_one({"_id": ObjectId(interview_id)})
+            if not document:
+                logger.warning("Interview not found for ID: %s", interview_id)
+            return self._serialize(document)
+        except Exception:
+            logger.exception("Repository failure while fetching interview by ID: %s", interview_id)
+            raise
+
+    async def get_all_interviews(self, query: dict | None = None, page: int = 1, limit: int = 10) -> tuple[list[dict], int]:
+        """Return interview documents ordered newest-first."""
+        try:
+            normalized_query = query or {}
+            total_items = await self.collection.count_documents(normalized_query)
+            cursor = self.collection.find(normalized_query).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+            interviews: list[dict] = []
+            async for document in cursor:
+                interviews.append(self._serialize(document))
+            logger.info("Interview list retrieved successfully")
+            return interviews, total_items
+        except Exception:
+            logger.exception("Repository failure while fetching interview list")
+            raise
+
+    async def find_overlapping_interview(self, candidate_id: str, interview_date, interview_time: str, exclude_id: str | None = None) -> dict | None:
+        """Find an interview scheduled for the same candidate slot."""
+        try:
+            query = {
+                "candidate_id": ObjectId(candidate_id),
+                "interview_date": interview_date,
+                "interview_time": interview_time,
+            }
+            if exclude_id and ObjectId.is_valid(exclude_id):
+                query["_id"] = {"$ne": ObjectId(exclude_id)}
+            return self._serialize(await self.collection.find_one(query))
+        except Exception:
+            logger.exception("Repository failure while checking overlapping interview for candidate: %s", candidate_id)
+            raise
+
+    async def get_interview_by_candidate(self, candidate_id: str) -> dict | None:
+        """Fetch the latest interview for a candidate."""
+        if not ObjectId.is_valid(candidate_id):
+            logger.warning("Invalid candidate ID provided for interview lookup: %s", candidate_id)
+            return None
+        try:
+            document = await self.collection.find_one({"candidate_id": ObjectId(candidate_id)}, sort=[("created_at", -1)])
+            return self._serialize(document)
+        except Exception:
+            logger.exception("Repository failure while fetching interview by candidate: %s", candidate_id)
+            raise
+
+    async def get_candidate_by_id(self, candidate_id: str) -> dict | None:
+        """Fetch a candidate for validation and dashboard lookups."""
+        if not ObjectId.is_valid(candidate_id):
+            logger.warning("Invalid candidate ID provided: %s", candidate_id)
+            return None
+        try:
+            candidate = await self.candidates.find_one({"_id": ObjectId(candidate_id)})
+            if candidate:
+                candidate["_id"] = str(candidate["_id"])
+            return candidate
+        except Exception:
+            logger.exception("Repository failure while fetching candidate by ID: %s", candidate_id)
+            raise
+
+    async def get_job_by_id(self, job_id: str) -> dict | None:
+        """Fetch a job for validation and dashboard lookups."""
+        if not ObjectId.is_valid(job_id):
+            logger.warning("Invalid job ID provided: %s", job_id)
+            return None
+        try:
+            job = await self.jobs.find_one({"_id": ObjectId(job_id)})
+            if job:
+                job["_id"] = str(job["_id"])
+            return job
+        except Exception:
+            logger.exception("Repository failure while fetching job by ID: %s", job_id)
+            raise
+
+    async def get_user_by_id(self, user_id: str) -> dict | None:
+        """Fetch a user for interviewer validation and dashboard lookups."""
+        if not ObjectId.is_valid(user_id):
+            logger.warning("Invalid user ID provided: %s", user_id)
+            return None
+        try:
+            user = await self.users.find_one({"_id": ObjectId(user_id)})
+            if user:
+                user["_id"] = str(user["_id"])
+            return user
+        except Exception:
+            logger.exception("Repository failure while fetching user by ID: %s", user_id)
+            raise
+
+    async def submit_feedback(self, interview_id: str, feedback_data: dict) -> dict | None:
+        """Store feedback on an existing interview."""
+        if not ObjectId.is_valid(interview_id):
+            logger.warning("Invalid interview ID provided for feedback submission: %s", interview_id)
+            return None
+        try:
+            feedback_data = dict(feedback_data)
+            feedback_data["feedback_submitted_at"] = datetime.now(timezone.utc)
+            result = await self.collection.update_one({"_id": ObjectId(interview_id)}, {"$set": feedback_data})
+            if result.matched_count == 0:
+                logger.warning("Interview not found for feedback submission: %s", interview_id)
+                return None
+            logger.info("Feedback stored successfully for interview: %s", interview_id)
+            return await self.get_interview_by_id(interview_id)
+        except Exception:
+            logger.exception("Repository failure while storing feedback for interview: %s", interview_id)
+            raise
+
+    async def get_feedback_by_interview_id(self, interview_id: str) -> dict | None:
+        """Fetch stored feedback for a given interview."""
+        return await self.get_interview_by_id(interview_id)
+
+    async def get_hr_dashboard_stats(self) -> dict:
+        """Aggregate the HR dashboard statistics."""
+        total_jobs = await self.jobs.count_documents({})
+        total_candidates = await self.candidates.count_documents({})
+        scheduled_interviews = await self.collection.count_documents({})
+        selected_candidates = await self.candidates.count_documents({"status": "SELECTED"})
+        rejected_candidates = await self.candidates.count_documents({"status": "REJECTED"})
+        return {
+            "total_jobs": total_jobs,
+            "total_candidates": total_candidates,
+            "scheduled_interviews": scheduled_interviews,
+            "selected_candidates": selected_candidates,
+            "rejected_candidates": rejected_candidates,
+        }
+
+    async def get_interviewer_dashboard_stats(self, interviewer_id: str) -> dict:
+        """Aggregate interviewer dashboard statistics."""
+        assigned_interviews = await self.collection.count_documents({"interviewer_id": ObjectId(interviewer_id)})
+        pending_feedback = await self.collection.count_documents({"interviewer_id": ObjectId(interviewer_id), "feedback": {"$exists": False}})
+        completed_feedback = await self.collection.count_documents({"interviewer_id": ObjectId(interviewer_id), "feedback": {"$exists": True}})
+        return {
+            "assigned_interviews": assigned_interviews,
+            "pending_feedback": pending_feedback,
+            "completed_feedback": completed_feedback,
+        }
