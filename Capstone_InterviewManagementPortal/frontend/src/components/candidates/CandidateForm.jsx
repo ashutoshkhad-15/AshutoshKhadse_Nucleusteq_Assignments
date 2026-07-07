@@ -10,6 +10,12 @@ const CandidateForm = ({
     submitting,
     submitLabel,
     submittingLabel,
+    statusLabel,
+    statusOptions = [],
+    statusReadOnly = false,
+    resumeFile = null,
+    resumeError = '',
+    onResumeFileChange,
     onChange,
     onCancel,
     onSubmit,
@@ -60,6 +66,26 @@ const CandidateForm = ({
                     />
                     {validationErrors.appliedJobId ? <p className="field-error">{validationErrors.appliedJobId}</p> : null}
                 </div>
+                {statusLabel ? (
+                    <div className="form-group">
+                        <label className="form-label" htmlFor="candidate-status-display">Current Status</label>
+                        {statusReadOnly ? (
+                            <input id="candidate-status-display" className="form-control" value={statusLabel} readOnly />
+                        ) : (
+                            <select id="candidate-status-display" className="form-control" value={statusLabel} onChange={(e) => onChange('status', e.target.value)}>
+                                {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+                            </select>
+                        )}
+                    </div>
+                ) : null}
+                {onResumeFileChange ? (
+                    <div className="form-group form-group-full">
+                        <label className="form-label" htmlFor="candidate-resume-file">Resume Upload</label>
+                        <input id="candidate-resume-file" type="file" accept="application/pdf,.pdf" className="form-control" onChange={onResumeFileChange} />
+                        {resumeFile ? <p className="field-helper">{resumeFile.name}</p> : null}
+                        {resumeError ? <p className="field-error">{resumeError}</p> : null}
+                    </div>
+                ) : null}
             </div>
             <div className="form-actions">
                 <button type="button" onClick={onCancel} className="btn-secondary" disabled={submitting}>Cancel</button>

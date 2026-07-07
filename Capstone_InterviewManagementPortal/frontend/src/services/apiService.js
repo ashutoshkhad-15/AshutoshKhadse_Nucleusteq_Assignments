@@ -16,20 +16,27 @@ export const clearAuthenticationData = () => {
 
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
+
+const isFormData = (value) => typeof FormData !== 'undefined' && value instanceof FormData;
 
 /**
  * Attach the persisted Basic Auth token to authenticated API requests.
  */
 const attachAuthHeader = (config) => {
     const token = localStorage.getItem(BASIC_AUTH_STORAGE_KEY);
+    const headers = config.headers || {};
 
     if (token) {
-        config.headers.Authorization = `Basic ${token}`;
+        headers.Authorization = `Basic ${token}`;
     }
+
+    if (isFormData(config.data)) {
+        delete headers['Content-Type'];
+        delete headers['content-type'];
+    }
+
+    config.headers = headers;
 
     return config;
 };

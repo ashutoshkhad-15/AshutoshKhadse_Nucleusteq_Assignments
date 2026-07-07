@@ -100,6 +100,15 @@ export const getCandidateManagementErrorMessage = (error, fallbackMessage) =>
 
 export const getCandidateAppliedJobLabel = (candidate) => candidate?.applied_job?.jobTitle || candidate?.appliedJob?.jobTitle || candidate?.applied_job?.job_title || 'Not specified';
 
+/**
+ * Return a display name for a candidate record.
+ */
+export const getCandidateDisplayName = (candidate = {}) => {
+    const firstName = candidate.first_name || candidate.firstName || '';
+    const lastName = candidate.last_name || candidate.lastName || '';
+    return `${firstName} ${lastName}`.trim() || 'Not specified';
+};
+
 export const formatCandidateDate = (value) => {
     if (!value) return 'Not available';
     const date = new Date(value);
@@ -112,3 +121,76 @@ export const mapJobsToOptions = (jobs = []) =>
         label: job.jobTitle || job.title || 'Untitled Job',
         description: job.jobRole || job.location || '',
     }));
+
+export const CANDIDATE_STATUS_OPTIONS = [
+    'PROFILE_CREATED',
+    'INTERVIEW_SCHEDULED',
+    'INTERVIEW_COMPLETED',
+    'SELECTED',
+    'REJECTED',
+];
+
+export const MAX_RESUME_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
+export const CANDIDATE_ROLES = {
+    ADMIN: 'ADMIN',
+    HR: 'HR',
+    INTERVIEWER: 'INTERVIEWER',
+};
+
+/**
+ * Extract a safe resume URL from the backend payload.
+ */
+export const getResumePdfUrl = (resume) => {
+    const base64 = resume?.resume_content_base64;
+    if (!base64) return '';
+    return `data:application/pdf;base64,${base64}`;
+};
+
+/**
+ * Normalizes the candidate status display value.
+ */
+export const formatCandidateStatus = (status) => status || 'PROFILE_CREATED';
+
+/**
+ * Format dates in DD/MM/YYYY format for candidate screens.
+ */
+export const formatCandidateDateDisplay = (value) => {
+    if (!value) return 'Not available';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Not available';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+};
+
+/**
+ * Format date-time values for status history rows.
+ */
+export const formatCandidateDateTimeDisplay = (value) => {
+    if (!value) return 'Not available';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Not available';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
+/**
+ * Return the current portal role from local storage.
+ */
+export const getCandidateCurrentRole = () => localStorage.getItem('userRole');
+
+/**
+ * Check whether the current user can edit candidate data.
+ */
+export const canEditCandidates = () => getCandidateCurrentRole() === CANDIDATE_ROLES.HR;
+
+/**
+ * Check whether the current user can view candidate data.
+ */
+export const canViewCandidates = () => [CANDIDATE_ROLES.ADMIN, CANDIDATE_ROLES.HR, CANDIDATE_ROLES.INTERVIEWER].includes(getCandidateCurrentRole());

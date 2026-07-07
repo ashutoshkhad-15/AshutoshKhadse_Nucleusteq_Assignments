@@ -5,11 +5,16 @@ import { candidateService } from '../services/candidateService';
 import '../styles/candidate-management.css';
 import {
     buildCandidatePayload,
+    CANDIDATE_STATUS_OPTIONS,
     getCandidateManagementErrorMessage,
     mapCandidateToFormValues,
+    MAX_RESUME_FILE_SIZE_BYTES,
     validateCandidateForm,
 } from '../utils/candidateManagement';
 
+/**
+ * Render the candidate edit screen with resume and status controls.
+ */
 const EditCandidateScreen = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -19,6 +24,10 @@ const EditCandidateScreen = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+    const [resumeFile, setResumeFile] = useState(null);
+    const [resumeError, setResumeError] = useState('');
+    const [statusValue, setStatusValue] = useState('PROFILE_CREATED');
+    const [initialStatus, setInitialStatus] = useState('PROFILE_CREATED');
 
     useEffect(() => {
         const controller = new AbortController();
@@ -26,6 +35,9 @@ const EditCandidateScreen = () => {
             try {
                 const candidateResponse = await candidateService.getCandidateById(id, { signal: controller.signal });
                 setValues(mapCandidateToFormValues(candidateResponse));
+                const currentStatus = candidateResponse?.status || 'PROFILE_CREATED';
+                setStatusValue(currentStatus);
+                setInitialStatus(currentStatus);
                 setSelectedAppliedJob(candidateResponse?.applied_job ? {
                     value: candidateResponse.applied_job._id,
                     label: candidateResponse.applied_job.jobTitle,
@@ -41,6 +53,10 @@ const EditCandidateScreen = () => {
     }, [id]);
 
     const handleChange = (field, value, job) => {
+        if (field === 'status') {
+            setStatusValue(value);
+            return;
+        }
         setValues((current) => ({ ...current, [field]: value }));
         if (field === 'appliedJobId') {
             setSelectedAppliedJob(job || null);
@@ -53,6 +69,30 @@ const EditCandidateScreen = () => {
         });
     };
 
+    /**
+     * Validate the selected resume file.
+     */
+    const validateResumeFile = (file) => {
+        if (!file) return '';
+        if (!file.name?.toLowerCase().endsWith('.pdf')) return 'Only PDF files are allowed.';
+        if ((file.type || '').toLowerCase() !== 'application/pdf') return 'Only PDF files are allowed.';
+        if (file.size === 0) return 'Resume is required.';
+        if (file.size > MAX_RESUME_FILE_SIZE_BYTES) return 'Resume size cannot exceed 5 MB.';
+        return '';
+    };
+
+    /**
+     * Handle resume selection on edit.
+     */
+    const handleResumeFileChange = (event) => {
+        const file = event.target.files?.[0] || null;
+        setResumeFile(file);
+        setResumeError('');
+    };
+
+    /**
+     * Persist candidate changes and optional resume/status updates.
+     */
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError(null);
@@ -61,10 +101,29 @@ const EditCandidateScreen = () => {
             setValidationErrors(errors);
             return;
         }
+        const resumeValidationError = validateResumeFile(resumeFile);
+        if (resumeValidationError) {
+            setResumeError(resumeValidationError);
+            return;
+        }
         try {
             setSaving(true);
             const payload = buildCandidatePayload(values);
             await candidateService.updateCandidate(id, payload);
+            if (statusValue !== initialStatus) {
+                await candidateService.updateCandidateStatus(id, statusValue);
+            }
+            if (resumeFile) {
+                try {
+                    const formData = new FormData();
+                    formData.append('resume_file', resumeFile);
+                    await candidateService.uploadResume(id, formData);
+                    setResumeFile(null);
+                } catch (uploadError) {
+                    setResumeError(getCandidateManagementErrorMessage(uploadError, 'Failed to upload resume.'));
+                    return;
+                }
+            }
             navigate('/candidates', { replace: true, state: { successMessage: 'Candidate updated successfully.' } });
         } catch (err) {
             setError(getCandidateManagementErrorMessage(err, 'Failed to update candidate.'));
@@ -81,7 +140,7 @@ const EditCandidateScreen = () => {
                 <div className="um-title-group">
                     <p className="um-eyebrow">Hiring</p>
                     <h1>Edit Candidate</h1>
-                    <p>Update candidate profile details and applied job selection.</p>
+                    <p>Update candidate profile details, resume, and status.</p>
                 </div>
             </div>
             <CandidateForm
@@ -91,10 +150,15 @@ const EditCandidateScreen = () => {
                 submitting={saving}
                 submitLabel="Save Changes"
                 submittingLabel="Saving..."
-                selectedAppliedJob={selectedAppliedJob}
+                statusLabel={statusValue}
+                statusOptions={CANDIDATE_STATUS_OPTIONS}
+                resumeFile={resumeFile}
+                resumeError={resumeError}
+                onResumeFileChange={handleResumeFileChange}
                 onChange={handleChange}
                 onCancel={() => navigate('/candidates')}
                 onSubmit={handleSubmit}
+                selectedAppliedJob={selectedAppliedJob}
             />
         </div>
     );
