@@ -67,7 +67,12 @@ class JobRepository:
             normalized_query = self._build_job_query(query)
             total_items = await self.collection.count_documents(normalized_query)
             jobs = []
-            cursor = self.collection.find(normalized_query).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+            cursor = (
+                self.collection.find(normalized_query)
+                .sort([("created_at", -1), ("_id", -1)])
+                .skip((page - 1) * limit)
+                .limit(limit)
+            )
             async for document in cursor:
                 document["_id"] = str(document["_id"])
                 document = self._normalize_job(document)

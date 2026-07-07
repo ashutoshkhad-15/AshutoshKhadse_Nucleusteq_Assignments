@@ -85,7 +85,12 @@ class UserRepository:
         query = {}
         try:
             total_items = await self.collection.count_documents(query)
-            cursor = self.collection.find(query, {"password_base64": 0}).sort("name", 1).skip((page - 1) * limit).limit(limit)
+            cursor = (
+                self.collection.find(query, {"password_base64": 0})
+                .sort([("created_at", -1), ("_id", -1)])
+                .skip((page - 1) * limit)
+                .limit(limit)
+            )
             users = await cursor.to_list(length=1000)
         except Exception:
             logger.exception("Repository failure while fetching all users")
@@ -103,7 +108,12 @@ class UserRepository:
         }
         try:
             total_items = await self.collection.count_documents(query)
-            cursor = self.collection.find(query, {"password_base64": 0}).sort("name", 1).skip((page - 1) * limit).limit(limit)
+            cursor = (
+                self.collection.find(query, {"password_base64": 0})
+                .sort([("created_at", -1), ("_id", -1)])
+                .skip((page - 1) * limit)
+                .limit(limit)
+            )
             users = await cursor.to_list(length=limit)
         except Exception:
             logger.exception("Repository failure while searching users")

@@ -108,7 +108,12 @@ class CandidateRepository:
         normalized_query = query or {}
         skip = (page - 1) * limit
         total_items = await self.collection.count_documents(normalized_query)
-        cursor = self.collection.find(normalized_query).sort("created_at", -1).skip(skip).limit(limit)
+        cursor = (
+            self.collection.find(normalized_query)
+            .sort([("created_at", -1), ("_id", -1)])
+            .skip(skip)
+            .limit(limit)
+        )
         candidates: list[dict] = []
         async for document in cursor:
             document = await self._hydrate_applied_job(document)
