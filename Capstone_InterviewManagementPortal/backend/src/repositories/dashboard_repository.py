@@ -2,8 +2,6 @@
 
 import logging
 
-from bson.objectid import ObjectId
-
 from src.core.database import get_database
 
 logger = logging.getLogger(__name__)
@@ -25,7 +23,7 @@ class DashboardRepository:
             stats = {
                 "total_jobs": await self.jobs.count_documents({}),
                 "total_candidates": await self.candidates.count_documents({}),
-                "scheduled_interviews": await self.interviews.count_documents({}),
+                "scheduled_interviews": await self.interviews.count_documents({"status": "SCHEDULED"}),
                 "selected_candidates": await self.candidates.count_documents({"status": "SELECTED"}),
                 "rejected_candidates": await self.candidates.count_documents({"status": "REJECTED"}),
             }
@@ -38,11 +36,10 @@ class DashboardRepository:
     async def get_interviewer_dashboard_stats(self, interviewer_id: str) -> dict:
         """Aggregate interviewer dashboard statistics."""
         try:
-            interviewer_object_id = ObjectId(interviewer_id)
             stats = {
-                "assigned_interviews": await self.interviews.count_documents({"interviewer_id": interviewer_object_id}),
-                "pending_feedback": await self.interviews.count_documents({"interviewer_id": interviewer_object_id, "feedback": {"$exists": False}}),
-                "completed_feedback": await self.interviews.count_documents({"interviewer_id": interviewer_object_id, "feedback": {"$exists": True}}),
+                "assigned_interviews": await self.interviews.count_documents({"interviewer_id": interviewer_id}),
+                "pending_feedback": await self.interviews.count_documents({"interviewer_id": interviewer_id, "feedback": {"$exists": False}}),
+                "completed_feedback": await self.interviews.count_documents({"interviewer_id": interviewer_id, "feedback": {"$exists": True}}),
             }
             logger.info("Interviewer dashboard statistics retrieved successfully for interviewer: %s", interviewer_id)
             return stats
