@@ -31,9 +31,9 @@ async def submit_feedback(interview_id: str, request: FeedbackRequest, feedback_
 
 
 @router.get("/{interview_id}/feedback", response_model=SuccessResponse[FeedbackResponse])
-async def view_feedback(interview_id: str, feedback_service: FeedbackService = Depends(get_feedback_service), _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value]))):
+async def view_feedback(interview_id: str, feedback_service: FeedbackService = Depends(get_feedback_service), current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value]))):
     """View feedback for an interview."""
     logger.info("Feedback view request received for interview: %s", interview_id)
-    data = await feedback_service.view_feedback(interview_id)
+    data = await feedback_service.view_feedback(interview_id, current_user)
     logger.info("Feedback view request completed successfully for interview: %s", interview_id)
     return SuccessResponse(message="Feedback retrieved successfully", data=data)
