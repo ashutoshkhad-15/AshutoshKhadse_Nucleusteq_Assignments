@@ -22,6 +22,7 @@ class UserRepository:
         """
         self.db = get_database()
         self.collection = self.db["users"]
+        self.interviews = self.db["interviews"]
 
     @staticmethod
     def _stringify_ids(users: list[dict]) -> list[dict]:
@@ -159,4 +160,13 @@ class UserRepository:
             return self._stringify_ids([user])[0] if user else None
         except Exception:
             logger.exception("Repository failure while fetching default admin account")
+            raise
+
+    async def has_scheduled_interviews(self, interviewer_id: str) -> bool:
+        """Check whether an interviewer still has scheduled interviews."""
+        try:
+            count = await self.interviews.count_documents({"interviewer_id": interviewer_id, "status": "SCHEDULED"})
+            return count > 0
+        except Exception:
+            logger.exception("Repository failure while checking scheduled interviews for user: %s", interviewer_id)
             raise

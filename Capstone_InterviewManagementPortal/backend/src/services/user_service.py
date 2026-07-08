@@ -145,6 +145,8 @@ class UserService:
         if user["email"] == self.DEFAULT_ADMIN_EMAIL:
             logger.warning("Unauthorized disable attempt for primary admin user ID: %s", user_id)
             raise AppBaseException("Cannot disable the primary super admin", "ACTION_DENIED", 403)
+        if user.get("role") == "INTERVIEWER" and await self.user_repo.has_scheduled_interviews(user_id):
+            raise AppBaseException("This interviewer has scheduled interviews assigned and cannot be disabled.", "VALIDATION_ERROR", 400)
 
         try:
             await self.user_repo.update_user_by_id(user_id, {"is_active": False})

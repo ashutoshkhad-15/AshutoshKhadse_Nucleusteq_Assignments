@@ -20,15 +20,19 @@ class CandidateService:
     def __init__(self):
         """Initialize the candidate service with repository dependencies."""
         self.candidate_repo = CandidateRepository()
-        self._allowed_status_transitions = {
-            CandidateStatus.PROFILE_CREATED.value: {
-                CandidateStatus.INTERVIEW_SCHEDULED.value,
+        self._manual_status_transitions = {
+            CandidateStatus.PROFILE_CREATED.value: set(),
+            CandidateStatus.INTERVIEW_SCHEDULED.value: set(),
+            CandidateStatus.INTERVIEW_COMPLETED.value: {
+                CandidateStatus.SELECTED.value,
                 CandidateStatus.REJECTED.value,
             },
-            CandidateStatus.INTERVIEW_SCHEDULED.value: {
-                CandidateStatus.INTERVIEW_COMPLETED.value,
-                CandidateStatus.REJECTED.value,
-            },
+            CandidateStatus.SELECTED.value: set(),
+            CandidateStatus.REJECTED.value: set(),
+        }
+        self._system_status_transitions = {
+            CandidateStatus.PROFILE_CREATED.value: {CandidateStatus.INTERVIEW_SCHEDULED.value},
+            CandidateStatus.INTERVIEW_SCHEDULED.value: {CandidateStatus.INTERVIEW_COMPLETED.value},
             CandidateStatus.INTERVIEW_COMPLETED.value: {
                 CandidateStatus.SELECTED.value,
                 CandidateStatus.REJECTED.value,
@@ -129,12 +133,12 @@ class CandidateService:
         logger.info("Resume viewed for candidate: %s", candidate_id)
         return resume
 
-    async def update_candidate_status(self, candidate_id: str, new_status: CandidateStatus | str, updated_by: Optional[str] = None) -> dict:
+    async def update_candidate_status(self, candidate_id: str, new_status: CandidateStatus | str, updated_by: Optional[str] = None, source: str = "manual") -> dict:
         """Update candidate status and append an immutable history record."""
         candidate = await self.get_candidate_by_id(candidate_id)
         normalized_status = self._normalize_status(new_status)
         previous_status = candidate.get("status") or CandidateStatus.PROFILE_CREATED.value
-        if not self._is_valid_transition(previous_status, normalized_status):
+        if not self._is_valid_transition(previous_status, normalized_status, source):
             raise AppBaseException("Invalid candidate status transition", "INVALID_STATUS_TRANSITION", 400)
         logger.info("Updating candidate status: %s", candidate_id)
         updated_candidate = await self.candidate_repo.update_candidate(candidate["_id"], {"status": normalized_status})
@@ -164,9 +168,11 @@ class CandidateService:
             raise AppBaseException("Invalid candidate status", "INVALID_STATUS", 400)
         return status_value
 
-    def _is_valid_transition(self, previous_status: str, new_status: str) -> bool:
+    def _is_valid_transition(self, previous_status: str, new_status: str, source: str) -> bool:
         """Validate whether a status transition is allowed."""
-        return new_status in self._allowed_status_transitions.get(previous_status, set())
+        if source == "system":
+            return new_status in self._system_status_transitions.get(previous_status, set())
+        return new_status in self._manual_status_transitions.get(previous_status, set())
 
     @staticmethod
     def _validate_resume_file(file: UploadFile) -> None:
