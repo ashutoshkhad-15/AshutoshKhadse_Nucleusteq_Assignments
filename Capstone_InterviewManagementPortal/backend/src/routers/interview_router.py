@@ -48,10 +48,29 @@ async def get_interviews(search: str | None = None, page: int = Query(1, ge=1), 
     return SuccessResponse(message="Interviews retrieved successfully", data=data, meta=meta)
 
 
+@router.get("/assigned", response_model=SuccessResponse[list[InterviewResponse]])
+async def get_assigned_interviews(page: int = Query(1, ge=1), limit: int = Query(10, ge=1, le=100), interview_service: InterviewService = Depends(get_interview_service), current_user: dict = Depends(require_role([UserRole.INTERVIEWER.value]))):
+    """Return interviews assigned to the authenticated interviewer."""
+    logger.info("Assigned interview list request received")
+    interviewer_id = str(current_user.get("_id") or current_user.get("id") or "")
+    data, meta = await interview_service.get_assigned_interviews(interviewer_id, page=page, limit=limit)
+    logger.info("Assigned interview list request completed successfully")
+    return SuccessResponse(message="Assigned interviews retrieved successfully", data=data, meta=meta)
+
+
+@router.get("/interviewers", response_model=SuccessResponse[list[dict]])
+async def get_interviewers(search: str | None = None, page: int = Query(1, ge=1), limit: int = Query(10, ge=1, le=100), interview_service: InterviewService = Depends(get_interview_service), _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value]))):
+    """Return interviewer options for interview scheduling."""
+    logger.info("Interviewer dropdown request received")
+    data, meta = await interview_service.get_interviewers(search=search, page=page, limit=limit)
+    logger.info("Interviewer dropdown request completed successfully")
+    return SuccessResponse(message="Interviewers retrieved successfully", data=data, meta=meta)
+
+
 @router.get("/{interview_id}", response_model=SuccessResponse[InterviewResponse])
-async def get_interview_by_id(interview_id: str, interview_service: InterviewService = Depends(get_interview_service), _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value]))):
+async def get_interview_by_id(interview_id: str, interview_service: InterviewService = Depends(get_interview_service), current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value]))):
     """Return a single interview."""
     logger.info("Interview lookup request received for interview: %s", interview_id)
-    data = await interview_service.get_interview_by_id(interview_id)
+    data = await interview_service.get_interview_for_user(interview_id, current_user)
     logger.info("Interview lookup request completed successfully for interview: %s", interview_id)
     return SuccessResponse(message="Interview retrieved successfully", data=data)

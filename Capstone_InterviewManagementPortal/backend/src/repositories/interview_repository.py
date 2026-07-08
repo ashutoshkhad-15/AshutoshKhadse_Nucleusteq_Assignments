@@ -1,7 +1,7 @@
 """Repository layer for interview scheduling and feedback persistence."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from bson.objectid import ObjectId
 
@@ -28,6 +28,13 @@ class InterviewRepository:
             return document
         serialized = dict(document)
         serialized["_id"] = str(serialized["_id"])
+        if isinstance(serialized.get("interview_date"), datetime):
+            serialized["interview_date"] = serialized["interview_date"].date().isoformat()
+        elif isinstance(serialized.get("interview_date"), date):
+            serialized["interview_date"] = serialized["interview_date"].isoformat()
+        for field in ("created_at", "updated_at", "feedback_submitted_at"):
+            if isinstance(serialized.get(field), datetime):
+                serialized[field] = serialized[field].isoformat()
         for field in ("candidate_id", "job_id", "interviewer_id", "feedback_by"):
             if serialized.get(field) is not None:
                 serialized[field] = str(serialized[field])
@@ -79,6 +86,23 @@ class InterviewRepository:
             logger.exception("Repository failure while fetching interview by ID: %s", interview_id)
             raise
 
+    async def get_interview_by_id_and_interviewer(self, interview_id: str, interviewer_id: str) -> dict | None:
+        """Fetch an interview by identifier only when assigned to the interviewer."""
+        if not ObjectId.is_valid(interview_id):
+            logger.warning("Invalid interview ID provided for interviewer lookup: %s", interview_id)
+            return None
+        try:
+            document = await self.collection.find_one({
+                "_id": ObjectId(interview_id),
+                "interviewer_id": interviewer_id,
+            })
+            if not document:
+                logger.warning("Interview not found for interviewer lookup: %s", interview_id)
+            return self._serialize(document)
+        except Exception:
+            logger.exception("Repository failure while fetching interview for interviewer: %s", interview_id)
+            raise
+
     async def get_all_interviews(self, query: dict | None = None, page: int = 1, limit: int = 10) -> tuple[list[dict], int]:
         """Return interview documents ordered newest-first."""
         try:
@@ -94,16 +118,37 @@ class InterviewRepository:
             logger.exception("Repository failure while fetching interview list")
             raise
 
+    async def complete_overdue_interviews(self, current_time: datetime) -> list[dict]:
+        """Mark overdue scheduled interviews as completed."""
+        try:
+            query = {
+                "status": "SCHEDULED",
+                "interview_date": {"$lte": current_time},
+            }
+            cursor = self.collection.find(query)
+            updates: list[dict] = []
+            async for document in cursor:
+                result = await self.collection.update_one(
+                    {"_id": document["_id"]},
+                    {"$set": {"status": "COMPLETED", "updated_at": datetime.now(timezone.utc)}},
+                )
+                if result.modified_count:
+                    updates.append(self._serialize(await self.collection.find_one({"_id": document["_id"]})))
+            return updates
+        except Exception:
+            logger.exception("Repository failure while completing overdue interviews")
+            raise
+
     async def find_overlapping_interview(self, candidate_id: str, interview_date, interview_time: str, exclude_id: str | None = None) -> dict | None:
         """Find an interview scheduled for the same candidate slot."""
         try:
             query = {
-                "candidate_id": ObjectId(candidate_id),
+                "candidate_id": candidate_id,
                 "interview_date": interview_date,
                 "interview_time": interview_time,
             }
-            if exclude_id and ObjectId.is_valid(exclude_id):
-                query["_id"] = {"$ne": ObjectId(exclude_id)}
+            if exclude_id:
+                query["_id"] = {"$ne": ObjectId(exclude_id)} if ObjectId.is_valid(exclude_id) else {"$ne": exclude_id}
             return self._serialize(await self.collection.find_one(query))
         except Exception:
             logger.exception("Repository failure while checking overlapping interview for candidate: %s", candidate_id)
@@ -111,11 +156,8 @@ class InterviewRepository:
 
     async def get_interview_by_candidate(self, candidate_id: str) -> dict | None:
         """Fetch the latest interview for a candidate."""
-        if not ObjectId.is_valid(candidate_id):
-            logger.warning("Invalid candidate ID provided for interview lookup: %s", candidate_id)
-            return None
         try:
-            document = await self.collection.find_one({"candidate_id": ObjectId(candidate_id)}, sort=[("created_at", -1)])
+            document = await self.collection.find_one({"candidate_id": candidate_id}, sort=[("created_at", -1)])
             return self._serialize(document)
         except Exception:
             logger.exception("Repository failure while fetching interview by candidate: %s", candidate_id)
@@ -123,11 +165,8 @@ class InterviewRepository:
 
     async def get_candidate_by_id(self, candidate_id: str) -> dict | None:
         """Fetch a candidate for validation and dashboard lookups."""
-        if not ObjectId.is_valid(candidate_id):
-            logger.warning("Invalid candidate ID provided: %s", candidate_id)
-            return None
         try:
-            candidate = await self.candidates.find_one({"_id": ObjectId(candidate_id)})
+            candidate = await self.candidates.find_one({"_id": candidate_id})
             if candidate:
                 candidate["_id"] = str(candidate["_id"])
             return candidate
@@ -137,11 +176,8 @@ class InterviewRepository:
 
     async def get_job_by_id(self, job_id: str) -> dict | None:
         """Fetch a job for validation and dashboard lookups."""
-        if not ObjectId.is_valid(job_id):
-            logger.warning("Invalid job ID provided: %s", job_id)
-            return None
         try:
-            job = await self.jobs.find_one({"_id": ObjectId(job_id)})
+            job = await self.jobs.find_one({"_id": job_id})
             if job:
                 job["_id"] = str(job["_id"])
             return job
@@ -151,11 +187,8 @@ class InterviewRepository:
 
     async def get_user_by_id(self, user_id: str) -> dict | None:
         """Fetch a user for interviewer validation and dashboard lookups."""
-        if not ObjectId.is_valid(user_id):
-            logger.warning("Invalid user ID provided: %s", user_id)
-            return None
         try:
-            user = await self.users.find_one({"_id": ObjectId(user_id)})
+            user = await self.users.find_one({"_id": user_id})
             if user:
                 user["_id"] = str(user["_id"])
             return user
@@ -202,9 +235,9 @@ class InterviewRepository:
 
     async def get_interviewer_dashboard_stats(self, interviewer_id: str) -> dict:
         """Aggregate interviewer dashboard statistics."""
-        assigned_interviews = await self.collection.count_documents({"interviewer_id": ObjectId(interviewer_id)})
-        pending_feedback = await self.collection.count_documents({"interviewer_id": ObjectId(interviewer_id), "feedback": {"$exists": False}})
-        completed_feedback = await self.collection.count_documents({"interviewer_id": ObjectId(interviewer_id), "feedback": {"$exists": True}})
+        assigned_interviews = await self.collection.count_documents({"interviewer_id": interviewer_id})
+        pending_feedback = await self.collection.count_documents({"interviewer_id": interviewer_id, "feedback": {"$exists": False}})
+        completed_feedback = await self.collection.count_documents({"interviewer_id": interviewer_id, "feedback": {"$exists": True}})
         return {
             "assigned_interviews": assigned_interviews,
             "pending_feedback": pending_feedback,
