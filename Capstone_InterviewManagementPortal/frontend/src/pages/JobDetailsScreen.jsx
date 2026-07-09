@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import JobPageHeader from '../components/jobs/JobPageHeader';
-import { jobService } from '../services/jobService';
+import { USER_ROLES } from '../constants/roles';
 import { getJobManagementErrorMessage } from '../utils/jobManagement';
+import { loadJobDetails } from '../utils/pageLoaders';
 import '../styles/job-management.css';
-
-const HR_ROLE = 'HR';
 
 /**
  * Display a single job description with role-aware actions.
@@ -19,7 +18,7 @@ const JobDetailsScreen = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const role = localStorage.getItem('userRole');
-    const canManageJobs = role === HR_ROLE;
+    const canManageJobs = role === USER_ROLES.HR;
 
     useEffect(() => {
         /**
@@ -28,20 +27,28 @@ const JobDetailsScreen = () => {
          * @returns {Promise<void>}
          */
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(async () => {
+        const timeoutId = window.setTimeout(() => {
             try {
                 setLoading(true);
-                const data = await jobService.getJobById(id, { signal: controller.signal });
-                setJob(data);
-                setError(null);
+                loadJobDetails(id, controller.signal)
+                    .then((data) => {
+                        setJob(data);
+                        setError(null);
+                    })
+                    .catch((err) => {
+                        if (err?.name === 'CanceledError') {
+                            return;
+                        }
+                        setError(getJobManagementErrorMessage(err, 'Failed to load job details.'));
+                    })
+                    .finally(() => {
+                        if (!controller.signal.aborted) {
+                            setLoading(false);
+                        }
+                    });
             } catch (err) {
-                if (err?.name === 'CanceledError') {
-                    return;
-                }
-                setError(getJobManagementErrorMessage(err, 'Failed to load job details.'));
-            } finally {
-                if (!controller.signal.aborted) {
-                    setLoading(false);
+                if (err?.name !== 'CanceledError') {
+                    setError(getJobManagementErrorMessage(err, 'Failed to load job details.'));
                 }
             }
         }, 20);

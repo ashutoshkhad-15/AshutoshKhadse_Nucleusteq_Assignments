@@ -8,9 +8,11 @@ import {
     CANDIDATE_STATUS_OPTIONS,
     getCandidateManagementErrorMessage,
     mapCandidateToFormValues,
+    mapAppliedJobToOption,
     MAX_RESUME_FILE_SIZE_BYTES,
     validateCandidateForm,
 } from '../utils/candidateManagement';
+import { loadCandidateDetails } from '../utils/pageLoaders';
 
 /**
  * Render the candidate edit screen with resume and status controls.
@@ -31,24 +33,20 @@ const EditCandidateScreen = () => {
 
     useEffect(() => {
         const controller = new AbortController();
-        (async () => {
-            try {
-                const candidateResponse = await candidateService.getCandidateById(id, { signal: controller.signal });
+        loadCandidateDetails(id, controller.signal)
+            .then((candidateResponse) => {
                 setValues(mapCandidateToFormValues(candidateResponse));
                 const currentStatus = candidateResponse?.status || 'PROFILE_CREATED';
                 setStatusValue(currentStatus);
                 setInitialStatus(currentStatus);
-                setSelectedAppliedJob(candidateResponse?.applied_job ? {
-                    value: candidateResponse.applied_job._id,
-                    label: candidateResponse.applied_job.jobTitle,
-                    description: 'Selected job',
-                } : null);
-            } catch (err) {
+                setSelectedAppliedJob(mapAppliedJobToOption(candidateResponse?.applied_job));
+            })
+            .catch((err) => {
                 if (err?.name !== 'CanceledError') setError(getCandidateManagementErrorMessage(err, 'Failed to load candidate details.'));
-            } finally {
+            })
+            .finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
-            }
-        })();
+            });
         return () => controller.abort();
     }, [id]);
 
@@ -69,9 +67,6 @@ const EditCandidateScreen = () => {
         });
     };
 
-    /**
-     * Validate the selected resume file.
-     */
     const validateResumeFile = (file) => {
         if (!file) return '';
         if (!file.name?.toLowerCase().endsWith('.pdf')) return 'Only PDF files are allowed.';
@@ -81,18 +76,12 @@ const EditCandidateScreen = () => {
         return '';
     };
 
-    /**
-     * Handle resume selection on edit.
-     */
     const handleResumeFileChange = (event) => {
         const file = event.target.files?.[0] || null;
         setResumeFile(file);
         setResumeError('');
     };
 
-    /**
-     * Persist candidate changes and optional resume/status updates.
-     */
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError(null);
@@ -114,9 +103,9 @@ const EditCandidateScreen = () => {
                 await candidateService.updateCandidateStatus(id, statusValue);
             }
             if (resumeFile) {
+                const formData = new FormData();
+                formData.append('resume_file', resumeFile);
                 try {
-                    const formData = new FormData();
-                    formData.append('resume_file', resumeFile);
                     await candidateService.uploadResume(id, formData);
                     setResumeFile(null);
                 } catch (uploadError) {

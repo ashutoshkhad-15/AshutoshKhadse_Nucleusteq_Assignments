@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { candidateService } from '../services/candidateService';
 import '../styles/candidate-management.css';
 import { getCandidateManagementErrorMessage, getResumePdfUrl } from '../utils/candidateManagement';
+import { loadCandidateResume } from '../utils/pageLoaders';
 
 /**
  * Renders the native browser PDF preview for a candidate resume.
@@ -16,15 +16,14 @@ const CandidateResumePreviewScreen = () => {
 
     useEffect(() => {
         const controller = new AbortController();
-        (async () => {
-            try {
-                setResume(await candidateService.getResume(id, { signal: controller.signal }));
-            } catch (err) {
+        loadCandidateResume(id, controller.signal)
+            .then((data) => setResume(data))
+            .catch((err) => {
                 if (err?.name !== 'CanceledError') setError(getCandidateManagementErrorMessage(err, 'Failed to load resume.'));
-            } finally {
+            })
+            .finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
-            }
-        })();
+            });
         return () => controller.abort();
     }, [id]);
 

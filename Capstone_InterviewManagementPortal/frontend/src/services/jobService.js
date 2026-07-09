@@ -1,6 +1,5 @@
 import apiClient from './apiService';
-
-const JOBS_BASE_PATH = '/jobs';
+import { API_PATHS } from '../constants/apiConstants';
 
 /**
  * Job description API operations backed by the shared authenticated client.
@@ -18,7 +17,7 @@ export const jobService = {
         if (search?.trim()) {
             params.search = search.trim();
         }
-        const response = await apiClient.get(`${JOBS_BASE_PATH}/`, {
+        const response = await apiClient.get(`${API_PATHS.JOBS}/`, {
             ...config,
             params,
         });
@@ -33,7 +32,7 @@ export const jobService = {
      * @returns {Promise<object>} Job record.
      */
     async getJobById(jobId, config = {}) {
-        const response = await apiClient.get(`${JOBS_BASE_PATH}/${jobId}`, config);
+        const response = await apiClient.get(`${API_PATHS.JOBS}/${jobId}`, config);
         return response.data.data;
     },
 
@@ -44,7 +43,7 @@ export const jobService = {
      * @returns {Promise<object>} Created job details.
      */
     async createJob(jobData) {
-        const response = await apiClient.post(`${JOBS_BASE_PATH}/`, jobData);
+        const response = await apiClient.post(`${API_PATHS.JOBS}/`, jobData);
         return response.data.data;
     },
 
@@ -56,7 +55,7 @@ export const jobService = {
      * @returns {Promise<object>} Updated job details.
      */
     async updateJob(jobId, updateData) {
-        const response = await apiClient.patch(`${JOBS_BASE_PATH}/${jobId}`, updateData);
+        const response = await apiClient.patch(`${API_PATHS.JOBS}/${jobId}`, updateData);
         return response.data.data;
     },
 };

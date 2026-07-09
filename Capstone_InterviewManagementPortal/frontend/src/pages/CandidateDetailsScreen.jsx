@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { candidateService } from '../services/candidateService';
 import '../styles/candidate-management.css';
 import {
     formatCandidateDateDisplay,
@@ -8,6 +7,7 @@ import {
     getCandidateManagementErrorMessage,
     canViewCandidates,
 } from '../utils/candidateManagement';
+import { loadCandidateDetails, loadCandidateResume } from '../utils/pageLoaders';
 
 /**
  * Render the read-only candidate details screen.
@@ -28,20 +28,20 @@ const CandidateDetailsScreen = () => {
             return;
         }
         const controller = new AbortController();
-        (async () => {
-            try {
-                const [candidateData, resumeData] = await Promise.all([
-                    candidateService.getCandidateById(id, { signal: controller.signal }),
-                    candidateService.getResume(id, { signal: controller.signal }).catch(() => null),
-                ]);
+        Promise.all([
+            loadCandidateDetails(id, controller.signal),
+            loadCandidateResume(id, controller.signal).catch(() => null),
+        ])
+            .then(([candidateData, resumeData]) => {
                 setCandidate(candidateData);
                 setResume(resumeData);
-            } catch (err) {
+            })
+            .catch((err) => {
                 if (err?.name !== 'CanceledError') setError(getCandidateManagementErrorMessage(err, 'Failed to load candidate details.'));
-            } finally {
+            })
+            .finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
-            }
-        })();
+            });
         return () => controller.abort();
     }, [canView, id]);
 

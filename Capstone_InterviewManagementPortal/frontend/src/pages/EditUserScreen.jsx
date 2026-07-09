@@ -1,14 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import UserForm from '../components/users/UserForm';
+import { DEFAULT_ADMIN_EMAIL } from '../constants/userConstants';
 import { userService } from '../services/userService';
 import '../styles/user-management.css';
 import {
-    DEFAULT_ADMIN_EMAIL,
     getUserManagementErrorMessage,
     isProtectedUser,
     validateUserForm,
 } from '../utils/userManagement';
+import { loadUserDetails } from '../utils/pageLoaders';
+
+const applyUserDetails = (userData, setName, setEmail, setRole, setIsActive, setError) => {
+    setName(userData.name || '');
+    setEmail(userData.email);
+    setRole(userData.role);
+    setIsActive(userData.is_active);
+    setError(null);
+};
 
 /**
  * Render the administrator workflow for editing an existing user.
@@ -38,25 +47,21 @@ const EditUserScreen = () => {
          * Load the user data needed to prefill the edit form.
          * We schedule the request after a short delay so React StrictMode
          * can mount/unmount the component once without issuing duplicate fetches.
-         */
+        */
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(async () => {
-            try {
-                setLoading(true);
-                const userData = await userService.getUserById(id, { signal: controller.signal });
-                setName(userData.name || '');
-                setEmail(userData.email);
-                setRole(userData.role);
-                setIsActive(userData.is_active);
-                setError(null);
-            } catch (err) {
-                if (err?.name === 'CanceledError') {
-                    return;
-                }
-                setError(getUserManagementErrorMessage(err, 'Failed to load user data.'));
-            } finally {
-                setLoading(false);
-            }
+        const timeoutId = window.setTimeout(() => {
+            setLoading(true);
+            loadUserDetails(id, controller.signal)
+                .then((userData) => applyUserDetails(userData, setName, setEmail, setRole, setIsActive, setError))
+                .catch((err) => {
+                    if (err?.name === 'CanceledError') {
+                        return;
+                    }
+                    setError(getUserManagementErrorMessage(err, 'Failed to load user data.'));
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
         }, 20);
 
         return () => {

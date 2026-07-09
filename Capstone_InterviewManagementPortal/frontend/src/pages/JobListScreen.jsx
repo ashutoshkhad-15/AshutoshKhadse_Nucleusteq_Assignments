@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useDebouncedValue from '../hooks/useDebouncedValue';
 import JobCard from '../components/jobs/JobCard';
-import { jobService } from '../services/jobService';
 import '../styles/job-management.css';
 import { getJobManagementErrorMessage, JOB_LIST_SKELETON_COUNT, JOB_SEARCH_DEBOUNCE_MS, throttle } from '../utils/jobManagement';
-
-const HR_ROLE = 'HR';
+import { USER_ROLES } from '../constants/roles';
+import { loadJobList } from '../utils/pageLoaders';
+import { getListPagination, getListRows, isCanceledRequest, getPaginationRange } from '../utils/listPage';
 
 /**
  * Renders the job list page.
@@ -24,7 +24,7 @@ const JobListScreen = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const role = localStorage.getItem('userRole');
-    const canManageJobs = role === HR_ROLE;
+    const canManageJobs = role === USER_ROLES.HR;
     const debouncedSearchTerm = useDebouncedValue(searchTerm, JOB_SEARCH_DEBOUNCE_MS);
     const normalizedSearch = debouncedSearchTerm.trim();
 
@@ -38,22 +38,21 @@ const JobListScreen = () => {
 
     useEffect(() => {
         const controller = new AbortController();
-        const loadJobs = async () => {
-            try {
-                setError(null);
-                if (loading && jobs.length === 0) setLoading(true);
-                else setSearching(true);
-                const response = await jobService.getAllJobs(normalizedSearch, { signal: controller.signal, params: { page: currentPage, limit: itemsPerPage } });
-                setJobs(Array.isArray(response?.data) ? response.data : []);
-                setPagination(response?.meta || { page: 1, limit: 10, total_items: 0, total_pages: 1 });
-            } catch (err) {
-                if (err?.name !== 'CanceledError') setError(getJobManagementErrorMessage(err, 'Failed to load job descriptions.'));
-            } finally {
+        setError(null);
+        if (loading && jobs.length === 0) setLoading(true);
+        else setSearching(true);
+            loadJobList(normalizedSearch, currentPage, itemsPerPage, controller.signal)
+                .then((response) => {
+                    setJobs(getListRows(response));
+                    setPagination(getListPagination(response));
+                })
+                .catch((err) => {
+                    if (!isCanceledRequest(err)) setError(getJobManagementErrorMessage(err, 'Failed to load job descriptions.'));
+                })
+            .finally(() => {
                 setLoading(false);
                 setSearching(false);
-            }
-        };
-        loadJobs();
+            });
         return () => controller.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [normalizedSearch, currentPage, itemsPerPage]);
@@ -73,6 +72,8 @@ const JobListScreen = () => {
     if (error && jobs.length === 0) {
         return <div className="um-state"><div className="error-banner">{error}</div><button type="button" className="btn-secondary" onClick={() => window.location.reload()}>Retry</button></div>;
     }
+
+    const [startIndex, endIndex] = getPaginationRange(pagination, currentPage, itemsPerPage, jobs.length);
 
     return (
         <div className="um-container">
@@ -100,7 +101,7 @@ const JobListScreen = () => {
 
                 {pagination.total_pages > 1 ? (
                     <div className="um-pagination">
-                        <span className="pagination-info">Showing {jobs.length === 0 ? 0 : ((pagination.page || currentPage) - 1) * (pagination.limit || itemsPerPage) + 1} to {((pagination.page || currentPage) - 1) * (pagination.limit || itemsPerPage) + jobs.length} of {pagination.total_items} jobs</span>
+                        <span className="pagination-info">Showing {startIndex} to {endIndex} of {pagination.total_items} jobs</span>
                         <div className="pagination-buttons">
                             <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="btn-page">Previous</button>
                             <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, pagination.total_pages || 1))} disabled={currentPage === (pagination.total_pages || 1)} className="btn-page">Next</button>

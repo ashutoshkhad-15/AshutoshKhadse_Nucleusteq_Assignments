@@ -1,4 +1,4 @@
-import { USER_ROLE_OPTIONS } from '../../utils/userManagement';
+import { USER_ROLE_OPTIONS } from '../../constants/userConstants';
 
 /**
  * Renders the user create and edit form.

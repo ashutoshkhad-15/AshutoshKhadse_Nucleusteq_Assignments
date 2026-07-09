@@ -1,3 +1,5 @@
+import { USER_ROLES } from '../constants/roles';
+
 export const CANDIDATE_FORM_DEFAULTS = {
     firstName: '',
     lastName: '',
@@ -122,6 +124,15 @@ export const mapJobsToOptions = (jobs = []) =>
         description: job.jobRole || job.location || '',
     }));
 
+export const mapAppliedJobToOption = (job) =>
+    job
+        ? {
+            value: job._id,
+            label: job.jobTitle || 'Untitled Job',
+            description: 'Selected job',
+        }
+        : null;
+
 export const CANDIDATE_STATUS_OPTIONS = [
     'PROFILE_CREATED',
     'INTERVIEW_SCHEDULED',
@@ -131,12 +142,6 @@ export const CANDIDATE_STATUS_OPTIONS = [
 ];
 
 export const MAX_RESUME_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-
-export const CANDIDATE_ROLES = {
-    ADMIN: 'ADMIN',
-    HR: 'HR',
-    INTERVIEWER: 'INTERVIEWER',
-};
 
 /**
  * Extract a safe resume URL from the backend payload.
@@ -188,9 +193,9 @@ export const getCandidateCurrentRole = () => localStorage.getItem('userRole');
 /**
  * Check whether the current user can edit candidate data.
  */
-export const canEditCandidates = () => getCandidateCurrentRole() === CANDIDATE_ROLES.HR;
+export const canEditCandidates = () => getCandidateCurrentRole() === USER_ROLES.HR;
 
 /**
  * Check whether the current user can view candidate data.
  */
-export const canViewCandidates = () => [CANDIDATE_ROLES.ADMIN, CANDIDATE_ROLES.HR, CANDIDATE_ROLES.INTERVIEWER].includes(getCandidateCurrentRole());
+export const canViewCandidates = () => [USER_ROLES.ADMIN, USER_ROLES.HR, USER_ROLES.INTERVIEWER].includes(getCandidateCurrentRole());

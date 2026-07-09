@@ -1,10 +1,4 @@
-export const USER_ROLE_OPTIONS = [
-    { value: 'ADMIN', label: 'Admin' },
-    { value: 'HR', label: 'HR' },
-    { value: 'INTERVIEWER', label: 'Interviewer' },
-];
-
-export const DEFAULT_ADMIN_EMAIL = 'admin@nucleusteq.com';
+import { DEFAULT_ADMIN_EMAIL, USER_ROLE_OPTIONS } from '../constants/userConstants';
 
 const ALLOWED_ROLES = new Set(USER_ROLE_OPTIONS.map((option) => option.value));
 const NUCLEUSTEQ_EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@nucleusteq\.com$/i;

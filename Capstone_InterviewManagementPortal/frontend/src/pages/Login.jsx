@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/auth/AuthLayout';
 import PasswordField from '../components/auth/PasswordField';
+import { LOGIN_TAGLINE } from '../constants/pageConstants';
 import apiClient from '../services/apiService';
-
-const LOGIN_TAGLINE = 'Streamline your recruitment process, schedule interviews, and track candidate progress all in one place.';
 
 /**
  * Render the login form and establish a local Basic Auth session.

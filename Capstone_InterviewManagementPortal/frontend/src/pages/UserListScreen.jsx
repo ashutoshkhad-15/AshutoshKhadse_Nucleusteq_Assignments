@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useDebouncedValue from '../hooks/useDebouncedValue';
+import { DEFAULT_ADMIN_EMAIL } from '../constants/userConstants';
 import { userService } from '../services/userService';
 import '../styles/user-management.css';
-import { DEFAULT_ADMIN_EMAIL, formatUserRange, getUserManagementErrorMessage, isProtectedUser } from '../utils/userManagement';
+import { formatUserRange, getUserManagementErrorMessage, isProtectedUser } from '../utils/userManagement';
+import { loadUserList } from '../utils/pageLoaders';
+import { getListPagination, getListRows, isCanceledRequest } from '../utils/listPage';
 
 /**
  * Displays the user management list for administrators.
@@ -34,25 +37,21 @@ const UserListScreen = () => {
 
     useEffect(() => {
         const controller = new AbortController();
-
-        const loadUsers = async () => {
-            try {
-                setError(null);
-                if (loading && users.length === 0) setLoading(true);
-                else setSearching(true);
-
-                const response = await userService.getAllUsers(requestSearch, { signal: controller.signal, params: { page: currentPage, limit: itemsPerPage } });
-                setUsers(Array.isArray(response?.data) ? response.data : []);
-                setPagination(response?.meta || { page: 1, limit: 10, total_items: 0, total_pages: 1 });
-            } catch (err) {
-                if (err?.name !== 'CanceledError') setError(getUserManagementErrorMessage(err, 'Failed to load users.'));
-            } finally {
+        setError(null);
+        if (loading && users.length === 0) setLoading(true);
+        else setSearching(true);
+            loadUserList(requestSearch, currentPage, itemsPerPage, controller.signal)
+                .then((response) => {
+                    setUsers(getListRows(response));
+                    setPagination(getListPagination(response));
+                })
+                .catch((err) => {
+                    if (!isCanceledRequest(err)) setError(getUserManagementErrorMessage(err, 'Failed to load users.'));
+                })
+            .finally(() => {
                 setLoading(false);
                 setSearching(false);
-            }
-        };
-
-        loadUsers();
+            });
         return () => controller.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [requestSearch, currentPage, itemsPerPage]);
@@ -66,9 +65,9 @@ const UserListScreen = () => {
         try {
             setStatusUpdatingId(userId);
             await userService.updateUser(userId, { is_active: nextStatus });
-            const response = await userService.getAllUsers(requestSearch, { params: { page: currentPage, limit: itemsPerPage } });
-            setUsers(Array.isArray(response?.data) ? response.data : []);
-            setPagination(response?.meta || pagination);
+            const response = await loadUserList(requestSearch, currentPage, itemsPerPage);
+            setUsers(getListRows(response));
+            setPagination(getListPagination(response));
             setSuccessMessage(`User ${email} ${actionLabel}d successfully.`);
             setError(null);
         } catch (err) {

@@ -21,7 +21,6 @@ const AppliedJobSelect = ({ value, onChange, error, disabled = false, initialJob
 
     useEffect(() => {
         const controller = new AbortController();
-
         const loadJobs = async () => {
             try {
                 setLoading(true);

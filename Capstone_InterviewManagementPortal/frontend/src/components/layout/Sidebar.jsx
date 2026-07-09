@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import apiClient, { clearAuthenticationData } from '../../services/apiService';
-
-const ADMIN_ROLE = 'ADMIN';
-const HR_ROLE = 'HR';
-const INTERVIEWER_ROLE = 'INTERVIEWER';
+import { SIDEBAR_NAV_ITEMS } from '../../constants/sidebarNavigation';
+import { signOut } from '../../utils/authSession';
 
 const Sidebar = () => {
     const role = localStorage.getItem('userRole');
@@ -12,27 +9,19 @@ const Sidebar = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [logoutError, setLogoutError] = useState('');
 
-    const navItems = [
-        { to: '/dashboard', label: 'Dashboard', visible: true },
-        { to: '/users', label: 'Users', visible: role === ADMIN_ROLE },
-        { to: '/jobs', label: 'Jobs', visible: [HR_ROLE, ADMIN_ROLE, INTERVIEWER_ROLE].includes(role) },
-        { to: '/candidates', label: 'Candidates', visible: [ADMIN_ROLE, HR_ROLE].includes(role) },
-    ];
-
     const handleLogout = async () => {
         if (isLoggingOut) return;
         setLogoutError('');
         setIsLoggingOut(true);
         try {
             if (localStorage.getItem('basicAuth')) {
-                await apiClient.post('/auth/logout');
+                await signOut();
             }
         } catch {
             setLogoutError('We could not sign you out right now. Please try again.');
             setIsLoggingOut(false);
             return;
         }
-        clearAuthenticationData();
         navigate('/login', { replace: true });
         setIsLoggingOut(false);
     };
@@ -47,7 +36,7 @@ const Sidebar = () => {
             </div>
 
             <nav className="sidebar-nav" aria-label="Primary">
-                {navItems.filter((item) => item.visible).map((item) => {
+                {SIDEBAR_NAV_ITEMS.filter((item) => !item.visibleRoles || item.visibleRoles.includes(role)).map((item) => {
                     return (
                         <NavLink key={item.to} to={item.to} className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}>
                             <span>{item.label}</span>

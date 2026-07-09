@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { candidateService } from '../services/candidateService';
 import '../styles/candidate-management.css';
 import {
     formatCandidateDateDisplay,
     formatCandidateDateTimeDisplay,
     getCandidateManagementErrorMessage,
 } from '../utils/candidateManagement';
+import { loadCandidateStatusHistory } from '../utils/pageLoaders';
 
 /**
  * Render the candidate status history table.
@@ -21,20 +21,17 @@ const CandidateStatusHistoryScreen = () => {
 
     useEffect(() => {
         const controller = new AbortController();
-        (async () => {
-            try {
-                const [candidateData, historyData] = await Promise.all([
-                    candidateService.getCandidateById(id, { signal: controller.signal }),
-                    candidateService.getCandidateStatusHistory(id, { signal: controller.signal }).catch(() => []),
-                ]);
+        loadCandidateStatusHistory(id, controller.signal)
+            .then(([candidateData, historyData]) => {
                 setCandidate(candidateData);
                 setHistory(Array.isArray(historyData) ? historyData : []);
-            } catch (err) {
+            })
+            .catch((err) => {
                 if (err?.name !== 'CanceledError') setError(getCandidateManagementErrorMessage(err, 'Failed to load status history.'));
-            } finally {
+            })
+            .finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
-            }
-        })();
+            });
         return () => controller.abort();
     }, [id]);
 

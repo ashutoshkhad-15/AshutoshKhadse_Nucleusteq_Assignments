@@ -1,6 +1,5 @@
 import apiClient from './apiService';
-
-const USERS_BASE_PATH = '/users';
+import { API_PATHS } from '../constants/apiConstants';
 
 /**
  * User management API operations backed by the shared authenticated client.
@@ -28,7 +27,7 @@ export const userService = {
             },
         };
 
-        const response = await apiClient.get(`${USERS_BASE_PATH}/`, requestConfig);
+        const response = await apiClient.get(`${API_PATHS.USERS}/`, requestConfig);
         return response.data;
     },
 
@@ -39,7 +38,7 @@ export const userService = {
      * @returns {Promise<object>} User record.
      */
     async getUserById(userId, config = {}) {
-        const response = await apiClient.get(`${USERS_BASE_PATH}/${userId}`, config);
+        const response = await apiClient.get(`${API_PATHS.USERS}/${userId}`, config);
         return response.data.data;
     },
 
@@ -50,7 +49,7 @@ export const userService = {
      * @returns {Promise<object>} Created user details.
      */
     async createUser(userData) {
-        const response = await apiClient.post(`${USERS_BASE_PATH}/`, userData);
+        const response = await apiClient.post(`${API_PATHS.USERS}/`, userData);
         return response.data.data;
     },
 
@@ -69,7 +68,7 @@ export const userService = {
         if (payload.email !== undefined && typeof payload.email === 'string') {
             payload.email = payload.email.trim();
         }
-        const response = await apiClient.patch(`${USERS_BASE_PATH}/${userId}`, payload);
+        const response = await apiClient.patch(`${API_PATHS.USERS}/${userId}`, payload);
         return response.data.data;
     },
 
@@ -80,7 +79,7 @@ export const userService = {
      * @returns {Promise<string>} Success message from the backend.
      */
     async disableUser(userId) {
-        const response = await apiClient.patch(`${USERS_BASE_PATH}/${userId}/disable`);
+        const response = await apiClient.patch(`${API_PATHS.USERS}/${userId}/disable`);
         return response.data.message;
     },
 };

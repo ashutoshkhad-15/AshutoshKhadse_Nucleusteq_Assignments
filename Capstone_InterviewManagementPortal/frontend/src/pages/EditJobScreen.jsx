@@ -10,6 +10,7 @@ import {
     mapJobToFormValues,
     useJobFormState,
 } from '../utils/jobManagement';
+import { loadJobDetails } from '../utils/pageLoaders';
 import useJobFormSubmission from '../hooks/useJobFormSubmission';
 import '../styles/job-management.css';
 
@@ -50,24 +51,26 @@ const EditJobScreen = () => {
          * Load the selected job and prefill the edit form.
          *
          * @returns {Promise<void>}
-         */
+        */
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(async () => {
-            try {
-                setLoading(true);
-                const job = await jobService.getJobById(id, { signal: controller.signal });
-                setValues(mapJobToFormValues(job));
-                setError(null);
-            } catch (err) {
-                if (err?.name === 'CanceledError') {
-                    return;
-                }
-                setError(getJobManagementErrorMessage(err, 'Failed to load job details.'));
-            } finally {
-                if (!controller.signal.aborted) {
-                    setLoading(false);
-                }
-            }
+        const timeoutId = window.setTimeout(() => {
+            setLoading(true);
+            loadJobDetails(id, controller.signal)
+                .then((job) => {
+                    setValues(mapJobToFormValues(job));
+                    setError(null);
+                })
+                .catch((err) => {
+                    if (err?.name === 'CanceledError') {
+                        return;
+                    }
+                    setError(getJobManagementErrorMessage(err, 'Failed to load job details.'));
+                })
+                .finally(() => {
+                    if (!controller.signal.aborted) {
+                        setLoading(false);
+                    }
+                });
         }, 20);
 
         return () => {
