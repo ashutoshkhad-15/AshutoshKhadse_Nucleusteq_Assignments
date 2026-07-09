@@ -1,11 +1,5 @@
 /**
  * Shared split-screen layout for authentication pages.
- *
- * @param {object} props - Component props.
- * @param {string} props.title - Heading shown in the brand panel.
- * @param {string} props.tagline - Supporting text shown in the brand panel.
- * @param {React.ReactNode} props.children - Form content displayed in the right panel.
- * @returns {JSX.Element} Authentication page layout.
  */
 const AuthLayout = ({ title, tagline, children }) => {
     return (
