@@ -5,30 +5,44 @@ and service exception handling for login and password reset routes. Service
 dependencies are mocked so router tests never access MongoDB.
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
+from fastapi.testclient import TestClient
 
 from src.exceptions.custom_exceptions import UnauthorizedException
+from src.main import app
+from src.utils.dependencies import get_auth_service
+
+
+@pytest.fixture
+def mock_auth_service():
+    """Provide a mocked auth service instance."""
+    service = AsyncMock()
+    service.login = AsyncMock()
+    service.reset_password = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def client(mock_auth_service):
+    """Return a test client with the auth service dependency overridden."""
+    app.dependency_overrides[get_auth_service] = lambda: mock_auth_service
+    yield TestClient(app)
+    app.dependency_overrides.clear()
 
 
 class TestLoginApi:
     """Verify login endpoint request and response behavior."""
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_login_returns_success_response_for_valid_credentials(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_login_returns_success_response_for_valid_credentials(self, client, mock_auth_service):
         """Return HTTP 200 and user metadata for valid credentials."""
         expected_data = {
             "email": "hr@nucleusteq.com",
             "role": "HR",
             "requires_password_reset": False,
         }
-        mock_service = mock_auth_service_class.return_value
-        mock_service.login = AsyncMock(return_value=expected_data)
+        mock_auth_service.login.return_value = expected_data
 
         response = client.post(
             "/api/v1/auth/login",
@@ -42,7 +56,7 @@ class TestLoginApi:
             "data": expected_data,
             "meta": None,
         }
-        mock_service.login.assert_awaited_once()
+        mock_auth_service.login.assert_awaited_once()
 
     @pytest.mark.parametrize(
         "payload",
@@ -64,17 +78,9 @@ class TestLoginApi:
         assert body["message"] == "Invalid request parameters"
         assert body["details"]
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_login_returns_unauthorized_for_incorrect_password(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_login_returns_unauthorized_for_incorrect_password(self, client, mock_auth_service):
         """Return HTTP 401 when the submitted password is incorrect."""
-        mock_service = mock_auth_service_class.return_value
-        mock_service.login = AsyncMock(
-            side_effect=UnauthorizedException("Invalid email or password")
-        )
+        mock_auth_service.login.side_effect = UnauthorizedException("Invalid email or password")
 
         response = client.post(
             "/api/v1/auth/login",
@@ -90,17 +96,9 @@ class TestLoginApi:
         assert body["timestamp"]
         assert body["details"] is None
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_login_returns_unauthorized_for_nonexistent_user(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_login_returns_unauthorized_for_nonexistent_user(self, client, mock_auth_service):
         """Return HTTP 401 when no user exists for the submitted email."""
-        mock_service = mock_auth_service_class.return_value
-        mock_service.login = AsyncMock(
-            side_effect=UnauthorizedException("Invalid email or password")
-        )
+        mock_auth_service.login.side_effect = UnauthorizedException("Invalid email or password")
 
         response = client.post(
             "/api/v1/auth/login",
@@ -111,17 +109,9 @@ class TestLoginApi:
         assert response.json()["error_code"] == "UNAUTHORIZED"
         assert response.json()["message"] == "Invalid email or password"
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_login_returns_unauthorized_for_disabled_account(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_login_returns_unauthorized_for_disabled_account(self, client, mock_auth_service):
         """Return HTTP 401 when the account is disabled."""
-        mock_service = mock_auth_service_class.return_value
-        mock_service.login = AsyncMock(
-            side_effect=UnauthorizedException("Account is disabled")
-        )
+        mock_auth_service.login.side_effect = UnauthorizedException("Account is disabled")
 
         response = client.post(
             "/api/v1/auth/login",
@@ -131,21 +121,13 @@ class TestLoginApi:
         assert response.status_code == 401
         assert response.json()["message"] == "Account is disabled"
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_login_response_preserves_authorized_role_from_service(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_login_response_preserves_authorized_role_from_service(self, client, mock_auth_service):
         """Return the role supplied by the authentication service."""
-        mock_service = mock_auth_service_class.return_value
-        mock_service.login = AsyncMock(
-            return_value={
-                "email": "interviewer@nucleusteq.com",
-                "role": "INTERVIEWER",
-                "requires_password_reset": False,
-            }
-        )
+        mock_auth_service.login.return_value = {
+            "email": "interviewer@nucleusteq.com",
+            "role": "INTERVIEWER",
+            "requires_password_reset": False,
+        }
 
         response = client.post(
             "/api/v1/auth/login",
@@ -159,15 +141,9 @@ class TestLoginApi:
 class TestResetPasswordApi:
     """Verify reset-password endpoint request and response behavior."""
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_reset_password_returns_success_response_for_valid_request(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_reset_password_returns_success_response_for_valid_request(self, client, mock_auth_service):
         """Return HTTP 200 when password reset succeeds."""
-        mock_service = mock_auth_service_class.return_value
-        mock_service.reset_password = AsyncMock(return_value=None)
+        mock_auth_service.reset_password.return_value = None
 
         response = client.post(
             "/api/v1/auth/reset-password",
@@ -185,7 +161,7 @@ class TestResetPasswordApi:
             "data": None,
             "meta": None,
         }
-        mock_service.reset_password.assert_awaited_once()
+        mock_auth_service.reset_password.assert_awaited_once()
 
     @pytest.mark.parametrize(
         "payload",
@@ -219,11 +195,7 @@ class TestResetPasswordApi:
             {},
         ],
     )
-    def test_reset_password_returns_validation_error_for_invalid_payload(
-        self,
-        client,
-        payload,
-    ):
+    def test_reset_password_returns_validation_error_for_invalid_payload(self, client, payload):
         """Return HTTP 422 when reset-password validation fails."""
         response = client.post("/api/v1/auth/reset-password", json=payload)
 
@@ -234,17 +206,9 @@ class TestResetPasswordApi:
         assert body["message"] == "Invalid request parameters"
         assert body["details"]
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_reset_password_returns_unauthorized_for_unknown_user(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_reset_password_returns_unauthorized_for_unknown_user(self, client, mock_auth_service):
         """Return HTTP 401 when no user exists for the submitted email."""
-        mock_service = mock_auth_service_class.return_value
-        mock_service.reset_password = AsyncMock(
-            side_effect=UnauthorizedException("Invalid email or old password")
-        )
+        mock_auth_service.reset_password.side_effect = UnauthorizedException("Invalid email or old password")
 
         response = client.post(
             "/api/v1/auth/reset-password",
@@ -259,17 +223,9 @@ class TestResetPasswordApi:
         assert response.json()["error_code"] == "UNAUTHORIZED"
         assert response.json()["message"] == "Invalid email or old password"
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_reset_password_returns_unauthorized_for_incorrect_old_password(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_reset_password_returns_unauthorized_for_incorrect_old_password(self, client, mock_auth_service):
         """Return HTTP 401 when the current password is incorrect."""
-        mock_service = mock_auth_service_class.return_value
-        mock_service.reset_password = AsyncMock(
-            side_effect=UnauthorizedException("Invalid email or old password")
-        )
+        mock_auth_service.reset_password.side_effect = UnauthorizedException("Invalid email or old password")
 
         response = client.post(
             "/api/v1/auth/reset-password",
@@ -283,17 +239,9 @@ class TestResetPasswordApi:
         assert response.status_code == 401
         assert response.json()["message"] == "Invalid email or old password"
 
-    @patch("src.routers.auth_router.AuthService")
-    def test_reset_password_returns_unauthorized_for_disabled_account(
-        self,
-        mock_auth_service_class,
-        client,
-    ):
+    def test_reset_password_returns_unauthorized_for_disabled_account(self, client, mock_auth_service):
         """Return HTTP 401 when service rejects a disabled account."""
-        mock_service = mock_auth_service_class.return_value
-        mock_service.reset_password = AsyncMock(
-            side_effect=UnauthorizedException("Account is disabled")
-        )
+        mock_auth_service.reset_password.side_effect = UnauthorizedException("Account is disabled")
 
         response = client.post(
             "/api/v1/auth/reset-password",

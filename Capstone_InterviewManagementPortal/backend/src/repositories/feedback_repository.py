@@ -4,6 +4,7 @@ import logging
 
 from bson.objectid import ObjectId
 
+from src.constants.interview_constants import InterviewConstants
 from src.core.database import get_database
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ class FeedbackRepository:
     def __init__(self):
         """Initialize the repository with active MongoDB collections."""
         self.db = get_database()
-        self.collection = self.db["interviews"]
+        self.collection = self.db[InterviewConstants.INTERVIEW_COLLECTION]
 
     @staticmethod
     def _serialize(document: dict | None) -> dict | None:

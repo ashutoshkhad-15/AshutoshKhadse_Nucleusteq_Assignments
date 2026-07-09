@@ -41,6 +41,12 @@ class CandidateService:
             CandidateStatus.REJECTED.value: set(),
         }
 
+    @staticmethod
+    def _raise_unexpected_error(operation: str, exc: Exception) -> None:
+        """Raise a stable application error for unexpected service failures."""
+        logger.exception(operation)
+        raise AppBaseException("An unexpected error occurred.", "CANDIDATE_SERVICE_ERROR", 500) from exc
+
     async def create_candidate(self, request: CandidateCreateRequest) -> dict:
         """Create a new candidate after validating uniqueness and job existence."""
         await self._ensure_unique_email(request.email)
@@ -50,9 +56,8 @@ class CandidateService:
         try:
             logger.info("Creating candidate profile")
             return await self.candidate_repo.create_candidate(candidate_data)
-        except Exception:
-            logger.exception("Unexpected repository failure during candidate creation")
-            raise
+        except Exception as exc:
+            self._raise_unexpected_error("Unexpected repository failure during candidate creation", exc)
 
     async def get_all_candidates(self, search: str | None = None, page: int = 1, limit: int = 10) -> tuple[list[dict], dict]:
         """Return all candidates matching an optional search term."""
@@ -61,9 +66,8 @@ class CandidateService:
             candidates, total_items = await self.candidate_repo.get_all_candidates(query, page=page, limit=limit)
             total_pages = max(1, (total_items + limit - 1) // limit)
             return candidates, {"page": page, "limit": limit, "total_items": total_items, "total_pages": total_pages}
-        except Exception:
-            logger.exception("Unexpected error while fetching all candidates")
-            raise
+        except Exception as exc:
+            self._raise_unexpected_error("Unexpected error while fetching all candidates", exc)
 
     async def get_candidate_by_id(self, candidate_id: str) -> dict:
         """Fetch a single candidate by identifier."""
@@ -74,9 +78,8 @@ class CandidateService:
             return candidate
         except AppBaseException:
             raise
-        except Exception:
-            logger.exception("Unexpected error while fetching candidate by ID: %s", candidate_id)
-            raise
+        except Exception as exc:
+            self._raise_unexpected_error(f"Unexpected error while fetching candidate by ID: {candidate_id}", exc)
 
     async def update_candidate(self, candidate_id: str, request: CandidateUpdateRequest) -> dict:
         """Apply partial updates to an existing candidate."""
@@ -100,9 +103,8 @@ class CandidateService:
             return candidate
         except AppBaseException:
             raise
-        except Exception:
-            logger.exception("Unexpected repository failure during candidate update")
-            raise
+        except Exception as exc:
+            self._raise_unexpected_error("Unexpected repository failure during candidate update", exc)
 
     async def upload_resume(self, candidate_id: str, file: UploadFile, uploaded_by: Optional[str] = None) -> dict:
         """Validate and persist a PDF resume for a candidate."""
@@ -156,9 +158,8 @@ class CandidateService:
         """Return job options for the applied-job searchable dropdown."""
         try:
             return await self.candidate_repo.get_jobs_by_title((search or "").strip())
-        except Exception:
-            logger.exception("Unexpected error while fetching job dropdown data")
-            raise
+        except Exception as exc:
+            self._raise_unexpected_error("Unexpected error while fetching job dropdown data", exc)
 
     @staticmethod
     def _normalize_status(value: CandidateStatus | str) -> str:

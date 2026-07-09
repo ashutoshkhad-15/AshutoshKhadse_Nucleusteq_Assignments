@@ -9,17 +9,12 @@ from src.schemas.request.interview_request import InterviewCreateRequest, Interv
 from src.schemas.response.interview_response import InterviewResponse
 from src.schemas.response.common_response import SuccessResponse
 from src.services.interview_service import InterviewService
+from src.utils.dependencies import get_interview_service
 from src.utils.security import require_role
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/interviews", tags=["Interviews"])
-
-
-def get_interview_service() -> InterviewService:
-    """Resolve the interview service dependency for interview routes."""
-    return InterviewService()
-
 
 @router.post("/", response_model=SuccessResponse[InterviewResponse], status_code=status.HTTP_201_CREATED)
 async def create_interview(request: InterviewCreateRequest, interview_service: InterviewService = Depends(get_interview_service), _current_user: dict = Depends(require_role([UserRole.HR.value]))):

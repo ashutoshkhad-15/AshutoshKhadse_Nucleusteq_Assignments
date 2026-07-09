@@ -8,17 +8,12 @@ from src.enums.app_enums import UserRole
 from src.schemas.response.common_response import SuccessResponse
 from src.schemas.response.dashboard_response import HrDashboardResponse, InterviewerDashboardResponse
 from src.services.dashboard_service import DashboardService
+from src.utils.dependencies import get_dashboard_service
 from src.utils.security import require_role
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/interviews", tags=["Dashboard"])
-
-
-def get_dashboard_service() -> DashboardService:
-    """Resolve the dashboard service dependency for dashboard routes."""
-    return DashboardService()
-
 
 @router.get("/dashboard/hr", response_model=SuccessResponse[HrDashboardResponse])
 async def hr_dashboard(dashboard_service: DashboardService = Depends(get_dashboard_service), _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value]))):

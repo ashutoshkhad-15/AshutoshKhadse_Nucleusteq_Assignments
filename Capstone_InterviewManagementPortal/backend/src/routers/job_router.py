@@ -13,18 +13,13 @@ from src.exceptions.custom_exceptions import AppBaseException
 from src.schemas.request.job_request import CreateJobRequest, UpdateJobRequest
 from src.schemas.response.common_response import SuccessResponse
 from src.services.job_service import JobService
+from src.utils.dependencies import get_job_service
 from src.utils.security import require_role, get_current_user
 from src.enums.app_enums import UserRole
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["Jobs"])
-
-
-def get_job_service() -> JobService:
-    """Resolve the JobService dependency for job routes."""
-    return JobService()
-
 
 @router.post("/", response_model=SuccessResponse[dict], status_code=status.HTTP_201_CREATED)
 async def create_job(

@@ -2,6 +2,7 @@
 
 import logging
 
+from src.constants.interview_constants import InterviewConstants
 from src.core.database import get_database
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ class DashboardRepository:
         self.db = get_database()
         self.jobs = self.db["jobs"]
         self.candidates = self.db["candidates"]
-        self.interviews = self.db["interviews"]
+        self.interviews = self.db[InterviewConstants.INTERVIEW_COLLECTION]
 
     async def get_hr_dashboard_stats(self) -> dict:
         """Aggregate the HR dashboard statistics."""

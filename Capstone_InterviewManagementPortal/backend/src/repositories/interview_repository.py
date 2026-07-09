@@ -5,6 +5,7 @@ from datetime import date, datetime, timezone
 
 from bson.objectid import ObjectId
 
+from src.constants.interview_constants import InterviewConstants
 from src.core.database import get_database
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ class InterviewRepository:
     def __init__(self):
         """Initialize the repository with active MongoDB collections."""
         self.db = get_database()
-        self.collection = self.db["interviews"]
+        self.collection = self.db[InterviewConstants.INTERVIEW_COLLECTION]
         self.candidates = self.db["candidates"]
         self.jobs = self.db["jobs"]
         self.users = self.db["users"]

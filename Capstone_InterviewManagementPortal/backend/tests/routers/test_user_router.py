@@ -1,19 +1,40 @@
 """Tests for the user management router."""
 
+from unittest.mock import AsyncMock
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, patch
-import base64
 
-from src.main import app
 from src.enums.app_enums import UserRole
+from src.main import app
+from src.routers.user_router import get_user_service
 from src.utils.security import get_current_user
 
-client = TestClient(app)
+
+@pytest.fixture
+def mock_user_service():
+    """Provide a mocked user service instance."""
+    service = AsyncMock()
+    service.create_user = AsyncMock()
+    service.get_all_users = AsyncMock()
+    service.get_user_by_id = AsyncMock()
+    service.update_user = AsyncMock()
+    service.disable_user = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def client(mock_user_service):
+    """Return a test client with the user service dependency overridden."""
+    app.dependency_overrides[get_user_service] = lambda: mock_user_service
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
 
 def override_get_current_user_admin():
     """Return an admin user for dependency override in router tests."""
     return {"email": "admin@nucleusteq.com", "role": UserRole.ADMIN.value}
+
 
 def override_get_current_user_hr():
     """Return an HR user for dependency override in router tests."""
@@ -35,13 +56,11 @@ class TestUserRouter:
 
         app.dependency_overrides.clear()
 
-    @patch('src.routers.user_router.UserService')
-    def test_create_user_endpoint_success(self, mock_user_service_class):
+    def test_create_user_endpoint_success(self, client, mock_user_service):
         """Create a user successfully through the router."""
         app.dependency_overrides[get_current_user] = override_get_current_user_admin
 
-        mock_instance = mock_user_service_class.return_value
-        mock_instance.create_user = AsyncMock(return_value={"name": "New User", "email": "new@nucleusteq.com", "role": "HR"})
+        mock_user_service.create_user.return_value = {"name": "New User", "email": "new@nucleusteq.com", "role": "HR"}
 
         payload = {"name": "New User", "email": "new@nucleusteq.com", "role": "HR"}
 
@@ -79,13 +98,11 @@ class TestUserRouter:
 
         app.dependency_overrides.clear()
 
-    @patch('src.routers.user_router.UserService')
-    def test_disable_user_endpoint_success(self, mock_user_service_class):
+    def test_disable_user_endpoint_success(self, client, mock_user_service):
         """Disable a user successfully through the router."""
         app.dependency_overrides[get_current_user] = override_get_current_user_admin
 
-        mock_instance = mock_user_service_class.return_value
-        mock_instance.disable_user = AsyncMock(return_value=None)
+        mock_user_service.disable_user.return_value = None
 
         response = client.patch("/api/v1/users/123/disable")
 

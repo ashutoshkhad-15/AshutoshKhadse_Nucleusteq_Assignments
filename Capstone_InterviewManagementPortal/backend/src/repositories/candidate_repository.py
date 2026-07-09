@@ -92,6 +92,13 @@ class CandidateRepository:
             candidate["applied_job"] = {"_id": str(job["_id"]), "jobTitle": job.get("jobTitle", "")}
         return candidate
 
+    @staticmethod
+    def _get_object_id(value: str) -> ObjectId | None:
+        """Return a Mongo ObjectId when the input is valid."""
+        if not ObjectId.is_valid(value):
+            return None
+        return ObjectId(value)
+
     async def create_candidate(self, candidate_data: dict) -> dict:
         """Insert a new candidate document."""
         candidate_data = dict(candidate_data)
@@ -122,9 +129,10 @@ class CandidateRepository:
 
     async def get_candidate_by_id(self, candidate_id: str) -> dict | None:
         """Fetch a candidate by MongoDB identifier."""
-        if not ObjectId.is_valid(candidate_id):
+        object_id = self._get_object_id(candidate_id)
+        if not object_id:
             return None
-        candidate = await self.collection.find_one({"_id": ObjectId(candidate_id)})
+        candidate = await self.collection.find_one({"_id": object_id})
         if not candidate:
             return None
         candidate = await self._hydrate_applied_job(candidate)
@@ -132,12 +140,13 @@ class CandidateRepository:
 
     async def update_candidate(self, candidate_id: str, update_data: dict) -> dict | None:
         """Apply a partial update to a candidate document."""
-        if not ObjectId.is_valid(candidate_id):
+        object_id = self._get_object_id(candidate_id)
+        if not object_id:
             return None
 
         update_data = dict(update_data)
         update_data["updated_at"] = datetime.now(timezone.utc)
-        result = await self.collection.update_one({"_id": ObjectId(candidate_id)}, {"$set": update_data})
+        result = await self.collection.update_one({"_id": object_id}, {"$set": update_data})
         if result.matched_count == 0:
             return None
         return await self.get_candidate_by_id(candidate_id)
@@ -154,9 +163,10 @@ class CandidateRepository:
 
     async def get_job_by_id(self, job_id: str) -> dict | None:
         """Fetch an applied job record for candidate validation."""
-        if not ObjectId.is_valid(job_id):
+        object_id = self._get_object_id(job_id)
+        if not object_id:
             return None
-        job = await self.job_collection.find_one({"_id": ObjectId(job_id)})
+        job = await self.job_collection.find_one({"_id": object_id})
         if not job:
             return None
         job = dict(job)
@@ -174,17 +184,19 @@ class CandidateRepository:
 
     async def get_resume_metadata(self, candidate_id: str) -> dict | None:
         """Return stored resume metadata for a candidate."""
-        if not ObjectId.is_valid(candidate_id):
+        object_id = self._get_object_id(candidate_id)
+        if not object_id:
             return None
-        document = await self.resume_collection.find_one({"candidate_id": ObjectId(candidate_id)})
+        document = await self.resume_collection.find_one({"candidate_id": object_id})
         return self._serialize_resume_document(document)
 
-    async def upsert_resume(self, candidate_id: str, file_name: str, content_type: str, file_bytes: bytes, uploaded_by: str | None = None) -> dict:
+    async def upsert_resume(self, candidate_id: str, file_name: str, content_type: str, file_bytes: bytes, uploaded_by: str | None = None) -> dict | None:
         """Store resume bytes and metadata for a candidate."""
-        if not ObjectId.is_valid(candidate_id):
+        object_id = self._get_object_id(candidate_id)
+        if not object_id:
             return None
         payload = {
-            "candidate_id": ObjectId(candidate_id),
+            "candidate_id": object_id,
             "original_filename": file_name,
             "stored_filename": f"{candidate_id}_{file_name}",
             "content_type": content_type,
@@ -194,22 +206,26 @@ class CandidateRepository:
         }
         existing = await self.get_resume_metadata(candidate_id)
         if existing:
-            await self.resume_collection.update_one({"candidate_id": ObjectId(candidate_id)}, {"$set": payload})
+            await self.resume_collection.update_one({"candidate_id": object_id}, {"$set": payload})
         else:
             await self.resume_collection.insert_one(payload)
         return await self.get_resume_metadata(candidate_id)
 
     async def get_resume_file(self, candidate_id: str) -> dict | None:
         """Return stored resume bytes and metadata for a candidate."""
-        if not ObjectId.is_valid(candidate_id):
+        object_id = self._get_object_id(candidate_id)
+        if not object_id:
             return None
-        document = await self.resume_collection.find_one({"candidate_id": ObjectId(candidate_id)})
+        document = await self.resume_collection.find_one({"candidate_id": object_id})
         return self._serialize_resume_document(document)
 
-    async def add_status_history(self, candidate_id: str, previous_status: str | None, new_status: str, updated_by: str | None = None) -> dict:
+    async def add_status_history(self, candidate_id: str, previous_status: str | None, new_status: str, updated_by: str | None = None) -> dict | None:
         """Append an immutable candidate status history row."""
+        object_id = self._get_object_id(candidate_id)
+        if not object_id:
+            return None
         payload = {
-            "candidate_id": ObjectId(candidate_id),
+            "candidate_id": object_id,
             "previous_status": previous_status,
             "new_status": new_status,
             "timestamp": datetime.now(timezone.utc),
@@ -221,10 +237,11 @@ class CandidateRepository:
 
     async def get_status_history(self, candidate_id: str) -> list[dict]:
         """Return the full status history for a candidate."""
-        if not ObjectId.is_valid(candidate_id):
+        object_id = self._get_object_id(candidate_id)
+        if not object_id:
             return []
         history: list[dict] = []
-        cursor = self.status_history_collection.find({"candidate_id": ObjectId(candidate_id)}).sort("timestamp", 1)
+        cursor = self.status_history_collection.find({"candidate_id": object_id}).sort("timestamp", 1)
         async for document in cursor:
             history.append(self._serialize_status_history(document))
         return history

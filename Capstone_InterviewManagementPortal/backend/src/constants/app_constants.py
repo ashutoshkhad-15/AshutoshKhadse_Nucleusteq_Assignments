@@ -7,6 +7,7 @@ class AppConstants:
     PAGINATION_DEFAULT_LIMIT = 10
     PAGINATION_DEFAULT_PAGE = 1
     DOMAIN_NAME = "nucleusteq.com"
+    DEFAULT_ADMIN_EMAIL = "admin@nucleusteq.com"
     MOBILE_NUMBER_LENGTH = 10
     PASSWORD_MIN_LENGTH = 6
     PASSWORD_MAX_LENGTH = 12

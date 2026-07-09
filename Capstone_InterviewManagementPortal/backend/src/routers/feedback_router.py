@@ -9,17 +9,12 @@ from src.schemas.request.feedback_request import FeedbackRequest
 from src.schemas.response.feedback_response import FeedbackResponse
 from src.schemas.response.common_response import SuccessResponse
 from src.services.feedback_service import FeedbackService
+from src.utils.dependencies import get_feedback_service
 from src.utils.security import require_role
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/interviews", tags=["Feedback"])
-
-
-def get_feedback_service() -> FeedbackService:
-    """Resolve the feedback service dependency for feedback routes."""
-    return FeedbackService()
-
 
 @router.post("/{interview_id}/feedback", response_model=SuccessResponse[FeedbackResponse])
 async def submit_feedback(interview_id: str, request: FeedbackRequest, feedback_service: FeedbackService = Depends(get_feedback_service), current_user: dict = Depends(require_role([UserRole.INTERVIEWER.value]))):

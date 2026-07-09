@@ -2,6 +2,7 @@
 
 import logging
 
+from src.constants.app_constants import AppConstants
 from src.core.config import settings
 from src.exceptions.custom_exceptions import AppBaseException
 from src.repositories.user_repository import UserRepository
@@ -13,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 class UserService:
     """Coordinate user-related business rules and persistence operations."""
-
-    DEFAULT_ADMIN_EMAIL = "admin@nucleusteq.com"
 
     def __init__(self):
         """Initialize the service with the user repository dependency."""
@@ -119,7 +118,7 @@ class UserService:
         user = await self.get_user_by_id(user_id)
         update_payload = {key: value for key, value in request.model_dump().items() if value is not None}
 
-        if user.get("email") == self.DEFAULT_ADMIN_EMAIL:
+        if user.get("email") == AppConstants.DEFAULT_ADMIN_EMAIL:
             protected_fields = {"name", "email", "role"}
             requested_fields = set(update_payload)
             if requested_fields & protected_fields:
@@ -142,7 +141,7 @@ class UserService:
     async def disable_user(self, user_id: str):
         """Disable a user account while protecting the primary super-admin."""
         user = await self.get_user_by_id(user_id)
-        if user["email"] == self.DEFAULT_ADMIN_EMAIL:
+        if user["email"] == AppConstants.DEFAULT_ADMIN_EMAIL:
             logger.warning("Unauthorized disable attempt for primary admin user ID: %s", user_id)
             raise AppBaseException("Cannot disable the primary super admin", "ACTION_DENIED", 403)
         if user.get("role") == "INTERVIEWER" and await self.user_repo.has_scheduled_interviews(user_id):
