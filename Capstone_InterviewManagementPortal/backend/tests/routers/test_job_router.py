@@ -129,3 +129,44 @@ class TestJobRouter:
 
         assert response.status_code == 403
         mock_job_service.update_job.assert_not_called()
+
+    def test_job_service_error_propagates_on_create(self, client, mock_job_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_hr
+        mock_job_service.create_job.side_effect = RuntimeError("boom")
+
+        payload = {
+            "jobTitle": "Data Engineer",
+            "jobDetails": "Build pipelines and data services.",
+            "jobRole": "Data Engineering",
+            "requiredSkills": ["Python"],
+            "experienceRequired": "2 years",
+            "employmentType": "Full Time",
+            "location": "Remote",
+        }
+
+        with pytest.raises(RuntimeError):
+            client.post("/api/v1/jobs/", json=payload)
+
+    def test_get_all_jobs_fallback_meta_branch(self, client, mock_job_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_interviewer
+        mock_job_service.get_all_jobs.return_value = [{"_id": "1"}]
+
+        response = client.get("/api/v1/jobs/?search=backend&page=2&limit=5")
+
+        assert response.status_code == 200
+        assert response.json()["meta"]["page"] == 2
+        assert response.json()["meta"]["limit"] == 5
+
+    def test_get_job_error_propagates(self, client, mock_job_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_interviewer
+        mock_job_service.get_job_by_id.side_effect = RuntimeError("boom")
+
+        with pytest.raises(RuntimeError):
+            client.get("/api/v1/jobs/123")
+
+    def test_update_job_error_propagates(self, client, mock_job_service):
+        app.dependency_overrides[get_current_user] = override_get_current_user_hr
+        mock_job_service.update_job.side_effect = RuntimeError("boom")
+
+        with pytest.raises(RuntimeError):
+            client.patch("/api/v1/jobs/123", json={"jobTitle": "Platform Engineer"})

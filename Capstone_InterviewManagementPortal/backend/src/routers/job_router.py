@@ -13,8 +13,9 @@ from src.exceptions.custom_exceptions import AppBaseException
 from src.schemas.request.job_request import CreateJobRequest, UpdateJobRequest
 from src.schemas.response.common_response import SuccessResponse
 from src.services.job_service import JobService
+from src.utils.common import build_success_response
 from src.utils.dependencies import get_job_service
-from src.utils.security import require_role, get_current_user
+from src.utils.security import require_role
 from src.enums.app_enums import UserRole
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/api/v1/jobs", tags=["Jobs"])
 async def create_job(
     request: CreateJobRequest,
     job_service: JobService = Depends(get_job_service),
-    _current_user: dict = Depends(require_role([UserRole.HR.value]))
+    _current_user: dict = Depends(require_role([UserRole.HR]))
 ):
     """Create a new job description.
 
@@ -38,7 +39,7 @@ async def create_job(
             logger.exception("Unexpected error while creating job through API")
         raise
     logger.info("Job created successfully through API")
-    return SuccessResponse(message="Job created successfully", data=data)
+    return build_success_response("Job created successfully", data)
 
 
 @router.get("/", response_model=SuccessResponse[list], status_code=status.HTTP_200_OK)
@@ -47,7 +48,7 @@ async def get_all_jobs(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     job_service: JobService = Depends(get_job_service),
-    _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value]))
+    _current_user: dict = Depends(require_role([UserRole.HR, UserRole.ADMIN, UserRole.INTERVIEWER]))
 ):
     """Retrieve all job descriptions.
 
@@ -65,14 +66,14 @@ async def get_all_jobs(
             logger.exception("Unexpected error while retrieving jobs through API")
         raise
     logger.info("Jobs retrieved successfully through API")
-    return SuccessResponse(message="Jobs retrieved successfully", data=data, meta=meta)
+    return build_success_response("Jobs retrieved successfully", data, meta)
 
 
 @router.get("/{job_id}", response_model=SuccessResponse[dict], status_code=status.HTTP_200_OK)
 async def get_job(
     job_id: str,
     job_service: JobService = Depends(get_job_service),
-    _current_user: dict = Depends(require_role([UserRole.HR.value, UserRole.ADMIN.value, UserRole.INTERVIEWER.value]))
+    _current_user: dict = Depends(require_role([UserRole.HR, UserRole.ADMIN, UserRole.INTERVIEWER]))
 ):
     """Retrieve a specific job description by ID.
 
@@ -85,7 +86,7 @@ async def get_job(
             logger.exception("Unexpected error while retrieving job %s through API", job_id)
         raise
     logger.info("Job retrieved successfully through API: %s", job_id)
-    return SuccessResponse(message="Job retrieved successfully", data=data)
+    return build_success_response("Job retrieved successfully", data)
 
 
 @router.patch("/{job_id}", response_model=SuccessResponse[dict], status_code=status.HTTP_200_OK)
@@ -93,7 +94,7 @@ async def update_job(
     job_id: str,
     request: UpdateJobRequest,
     job_service: JobService = Depends(get_job_service),
-    _current_user: dict = Depends(require_role([UserRole.HR.value]))
+    _current_user: dict = Depends(require_role([UserRole.HR]))
 ):
     """Update an existing job description.
 
@@ -106,4 +107,4 @@ async def update_job(
             logger.exception("Unexpected error while updating job %s through API", job_id)
         raise
     logger.info("Job updated successfully through API: %s", job_id)
-    return SuccessResponse(message="Job updated successfully", data=data)
+    return build_success_response("Job updated successfully", data)

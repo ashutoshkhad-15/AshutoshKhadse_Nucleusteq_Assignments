@@ -10,6 +10,7 @@ import logging
 from src.repositories.job_repository import JobRepository
 from src.schemas.request.job_request import CreateJobRequest, UpdateJobRequest
 from src.exceptions.custom_exceptions import AppBaseException
+from src.utils.common import build_pagination_meta, normalize_search_term
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +43,7 @@ class JobService:
         """
         logger.info("Fetching all job descriptions")
         query: dict = {}
-
-        search_term = (search or "").strip()
+        search_term = normalize_search_term(search)
         if search_term:
             query["$or"] = [
                 {"jobTitle": {"$regex": search_term, "$options": "i"}},
@@ -58,8 +58,7 @@ class JobService:
                 jobs, total_items = result
             else:
                 jobs, total_items = result, len(result or [])
-            total_pages = max(1, (total_items + limit - 1) // limit)
-            return jobs, {"page": page, "limit": limit, "total_items": total_items, "total_pages": total_pages}
+            return jobs, build_pagination_meta(page, limit, total_items)
         except Exception:
             logger.exception("Unexpected error while fetching all jobs")
             raise

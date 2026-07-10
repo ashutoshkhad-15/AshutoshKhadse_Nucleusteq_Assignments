@@ -118,3 +118,34 @@ class TestJobService:
         assert exc_info.value.status_code == 404
         assert exc_info.value.error_code == "JOB_NOT_FOUND"
         job_service.job_repo.update_job.assert_not_called()
+
+    async def test_get_all_jobs_accepts_list_return(self, job_service):
+        job_service.job_repo.get_all_jobs.return_value = [{"jobTitle": "Job 1"}]
+
+        jobs, meta = await job_service.get_all_jobs(search=None, page=3, limit=4)
+
+        assert jobs[0]["jobTitle"] == "Job 1"
+        assert meta["page"] == 3
+        assert meta["total_items"] == 1
+
+    async def test_update_job_empty_payload_fails(self, job_service):
+        job_service.job_repo.get_job_by_id.return_value = {"_id": "123", "jobTitle": "Senior Engineer"}
+
+        with pytest.raises(AppBaseException) as exc_info:
+            await job_service.update_job("123", UpdateJobRequest())
+
+        assert exc_info.value.status_code == 400
+        assert exc_info.value.error_code == "BAD_REQUEST"
+
+    async def test_repository_error_paths_bubble_up(self, job_service):
+        job_service.job_repo.create_job.side_effect = RuntimeError("boom")
+        with pytest.raises(RuntimeError):
+            await job_service.create_job(CreateJobRequest(
+                jobTitle="Senior Backend Engineer",
+                jobDetails="Design and implement scalable backend services.",
+                jobRole="Backend Development",
+                requiredSkills=["Python"],
+                experienceRequired="3+ years",
+                employmentType="Full Time",
+                location="Indore, MP",
+            ))
