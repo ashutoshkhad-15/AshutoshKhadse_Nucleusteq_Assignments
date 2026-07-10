@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import MainLayout from '../layout/MainLayout';
+import { isAdmin, isAuthenticated } from '../../utils/session';
 
 /**
  * Restrict access to administrative user-management routes.
@@ -7,14 +8,11 @@ import MainLayout from '../layout/MainLayout';
  * @returns {JSX.Element} Admin layout shell or a redirect for unauthorized users.
  */
 const AdminRoute = () => {
-    const role = localStorage.getItem('userRole');
-    const auth = localStorage.getItem('basicAuth');
-
-    if (!role || !auth) {
+    if (!isAuthenticated()) {
         return <Navigate to="/login" replace />;
     }
 
-    if (role !== 'ADMIN') {
+    if (!isAdmin()) {
         return <Navigate to="/dashboard" replace />;
     }
 

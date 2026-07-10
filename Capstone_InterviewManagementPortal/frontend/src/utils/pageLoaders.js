@@ -2,6 +2,7 @@ import { candidateService } from '../services/candidateService';
 import { jobService } from '../services/jobService';
 import { userService } from '../services/userService';
 import { interviewService } from '../services/interviewService';
+import { USER_ROLES } from '../constants/roles';
 
 export const loadCandidateDetails = (id, signal) => candidateService.getCandidateById(id, { signal });
 export const loadCandidateResume = (id, signal) => candidateService.getResume(id, { signal });
@@ -30,11 +31,25 @@ export const loadInterviewList = (search, page, limit, signal) =>
 export const loadInterviewDetails = (id, signal) => interviewService.getInterviewById(id, { signal });
 export const loadAssignedInterviews = (signal) => interviewService.getAssignedInterviews({ signal, params: { page: 1, limit: 100 } });
 
+export const loadInterviewFormOptions = async (signal) => {
+    const [candidateResponse, jobResponse, interviewerResponse] = await Promise.allSettled([
+        candidateService.getAllCandidates('', { signal, params: { page: 1, limit: 100 } }),
+        jobService.getAllJobs('', { signal, params: { page: 1, limit: 100 } }),
+        interviewService.getInterviewers('', { signal, params: { page: 1, limit: 100 } }),
+    ]);
+
+    return {
+        candidateResponse: candidateResponse.status === 'fulfilled' ? candidateResponse.value : null,
+        jobResponse: jobResponse.status === 'fulfilled' ? jobResponse.value : null,
+        interviewerResponse: interviewerResponse.status === 'fulfilled' ? interviewerResponse.value : null,
+    };
+};
+
 export const loadDashboardStats = (role, signal) => {
-    if (role === 'INTERVIEWER') {
+    if (role === USER_ROLES.INTERVIEWER) {
         return interviewService.getInterviewerDashboard({ signal });
     }
-    if (role === 'ADMIN') {
+    if (role === USER_ROLES.ADMIN) {
         return interviewService.getAdminDashboard({ signal });
     }
     return interviewService.getHrDashboard({ signal });

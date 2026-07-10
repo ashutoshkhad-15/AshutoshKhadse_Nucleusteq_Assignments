@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { SIDEBAR_NAV_ITEMS } from '../../constants/sidebarNavigation';
+import { ROUTES } from '../../constants/routes';
 import { signOut } from '../../utils/authSession';
+import { getStoredUserRole, isAuthenticated } from '../../utils/session';
 
 const Sidebar = () => {
-    const role = localStorage.getItem('userRole');
+    const role = getStoredUserRole();
     const navigate = useNavigate();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [logoutError, setLogoutError] = useState('');
@@ -14,7 +16,7 @@ const Sidebar = () => {
         setLogoutError('');
         setIsLoggingOut(true);
         try {
-            if (localStorage.getItem('basicAuth')) {
+            if (isAuthenticated()) {
                 await signOut();
             }
         } catch {
@@ -22,7 +24,7 @@ const Sidebar = () => {
             setIsLoggingOut(false);
             return;
         }
-        navigate('/login', { replace: true });
+        navigate(ROUTES.LOGIN, { replace: true });
         setIsLoggingOut(false);
     };
 
@@ -36,13 +38,11 @@ const Sidebar = () => {
             </div>
 
             <nav className="sidebar-nav" aria-label="Primary">
-                {SIDEBAR_NAV_ITEMS.filter((item) => !item.visibleRoles || item.visibleRoles.includes(role)).map((item) => {
-                    return (
-                        <NavLink key={item.to} to={item.to} className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}>
-                            <span>{item.label}</span>
-                        </NavLink>
-                    );
-                })}
+                {SIDEBAR_NAV_ITEMS.filter((item) => !item.visibleRoles || item.visibleRoles.includes(role)).map((item) => (
+                    <NavLink key={item.to} to={item.to} className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}>
+                        <span>{item.label}</span>
+                    </NavLink>
+                ))}
             </nav>
 
             <div className="sidebar-footer">
