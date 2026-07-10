@@ -260,7 +260,7 @@ class TestCandidateService:
         candidate_service.candidate_repo.update_candidate.return_value = {"_id": "123", "status": CandidateStatus.INTERVIEW_SCHEDULED.value}
         candidate_service.candidate_repo.add_status_history.return_value = {"_id": "history1"}
 
-        result = await candidate_service.update_candidate_status("123", CandidateStatus.INTERVIEW_SCHEDULED)
+        result = await candidate_service.update_candidate_status("123", CandidateStatus.INTERVIEW_SCHEDULED, force_transition=True)
         assert result["status"] == CandidateStatus.INTERVIEW_SCHEDULED.value
 
     async def test_update_candidate_status_invalid_transition(self, candidate_service):
