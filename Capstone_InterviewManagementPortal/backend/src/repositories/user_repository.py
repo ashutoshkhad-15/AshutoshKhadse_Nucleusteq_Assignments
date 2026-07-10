@@ -162,10 +162,3 @@ class UserRepository:
         except Exception as exc:
             self._raise_repository_error("fetching default admin account", exc)
 
-    async def has_scheduled_interviews(self, interviewer_id: str) -> bool:
-        """Check whether an interviewer still has scheduled interviews."""
-        try:
-            count = await self.interviews.count_documents({"interviewer_id": interviewer_id, "status": "SCHEDULED"})
-            return count > 0
-        except Exception as exc:
-            self._raise_repository_error(f"checking scheduled interviews for user: {interviewer_id}", exc)

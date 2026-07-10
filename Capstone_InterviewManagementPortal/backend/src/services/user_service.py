@@ -3,10 +3,13 @@
 import logging
 
 from src.constants.app_constants import AppConstants
+from src.enums.app_enums import UserRole
 from src.core.config import settings
 from src.exceptions.custom_exceptions import AppBaseException
+from src.repositories.interview_repository import InterviewRepository
 from src.repositories.user_repository import UserRepository
 from src.schemas.request.user_request import CreateUserRequest, UpdateUserRequest
+from src.utils.common import build_pagination_meta, get_user_role, normalize_search_term
 from src.utils.security import encode_password
 
 logger = logging.getLogger(__name__)
@@ -18,6 +21,7 @@ class UserService:
     def __init__(self):
         """Initialize the service with the user repository dependency."""
         self.user_repo = UserRepository()
+        self.interview_repo = InterviewRepository()
 
     @staticmethod
     def _extract_page_result(result) -> tuple[list, int]:
@@ -25,12 +29,6 @@ class UserService:
         if isinstance(result, tuple) and len(result) == 2:
             return result
         return result, len(result or [])
-
-    @staticmethod
-    def _build_pagination_meta(page: int, limit: int, total_items: int) -> dict:
-        """Build pagination metadata using the canonical response shape."""
-        total_pages = max(1, (total_items + limit - 1) // limit)
-        return {"page": page, "limit": limit, "total_items": total_items, "total_pages": total_pages}
 
     async def _list_users(self, repo_method, page: int, limit: int, search_term: str | None = None) -> tuple[list, dict]:
         """Fetch users through the supplied repository method and normalize metadata."""
@@ -47,7 +45,7 @@ class UserService:
             logger.exception("Repository failure while fetching users")
             raise
         logger.info("User list retrieved successfully")
-        return users, self._build_pagination_meta(page, limit, total_items)
+        return users, build_pagination_meta(page, limit, total_items)
 
     async def create_user(self, request: CreateUserRequest) -> dict:
         """Create a new user with the default temporary password."""
@@ -92,7 +90,7 @@ class UserService:
 
     async def get_all_users(self, search: str | None = None, page: int = 1, limit: int = 10) -> tuple[list, dict]:
         """Return all users or a filtered subset when a search term is provided."""
-        search_term = (search or "").strip().lower()
+        search_term = normalize_search_term(search).lower()
         if search_term:
             return await self._list_users(self.user_repo.search_users, page, limit, search_term)
 
@@ -118,6 +116,14 @@ class UserService:
         user = await self.get_user_by_id(user_id)
         update_payload = {key: value for key, value in request.model_dump().items() if value is not None}
 
+        if get_user_role(user) == UserRole.INTERVIEWER and await self.interview_repo.has_scheduled_interviews_for_interviewer(user_id):
+            logger.warning("Attempted to edit interviewer with scheduled interviews: %s", user_id)
+            raise AppBaseException(
+                "This interviewer has scheduled interviews assigned and cannot be edited.",
+                "VALIDATION_ERROR",
+                400,
+            )
+
         if user.get("email") == AppConstants.DEFAULT_ADMIN_EMAIL:
             protected_fields = {"name", "email", "role"}
             requested_fields = set(update_payload)
@@ -139,13 +145,24 @@ class UserService:
         return await self.get_user_by_id(user_id)
 
     async def disable_user(self, user_id: str):
-        """Disable a user account while protecting the primary super-admin."""
+        """Disable a user account while protecting the primary super-admin.
+
+        Interviewers can only be disabled when they have no interviews in
+        INTERVIEW_SCHEDULED state.
+        """
         user = await self.get_user_by_id(user_id)
         if user["email"] == AppConstants.DEFAULT_ADMIN_EMAIL:
             logger.warning("Unauthorized disable attempt for primary admin user ID: %s", user_id)
             raise AppBaseException("Cannot disable the primary super admin", "ACTION_DENIED", 403)
-        if user.get("role") == "INTERVIEWER" and await self.user_repo.has_scheduled_interviews(user_id):
-            raise AppBaseException("This interviewer has scheduled interviews assigned and cannot be disabled.", "VALIDATION_ERROR", 400)
+        if get_user_role(user) == UserRole.INTERVIEWER:
+            has_scheduled = await self.interview_repo.has_scheduled_interviews_for_interviewer(user_id)
+            if has_scheduled:
+                logger.warning("Attempted to disable interviewer with scheduled interviews: %s", user_id)
+                raise AppBaseException(
+                    "This interviewer has scheduled interviews assigned and cannot be disabled.",
+                    "VALIDATION_ERROR",
+                    400,
+                )
 
         try:
             await self.user_repo.update_user_by_id(user_id, {"is_active": False})

@@ -41,12 +41,12 @@ def override_get_current_user_hr():
     return {"email": "hr@nucleusteq.com", "role": UserRole.HR.value}
 
 class TestUserRouter:
-    def test_unauthorized_access_rejected(self):
+    def test_unauthorized_access_rejected(self, client):
         """Reject access when no authenticated user is available."""
         response = client.get("/api/v1/users/")
         assert response.status_code == 401
 
-    def test_hr_role_rejected(self):
+    def test_hr_role_rejected(self, client):
         """Reject access for roles that are not allowed to manage users."""
         app.dependency_overrides[get_current_user] = override_get_current_user_hr
 
@@ -72,7 +72,7 @@ class TestUserRouter:
 
         app.dependency_overrides.clear()
 
-    def test_create_user_pydantic_validation_fails(self):
+    def test_create_user_pydantic_validation_fails(self, client):
         """Surface validation errors before the request reaches the service."""
         app.dependency_overrides[get_current_user] = override_get_current_user_admin
 
@@ -85,7 +85,7 @@ class TestUserRouter:
 
         app.dependency_overrides.clear()
 
-    def test_create_user_pydantic_validation_rejects_invalid_format(self):
+    def test_create_user_pydantic_validation_rejects_invalid_format(self, client):
         """Reject emails that violate the NucleusTeq corporate format rules."""
         app.dependency_overrides[get_current_user] = override_get_current_user_admin
 

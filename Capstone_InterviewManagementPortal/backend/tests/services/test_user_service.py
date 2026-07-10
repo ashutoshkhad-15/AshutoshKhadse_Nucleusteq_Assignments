@@ -11,6 +11,7 @@ from src.enums.app_enums import UserRole
 def user_service():
     """Provide a service instance backed by a mocked repository."""
     with patch('src.services.user_service.UserRepository') as mock_repo_class, \
+         patch('src.services.user_service.InterviewRepository') as mock_interview_repo_class, \
          patch('os.getenv', return_value="TestPassword@123"):
              
         mock_repo_instance = mock_repo_class.return_value
@@ -20,9 +21,12 @@ def user_service():
         mock_repo_instance.search_users = AsyncMock()
         mock_repo_instance.get_user_by_id = AsyncMock()
         mock_repo_instance.update_user_by_id = AsyncMock()
+        mock_interview_repo_instance = mock_interview_repo_class.return_value
+        mock_interview_repo_instance.has_scheduled_interviews_for_interviewer = AsyncMock(return_value=False)
         
         service = UserService()
         service.user_repo = mock_repo_instance
+        service.interview_repo = mock_interview_repo_instance
         yield service
 
 class TestUserService:
@@ -98,3 +102,29 @@ class TestUserService:
         with pytest.raises(AppBaseException) as excinfo:
             await user_service.disable_user("123")
         assert excinfo.value.error_code == "ACTION_DENIED"
+
+    async def test_update_interviewer_with_scheduled_interviews_fails(self, user_service):
+        user_service.user_repo.get_user_by_id.return_value = {"_id": "123", "email": "interviewer@nucleusteq.com", "role": UserRole.INTERVIEWER.value}
+        user_service.interview_repo.has_scheduled_interviews_for_interviewer.return_value = True
+
+        with pytest.raises(AppBaseException) as excinfo:
+            await user_service.update_user("123", UpdateUserRequest(name="New Name"))
+
+        assert excinfo.value.error_code == "VALIDATION_ERROR"
+
+    async def test_update_default_admin_fails(self, user_service):
+        user_service.user_repo.get_user_by_id.return_value = {"_id": "123", "email": "admin@nucleusteq.com", "role": UserRole.ADMIN.value}
+
+        with pytest.raises(AppBaseException) as excinfo:
+            await user_service.update_user("123", UpdateUserRequest(name="New Name"))
+
+        assert excinfo.value.error_code == "ACTION_DENIED"
+
+    async def test_create_user_missing_default_password_fails(self, user_service, monkeypatch):
+        monkeypatch.setattr("src.services.user_service.settings.DEFAULT_USER_PASSWORD", "")
+        user_service.user_repo.get_user_by_email.return_value = None
+
+        with pytest.raises(AppBaseException) as excinfo:
+            await user_service.create_user(CreateUserRequest(name="User One", email="user1@nucleusteq.com", role=UserRole.HR))
+
+        assert excinfo.value.error_code == "SERVER_ERROR"
