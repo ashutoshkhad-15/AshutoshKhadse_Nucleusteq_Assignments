@@ -1,5 +1,6 @@
 import apiClient from './apiService';
 import { API_PATHS } from '../constants/apiConstants';
+import { withSearchParam } from '../utils/requestParams';
 
 /**
  * User management API operations backed by the shared authenticated client.
@@ -13,21 +14,7 @@ export const userService = {
      * @returns {Promise<Array>} User records returned by the backend.
      */
     async getAllUsers(search = '', config = {}) {
-        const params = {};
-
-        if (search?.trim()) {
-            params.search = search.trim();
-        }
-
-        const requestConfig = {
-            ...config,
-            params: {
-                ...(config.params || {}),
-                ...params,
-            },
-        };
-
-        const response = await apiClient.get(`${API_PATHS.USERS}/`, requestConfig);
+        const response = await apiClient.get(`${API_PATHS.USERS}/`, withSearchParam(search, config));
         return response.data;
     },
 

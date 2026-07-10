@@ -1,11 +1,10 @@
 import apiClient from './apiService';
 import { API_PATHS } from '../constants/apiConstants';
+import { withSearchParam } from '../utils/requestParams';
 
 export const candidateService = {
     async getAllCandidates(search = '', config = {}) {
-        const params = { ...(config.params || {}) };
-        if (search?.trim()) params.search = search.trim();
-        const response = await apiClient.get(`${API_PATHS.CANDIDATES}/`, { ...config, params });
+        const response = await apiClient.get(`${API_PATHS.CANDIDATES}/`, withSearchParam(search, config));
         return response.data;
     },
 
@@ -25,9 +24,7 @@ export const candidateService = {
     },
 
     async searchJobs(search = '', config = {}) {
-        const params = { ...(config.params || {}) };
-        if (search?.trim()) params.search = search.trim();
-        const response = await apiClient.get(`${API_PATHS.CANDIDATES}/jobs/search`, { ...config, params });
+        const response = await apiClient.get(`${API_PATHS.CANDIDATES}/jobs/search`, withSearchParam(search, config));
         return response.data;
     },
 

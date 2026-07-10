@@ -1,6 +1,7 @@
-import apiClient, { clearAuthenticationData } from '../services/apiService';
+import apiClient from '../services/apiService';
+import { clearSession } from './session';
 
 export const signOut = async () => {
     await apiClient.post('/auth/logout');
-    clearAuthenticationData();
+    clearSession();
 };

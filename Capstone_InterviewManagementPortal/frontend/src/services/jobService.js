@@ -1,5 +1,6 @@
 import apiClient from './apiService';
 import { API_PATHS } from '../constants/apiConstants';
+import { withSearchParam } from '../utils/requestParams';
 
 /**
  * Job description API operations backed by the shared authenticated client.
@@ -13,14 +14,7 @@ export const jobService = {
      * @returns {Promise<Array>} Job records returned by the backend.
      */
     async getAllJobs(search = '', config = {}) {
-        const params = { ...(config.params || {}) };
-        if (search?.trim()) {
-            params.search = search.trim();
-        }
-        const response = await apiClient.get(`${API_PATHS.JOBS}/`, {
-            ...config,
-            params,
-        });
+        const response = await apiClient.get(`${API_PATHS.JOBS}/`, withSearchParam(search, config));
         return response.data;
     },
 
