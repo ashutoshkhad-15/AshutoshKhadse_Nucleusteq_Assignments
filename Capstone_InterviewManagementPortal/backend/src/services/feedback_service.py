@@ -2,12 +2,13 @@
 
 import logging
 
-from src.enums.app_enums import CandidateStatus
+from src.enums.app_enums import CandidateStatus, UserRole
 from src.exceptions.custom_exceptions import AppBaseException
 from src.repositories.feedback_repository import FeedbackRepository
 from src.schemas.request.interview_request import FeedbackRequest
 from src.services.candidate_service import CandidateService
 from src.services.interview_service import InterviewService
+from src.utils.common import get_user_role
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +24,11 @@ class FeedbackService:
 
     async def submit_feedback(self, interview_id: str, request: FeedbackRequest, current_user: dict) -> dict:
         """Submit interview feedback for the assigned interviewer."""
-        interview = await self.interview_service.get_interview_for_interviewer(
-            interview_id,
-            str(current_user.get("_id") or current_user.get("id") or ""),
-        )
-        self.interview_service._ensure_feedback_window_has_opened(interview)
+        interview = await self.interview_service.get_interview_by_id(interview_id)
+        if str(interview.get("interviewer_id")) != str(current_user.get("_id") or current_user.get("id")):
+            raise AppBaseException("Only the assigned interviewer can submit feedback", "FORBIDDEN", 403)
+        if interview.get("status") != CandidateStatus.INTERVIEW_COMPLETED.value:
+            raise AppBaseException("Feedback can only be submitted after the interview is completed", "INVALID_INTERVIEW_STATUS", 400)
         if await self.feedback_repo.feedback_exists(interview_id):
             raise AppBaseException("Feedback already exists for this interview", "FEEDBACK_EXISTS", 400)
 
@@ -51,28 +52,20 @@ class FeedbackService:
         return result
 
     async def view_feedback(self, interview_id: str, current_user: dict) -> dict:
-        """Return submitted feedback for an interview."""
-        if current_user.get("role") == "INTERVIEWER":
+        """Return submitted feedback for an interview, or null when absent."""
+        if get_user_role(current_user) == UserRole.INTERVIEWER:
             await self.interview_service.get_interview_for_interviewer(
                 interview_id,
                 str(current_user.get("_id") or current_user.get("id") or ""),
             )
         interview = await self.feedback_repo.get_feedback_by_interview_id(interview_id)
         if not interview or not interview.get("feedback"):
-            raise AppBaseException("Feedback not found", "FEEDBACK_NOT_FOUND", 404)
+            return None
         return interview
 
     async def _apply_post_feedback_status(self, interview: dict, recommendation: str, current_user: dict) -> None:
         """Update interview and candidate status after feedback submission."""
         candidate_id = interview["candidate_id"]
-        if interview.get("status") == "SCHEDULED":
-            await self.interview_service.interview_repo.update_interview(interview["_id"], {"status": "COMPLETED"})
-            await self.candidate_service.update_candidate_status(
-                candidate_id,
-                CandidateStatus.INTERVIEW_COMPLETED.value,
-                source="system",
-                updated_by=current_user.get("_id") or current_user.get("id"),
-            )
         if recommendation == "SELECT":
             await self.candidate_service.update_candidate_status(
                 candidate_id,

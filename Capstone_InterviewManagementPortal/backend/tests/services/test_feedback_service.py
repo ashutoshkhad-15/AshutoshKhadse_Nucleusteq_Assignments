@@ -37,7 +37,7 @@ def feedback_service():
 @pytest.mark.asyncio
 class TestFeedbackService:
     async def test_submit_feedback_success(self, feedback_service):
-        feedback_service.interview_service.get_interview_by_id.return_value = {"_id": "int1", "interviewer_id": "usr1", "candidate_id": "cand1"}
+        feedback_service.interview_service.get_interview_by_id.return_value = {"_id": "int1", "interviewer_id": "usr1", "candidate_id": "cand1", "status": CandidateStatus.INTERVIEW_COMPLETED.value}
         feedback_service.feedback_repo.feedback_exists.return_value = False
         feedback_service.feedback_repo.submit_feedback.return_value = {"_id": "int1", "feedback": {"recommendation": "SELECT"}}
         feedback_service.candidate_service.update_candidate_status.return_value = {"_id": "cand1"}
@@ -46,7 +46,7 @@ class TestFeedbackService:
         assert result["_id"] == "int1"
 
     async def test_submit_feedback_duplicate(self, feedback_service):
-        feedback_service.interview_service.get_interview_by_id.return_value = {"_id": "int1", "interviewer_id": "usr1"}
+        feedback_service.interview_service.get_interview_by_id.return_value = {"_id": "int1", "interviewer_id": "usr1", "status": CandidateStatus.INTERVIEW_COMPLETED.value}
         feedback_service.feedback_repo.feedback_exists.return_value = True
         request = FeedbackRequest(technicalRating=5, communicationRating=4, problemSolving=5, techAreasCovered=["Python"], comments="Good", recommendation=Recommendation.SELECT)
         with pytest.raises(AppBaseException) as excinfo:
@@ -54,7 +54,7 @@ class TestFeedbackService:
         assert excinfo.value.error_code == "FEEDBACK_EXISTS"
 
     async def test_submit_feedback_wrong_user(self, feedback_service):
-        feedback_service.interview_service.get_interview_by_id.return_value = {"_id": "int1", "interviewer_id": "usr1"}
+        feedback_service.interview_service.get_interview_by_id.return_value = {"_id": "int1", "interviewer_id": "usr1", "status": CandidateStatus.INTERVIEW_COMPLETED.value}
         request = FeedbackRequest(technicalRating=5, communicationRating=4, problemSolving=5, techAreasCovered=["Python"], comments="Good", recommendation=Recommendation.SELECT)
         with pytest.raises(AppBaseException) as excinfo:
             await feedback_service.submit_feedback("int1", request, {"_id": "usr2", "role": UserRole.INTERVIEWER.value})
@@ -62,8 +62,8 @@ class TestFeedbackService:
 
     async def test_view_feedback_not_found(self, feedback_service):
         feedback_service.feedback_repo.get_feedback_by_interview_id.return_value = None
-        with pytest.raises(AppBaseException):
-            await feedback_service.view_feedback("missing")
+        result = await feedback_service.view_feedback("missing", {"role": UserRole.HR.value})
+        assert result is None
 
     async def test_feedback_rating_validation(self):
         with pytest.raises(ValidationError):

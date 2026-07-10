@@ -36,7 +36,10 @@ class FeedbackRepository:
             logger.warning("Invalid interview ID provided for feedback lookup: %s", interview_id)
             return None
         try:
-            document = await self.collection.find_one({"_id": ObjectId(interview_id)}, {"feedback": 1, "feedback_by": 1, "feedback_submitted_at": 1})
+            document = await self.collection.find_one(
+                {"_id": ObjectId(interview_id)},
+                {"feedback": 1, "feedback_by": 1, "feedback_submitted_at": 1},
+            )
             return self._serialize(document)
         except Exception:
             logger.exception("Repository failure while fetching feedback for interview: %s", interview_id)
