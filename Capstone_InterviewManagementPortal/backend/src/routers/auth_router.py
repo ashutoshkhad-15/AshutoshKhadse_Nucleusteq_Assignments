@@ -7,17 +7,12 @@ from fastapi import APIRouter, Depends
 from src.schemas.request.auth_request import LoginRequest, ResetPasswordRequest
 from src.schemas.response.common_response import SuccessResponse
 from src.services.auth_service import AuthService
+from src.utils.common import build_success_response
 from src.utils.security import get_current_user
 from src.utils.dependencies import get_auth_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 logger = logging.getLogger(__name__)
-
-
-def _build_success_response(message: str, data: dict | None = None) -> SuccessResponse:
-    """Create the shared success payload for authentication endpoints."""
-    return SuccessResponse(message=message, data=data)
-
 
 @router.post("/login", response_model=SuccessResponse[dict])
 async def login(request: LoginRequest, auth_service: AuthService = Depends(get_auth_service)):
@@ -40,7 +35,7 @@ async def login(request: LoginRequest, auth_service: AuthService = Depends(get_a
     """
     data = await auth_service.login(request)
     logger.info("Login endpoint completed successfully for user: %s", request.email)
-    return _build_success_response("Login successful", data)
+    return build_success_response("Login successful", data)
 
 
 @router.post("/reset-password", response_model=SuccessResponse[None])
@@ -64,7 +59,7 @@ async def reset_password(request: ResetPasswordRequest, auth_service: AuthServic
     """
     await auth_service.reset_password(request)
     logger.info("Password reset endpoint completed successfully for user: %s", request.email)
-    return _build_success_response("Password reset successfully")
+    return build_success_response("Password reset successfully")
 
 
 @router.post("/logout", response_model=SuccessResponse[None])
@@ -90,4 +85,4 @@ async def logout(current_user: dict = Depends(get_current_user)):
         AppBaseException: If a password reset is required before protected
             access is granted.
     """
-    return _build_success_response("Logout successful. Please clear client credentials.")
+    return build_success_response("Logout successful. Please clear client credentials.")
