@@ -13,8 +13,7 @@ export const CANDIDATE_FORM_DEFAULTS = {
 
 export const CANDIDATE_SEARCH_DEBOUNCE_MS = 500;
 
-export const TOTAL_EXPERIENCE_PATTERN =
-  /^(?:\d+ year|\d+ years|\d+\+ years|\d+-\d+ years)$/;
+export const TOTAL_EXPERIENCE_PATTERN = /^(?:\d+ month|\d+ months|\d+ year|\d+ years|\d+ year \d+ month|\d+ year \d+ months|\d+ years \d+ month|\d+ years \d+ months|\d+\+ years|\d+-\d+ years)$/;
 
 const NAME_PATTERN = /^(?=.*[A-Za-z])[A-Za-z]+(?: [A-Za-z]+)*$/;
 const EMAIL_PATTERN = /^(?!\.)(?!.*\.\.)[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*@(gmail\.com|outlook\.com|yahoo\.com)$/i;
@@ -88,7 +87,7 @@ export const validateCandidateForm = (values) => {
     if (!payload.totalExperience) {
         errors.totalExperience = 'Total Experience is required.';
     } else if (!TOTAL_EXPERIENCE_PATTERN.test(payload.totalExperience)) {
-        errors.totalExperience = 'Use formats like "0 year", "1 year", "2 years", "3+ years", or "5-7 years".';
+        errors.totalExperience = "Total Experience must be in one of these formats: '3 months', '1 year', '3 years', '3 year 6 months', '3+ years', or '3-5 years'.";
     }
 
     if (!payload.appliedJobId) {

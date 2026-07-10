@@ -25,9 +25,7 @@ JOB_TITLE_PATTERN = re.compile(r"^(?=.*[A-Za-z])[A-Za-z0-9&()/+\- ]{3,100}$")
 JOB_ROLE_PATTERN = re.compile(r"^(?=.*[A-Za-z])[A-Za-z0-9 ]{2,60}$")
 JOB_DETAILS_PATTERN = re.compile(r"^.{20,1000}$", re.DOTALL)
 LOCATION_PATTERN = re.compile(r"^(?=.*[A-Za-z])[A-Za-z0-9.,'()\- ]{2,80}$")
-EXPERIENCE_PATTERN = re.compile(
-    r"^(?:\d+ year|\d+ years|\d+\+ years|\d+-\d+ years)$"
-)
+EXPERIENCE_PATTERN = re.compile(r"^(?:\d+ month|\d+ months|\d+ year|\d+ years|\d+ year \d+ month|\d+ years \d+ months|\d+ years \d+ month|\d+ year \d+ months|\d+\+ years|\d+-\d+ years)$")
 
 
 def _validate_experience_required(value: str) -> str:
@@ -40,7 +38,7 @@ def _validate_experience_required(value: str) -> str:
         raise ValueError("Experience Required is required.")
 
     if not EXPERIENCE_PATTERN.fullmatch(normalized):
-        raise ValueError('Experience Required must use only: "0 year", "1 year", "2 years", "3+ years", or "5-7 years".')
+        raise ValueError("Experience Required must be in one of these formats: '3 months', '1 year', '3 years', '3 year 6 months', '3+ years', or '3-5 years'")
 
     return normalized
 

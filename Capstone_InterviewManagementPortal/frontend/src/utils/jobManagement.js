@@ -34,8 +34,7 @@ export const JOB_TEXT_MAX_LENGTH = {
     skill: 30,
 };
 
-export const EXPERIENCE_REQUIRED_PATTERN =
-  /^(?:\d+ year|\d+ years|\d+\+ years|\d+-\d+ years)$/;
+export const EXPERIENCE_REQUIRED_PATTERN = /^(?:\d+ month|\d+ months|\d+ year|\d+ years|\d+ year \d+ month|\d+ year \d+ months|\d+ years \d+ month|\d+ years \d+ months|\d+\+ years|\d+-\d+ years)$/;
 export const JOB_TITLE_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9&()/+\- ]{3,100}$/;
 export const JOB_ROLE_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9 ]{2,60}$/;
 export const LOCATION_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9.,'()\- ]{2,80}$/;
@@ -135,7 +134,7 @@ export const validateJobForm = (values) => {
     if (!payload.experienceRequired) {
         errors.experienceRequired = 'Experience Required is required.';
     } else if (!EXPERIENCE_REQUIRED_PATTERN.test(payload.experienceRequired)) {
-        errors.experienceRequired = 'Use only: "0 year", "1 year", "2 years", "3+ years", or "5-7 years".';
+        errors.experienceRequired = "Experience must be in one of these formats: '3 months', '1 year', '3 years', '3 year 6 months', '3+ years', or '3-5 years'.";
     }
 
     if (!payload.employmentType) {

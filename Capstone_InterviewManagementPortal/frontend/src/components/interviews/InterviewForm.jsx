@@ -69,7 +69,7 @@ const InterviewForm = ({
                         {values.focusTechAreas.map((area) => (
                             <span key={area} className="jm-skill-pill">
                                 {area}
-                                <button type="button" className="jm-skill-remove" onClick={() => onRemoveFocusArea(area)} disabled={disabled}>Remove</button>
+                                <button type="button" className="jm-skill-remove" onClick={() => onRemoveFocusArea(area)} disabled={disabled}>X</button>
                             </span>
                         ))}
                     </div>

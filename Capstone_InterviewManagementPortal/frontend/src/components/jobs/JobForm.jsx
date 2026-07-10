@@ -47,7 +47,7 @@ const JobForm = ({ values, validationErrors, formError, submitting, submitLabel,
                         {values.requiredSkills.map((skill) => (
                             <span key={skill} className="jm-skill-pill">
                                 {skill}
-                                <button type="button" className="jm-skill-remove" onClick={() => onRemoveSkill(skill)}>Remove</button>
+                                <button type="button" className="jm-skill-remove" onClick={() => onRemoveSkill(skill)}>X</button>
                             </span>
                         ))}
                     </div>

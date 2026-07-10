@@ -14,9 +14,7 @@ from src.utils.validators import (
 
 EMAIL_PATTERN = re.compile(r"^(?!\.)(?!.*\.\.)[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*@(gmail\.com|outlook\.com|yahoo\.com)$", re.IGNORECASE)
 NAME_PATTERN = re.compile(r"^(?=.*[A-Za-z])[A-Za-z]+(?: [A-Za-z]+)*$")
-TOTAL_EXPERIENCE_PATTERN = re.compile(
-    r"^(?:\d+ year|\d+ years|\d+\+ years|\d+-\d+ years)$"
-)
+TOTAL_EXPERIENCE_PATTERN = re.compile(r"^(?:\d+ month|\d+ months|\d+ year|\d+ years|\d+ year \d+ month|\d+ years \d+ months|\d+ years \d+ month|\d+ year \d+ months|\d+\+ years|\d+-\d+ years)$")
 COMPANY_PATTERN = re.compile(r"^(?=.*[A-Za-z])[A-Za-z0-9][A-Za-z0-9\s&().,'/-]*[A-Za-z0-9]$")
 
 
@@ -70,7 +68,7 @@ def _validate_total_experience(value: str) -> str:
         raise ValueError("Total Experience is required")
 
     if not TOTAL_EXPERIENCE_PATTERN.fullmatch(normalized):
-        raise ValueError('Total Experience must use formats like "0 year", "1 year", "2 years", "3+ years", or "5-7 years"')
+        raise ValueError("Total Experience must be in one of these formats: '3 months', '1 year', '3 years', '3 year 6 months', '3+ years', or '3-5 years'")
     return normalized
 
 
