@@ -5,6 +5,7 @@ import re
 from pydantic import BaseModel, EmailStr, field_validator
 
 from src.constants.app_constants import AppConstants
+from src.utils.validators import normalize_email
 
 
 PASSWORD_ALLOWED_CHARACTERS = re.compile(r'^[A-Za-z0-9@#$%^&+=!_.-]+$')
@@ -12,9 +13,10 @@ PASSWORD_ALLOWED_CHARACTERS = re.compile(r'^[A-Za-z0-9@#$%^&+=!_.-]+$')
 
 def _validate_company_email(email: EmailStr) -> EmailStr:
     """Ensure the authentication flow only accepts company email addresses."""
-    if not email.endswith(f'@{AppConstants.DOMAIN_NAME}'):
+    normalized = normalize_email(email)
+    if not normalized.endswith(f'@{AppConstants.DOMAIN_NAME}'):
         raise ValueError(f'Email must belong to {AppConstants.DOMAIN_NAME} domain')
-    return email
+    return normalized
 
 
 def _validate_password_policy(password: str) -> str:

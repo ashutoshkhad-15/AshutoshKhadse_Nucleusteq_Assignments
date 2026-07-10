@@ -5,8 +5,10 @@ import base64
 from fastapi import Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
+from src.enums.app_enums import UserRole
 from src.exceptions.custom_exceptions import UnauthorizedException, ForbiddenException, AppBaseException
 from src.repositories.user_repository import UserRepository
+from src.utils.common import has_role
 
 security = HTTPBasic()
 
@@ -62,7 +64,7 @@ async def get_current_user(credentials: HTTPBasicCredentials = Depends(security)
     return user
 
 
-def require_role(allowed_roles: list[str]):
+def require_role(allowed_roles: list[UserRole]):
     """Create a FastAPI dependency that enforces role-based access control.
 
     Args:
@@ -73,7 +75,7 @@ def require_role(allowed_roles: list[str]):
     """
     def role_checker(current_user: dict = Depends(get_current_user)):
         # Reject the request when the authenticated role is outside the allowed set.
-        if current_user.get("role") not in allowed_roles:
+        if not has_role(current_user, allowed_roles):
             raise ForbiddenException("You do not have permission to perform this action")
         return current_user
     return role_checker

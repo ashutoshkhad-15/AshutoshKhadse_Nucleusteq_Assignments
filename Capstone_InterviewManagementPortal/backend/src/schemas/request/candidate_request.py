@@ -6,6 +6,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 from src.utils.validators import (
+    normalize_email,
     validate_mobile_number,
     validate_required_text,
 )
@@ -37,7 +38,7 @@ def _validate_name(value: str, field_name: str, min_length: int = 2, max_length:
 
 def _validate_email(value: str) -> str:
     """Validate the candidate email format and allowed domains."""
-    normalized = validate_required_text(value, "Email Address").strip().lower()
+    normalized = normalize_email(validate_required_text(value, "Email Address"))
     if not EMAIL_PATTERN.fullmatch(normalized):
         raise ValueError("Email Address must be a valid gmail.com, outlook.com, or yahoo.com address using only letters, numbers, and single dots")
     return normalized

@@ -22,12 +22,17 @@ def validate_nucleusteq_email(email: str) -> str:
     Raises:
         ValueError: If the email does not match the required company format.
     """
-    normalized_email = email.strip().lower()
+    normalized_email = normalize_email(email)
     if not NUCLEUSTEQ_EMAIL_PATTERN.fullmatch(normalized_email):
         raise ValueError(
             f"Email must be a valid {AppConstants.DOMAIN_NAME} address using only letters, numbers, and single periods in the local part"
         )
     return normalized_email
+
+
+def normalize_email(email: str) -> str:
+    """Return a trimmed, lowercase email string."""
+    return email.strip().lower()
 
 
 def validate_required_text(value: str, field_name: str) -> str:

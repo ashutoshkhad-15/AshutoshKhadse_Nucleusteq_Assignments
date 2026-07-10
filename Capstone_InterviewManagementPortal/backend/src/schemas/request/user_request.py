@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from src.constants.app_constants import AppConstants
 from src.enums.app_enums import UserRole
-from src.utils.validators import validate_nucleusteq_email, validate_required_text
+from src.utils.validators import normalize_email, validate_nucleusteq_email, validate_required_text
 
 
 NAME_PATTERN = re.compile(r"^[A-Za-z]+(?: [A-Za-z]+)*$")
@@ -15,10 +15,11 @@ NAME_PATTERN = re.compile(r"^[A-Za-z]+(?: [A-Za-z]+)*$")
 
 def _validate_user_email(value: str) -> str:
     """Apply the shared corporate email rules with the expected error wording."""
+    normalized = normalize_email(value)
     try:
-        return validate_nucleusteq_email(value)
+        return validate_nucleusteq_email(normalized)
     except ValueError as exc:
-        if not value.strip().lower().endswith(f"@{AppConstants.DOMAIN_NAME}"):
+        if not normalized.endswith(f"@{AppConstants.DOMAIN_NAME}"):
             raise ValueError(f"Email must belong to {AppConstants.DOMAIN_NAME} domain") from exc
         raise ValueError("Email must be a valid NucleusTeq address") from exc
 

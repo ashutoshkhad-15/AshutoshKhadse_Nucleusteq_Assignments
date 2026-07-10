@@ -1,6 +1,6 @@
 """Interview response DTOs."""
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -20,5 +20,5 @@ class InterviewResponse(BaseModel):
     interview_time: str
     focus_tech_areas: list[str]
     status: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
