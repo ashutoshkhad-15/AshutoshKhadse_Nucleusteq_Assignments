@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import '../styles/candidate-management.css';
 import { getCandidateManagementErrorMessage, getResumePdfUrl } from '../utils/candidateManagement';
 import { loadCandidateResume } from '../utils/pageLoaders';
@@ -10,6 +10,7 @@ import { loadCandidateResume } from '../utils/pageLoaders';
 const CandidateResumePreviewScreen = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [resume, setResume] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -27,9 +28,11 @@ const CandidateResumePreviewScreen = () => {
         return () => controller.abort();
     }, [id]);
 
+    const backTarget = location.state?.returnTo || `/candidates/${id}`;
+
     if (loading) return <div className="um-state">Loading resume...</div>;
     if (error || !resume) {
-        return <div className="um-state"><div className="error-banner">{error || 'Resume not found.'}</div><button type="button" className="btn-secondary" onClick={() => navigate(`/candidates/${id}`)}>Back</button></div>;
+        return <div className="um-state"><div className="error-banner">{error || 'Resume not found.'}</div><button type="button" className="btn-secondary" onClick={() => navigate(backTarget)}>Back</button></div>;
     }
 
     const pdfUrl = getResumePdfUrl(resume);
@@ -42,7 +45,7 @@ const CandidateResumePreviewScreen = () => {
                     <h1>Resume Preview</h1>
                     <p>{resume.original_filename}</p>
                 </div>
-                <Link to={`/candidates/${id}`} className="btn-secondary">Back to Candidate</Link>
+                <Link to={backTarget} className="btn-secondary">Back</Link>
             </div>
             <div className="form-card">
                 <iframe title="Resume Preview" src={pdfUrl} style={{ width: '100%', minHeight: '80vh', border: 0 }} />

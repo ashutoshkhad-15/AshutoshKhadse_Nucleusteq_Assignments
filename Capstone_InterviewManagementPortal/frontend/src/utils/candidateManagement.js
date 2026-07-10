@@ -1,4 +1,5 @@
 import { USER_ROLES } from '../constants/roles';
+import { getStoredUserRole } from './session';
 
 export const CANDIDATE_FORM_DEFAULTS = {
     firstName: '',
@@ -188,7 +189,7 @@ export const formatCandidateDateTimeDisplay = (value) => {
 /**
  * Return the current portal role from local storage.
  */
-export const getCandidateCurrentRole = () => localStorage.getItem('userRole');
+export const getCandidateCurrentRole = () => getStoredUserRole();
 
 /**
  * Check whether the current user can edit candidate data.

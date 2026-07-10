@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import JobPageHeader from '../components/jobs/JobPageHeader';
 import { USER_ROLES } from '../constants/roles';
+import { ROUTES } from '../constants/routes';
 import { getJobManagementErrorMessage } from '../utils/jobManagement';
 import { loadJobDetails } from '../utils/pageLoaders';
+import { getStoredUserRole } from '../utils/session';
 import '../styles/job-management.css';
 
 /**
@@ -17,7 +19,7 @@ const JobDetailsScreen = () => {
     const [job, setJob] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const role = localStorage.getItem('userRole');
+    const role = getStoredUserRole();
     const canManageJobs = role === USER_ROLES.HR;
 
     useEffect(() => {
@@ -68,7 +70,7 @@ const JobDetailsScreen = () => {
             <div className="um-state">
                 <div className="error-banner">{error || 'Job description not found.'}</div>
                 <div className="form-actions jm-centered-actions">
-                    <button type="button" className="btn-secondary" onClick={() => navigate('/jobs')}>Back to Jobs</button>
+                    <button type="button" className="btn-secondary" onClick={() => navigate(ROUTES.JOBS)}>Back to Jobs</button>
                 </div>
             </div>
         );
@@ -82,9 +84,9 @@ const JobDetailsScreen = () => {
                 description={`${job.jobRole || job.department} | ${job.location}`}
                 actions={(
                     <>
-                        <button type="button" onClick={() => navigate('/jobs')} className="btn-secondary">Back to Jobs</button>
+                        <button type="button" onClick={() => navigate(ROUTES.JOBS)} className="btn-secondary">Back to Jobs</button>
                         {canManageJobs ? (
-                            <Link to={`/jobs/edit/${job._id}`} className="btn-primary">Edit Job</Link>
+                            <Link to={ROUTES.JOB_EDIT.replace(':id', job._id)} className="btn-primary">Edit Job</Link>
                         ) : null}
                     </>
                 )}

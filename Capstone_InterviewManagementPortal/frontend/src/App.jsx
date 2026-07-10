@@ -2,6 +2,13 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-d
 import { useEffect } from 'react';
 import MainLayout from './components/layout/MainLayout';
 import AdminRoute from './components/routing/AdminRoute';
+import DashboardScreen from './pages/DashboardScreen';
+import InterviewListScreen from './pages/InterviewListScreen';
+import InterviewDetailsScreen from './pages/InterviewDetailsScreen';
+import ScheduleInterviewScreen from './pages/ScheduleInterviewScreen';
+import EditInterviewScreen from './pages/EditInterviewScreen';
+import AssignedInterviewsScreen from './pages/AssignedInterviewsScreen';
+import SubmitFeedbackScreen from './pages/SubmitFeedbackScreen';
 import CreateJobScreen from './pages/CreateJobScreen';
 import CreateCandidateScreen from './pages/CreateCandidateScreen';
 import CreateUserScreen from './pages/CreateUserScreen';
@@ -17,8 +24,10 @@ import ResetPassword from './pages/ResetPassword';
 import CandidateResumePreviewScreen from './pages/CandidateResumePreviewScreen';
 import CandidateStatusHistoryScreen from './pages/CandidateStatusHistoryScreen';
 import UserListScreen from './pages/UserListScreen';
+import { USER_ROLES } from './constants/roles';
+import { ROUTES } from './constants/routes';
+import { getStoredAuthToken, getStoredUserRole, hasAnyRole } from './utils/session';
 
-const Dashboard = () => <h2>Dashboard</h2>;
 const NotFound = () => <h2>Page not found</h2>;
 
 /**
@@ -28,7 +37,7 @@ const NotFound = () => <h2>Page not found</h2>;
  * @param {React.ReactNode} props.children - Protected page content.
  * @returns {JSX.Element} Protected content or login redirect.
  */
-const ProtectedRoute = ({ children }) => (localStorage.getItem('basicAuth') ? children : <Navigate to="/login" replace />);
+const ProtectedRoute = ({ children }) => (getStoredAuthToken() ? children : <Navigate to={ROUTES.LOGIN} replace />);
 
 /**
  * Keeps authenticated users out of public authentication pages.
@@ -37,7 +46,7 @@ const ProtectedRoute = ({ children }) => (localStorage.getItem('basicAuth') ? ch
  * @param {React.ReactNode} props.children - Public page content.
  * @returns {JSX.Element} Public content or dashboard redirect.
  */
-const PublicRoute = ({ children }) => (localStorage.getItem('basicAuth') ? <Navigate to="/dashboard" replace /> : children);
+const PublicRoute = ({ children }) => (getStoredAuthToken() ? <Navigate to={ROUTES.DASHBOARD} replace /> : children);
 
 /**
  * Restrict protected routes to specific user roles.
@@ -48,11 +57,11 @@ const PublicRoute = ({ children }) => (localStorage.getItem('basicAuth') ? <Navi
  * @returns {JSX.Element} Role-allowed content or redirect.
  */
 const RoleRoute = ({ allowedRoles, children }) => {
-    const auth = localStorage.getItem('basicAuth');
-    const role = localStorage.getItem('userRole');
+    const auth = getStoredAuthToken();
+    const role = getStoredUserRole();
 
-    if (!auth || !role) return <Navigate to="/login" replace />;
-    if (!allowedRoles.includes(role)) return <Navigate to="/dashboard" replace />;
+    if (!auth || !role) return <Navigate to={ROUTES.LOGIN} replace />;
+    if (!hasAnyRole(allowedRoles)) return <Navigate to={ROUTES.DASHBOARD} replace />;
 
     return <MainLayout>{children}</MainLayout>;
 };
@@ -70,9 +79,9 @@ function App() {
     return (
         <Router>
             <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" />} />
+                <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.DASHBOARD} />} />
                 <Route
-                    path="/login"
+                    path={ROUTES.LOGIN}
                     element={(
                         <PublicRoute>
                             <Login />
@@ -80,7 +89,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/reset-password"
+                    path={ROUTES.RESET_PASSWORD}
                     element={(
                         <PublicRoute>
                             <ResetPassword />
@@ -88,22 +97,22 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/dashboard"
+                    path={ROUTES.DASHBOARD}
                     element={(
                         <ProtectedRoute>
                             <MainLayout>
-                                <Dashboard />
+                                <DashboardScreen />
                             </MainLayout>
                         </ProtectedRoute>
                     )}
                 />
                 <Route element={<AdminRoute />}>
-                    <Route path="/users" element={<UserListScreen />} />
-                    <Route path="/users/create" element={<CreateUserScreen />} />
-                    <Route path="/users/edit/:id" element={<EditUserScreen />} />
+                    <Route path={ROUTES.USERS} element={<UserListScreen />} />
+                    <Route path={ROUTES.USER_CREATE} element={<CreateUserScreen />} />
+                    <Route path={ROUTES.USER_EDIT} element={<EditUserScreen />} />
                 </Route>
                 <Route
-                    path="/candidates"
+                    path={ROUTES.CANDIDATES}
                     element={(
                         <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
                             <CandidateListScreen />
@@ -111,7 +120,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/candidates/create"
+                    path={ROUTES.CANDIDATE_CREATE}
                     element={(
                         <RoleRoute allowedRoles={['HR']}>
                             <CreateCandidateScreen />
@@ -119,7 +128,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/candidates/:id"
+                    path={ROUTES.CANDIDATE_DETAILS}
                     element={(
                         <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
                             <CandidateDetailsScreen />
@@ -127,7 +136,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/candidates/:id/resume"
+                    path={ROUTES.CANDIDATE_RESUME}
                     element={(
                         <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
                             <CandidateResumePreviewScreen />
@@ -135,7 +144,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/candidates/:id/status-history"
+                    path={ROUTES.CANDIDATE_STATUS_HISTORY}
                     element={(
                         <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
                             <CandidateStatusHistoryScreen />
@@ -143,7 +152,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/candidates/edit/:id"
+                    path={ROUTES.CANDIDATE_EDIT}
                     element={(
                         <RoleRoute allowedRoles={['HR']}>
                             <EditCandidateScreen />
@@ -151,7 +160,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/jobs"
+                    path={ROUTES.JOBS}
                     element={(
                         <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
                             <JobListScreen />
@@ -159,7 +168,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/jobs/:id"
+                    path={ROUTES.JOB_DETAILS}
                     element={(
                         <RoleRoute allowedRoles={['HR', 'ADMIN', 'INTERVIEWER']}>
                             <JobDetailsScreen />
@@ -167,7 +176,7 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/jobs/create"
+                    path={ROUTES.JOB_CREATE}
                     element={(
                         <RoleRoute allowedRoles={['HR']}>
                             <CreateJobScreen />
@@ -175,10 +184,58 @@ function App() {
                     )}
                 />
                 <Route
-                    path="/jobs/edit/:id"
+                    path={ROUTES.JOB_EDIT}
                     element={(
                         <RoleRoute allowedRoles={['HR']}>
                             <EditJobScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path={ROUTES.INTERVIEWS}
+                    element={(
+                        <RoleRoute allowedRoles={[USER_ROLES.HR, USER_ROLES.ADMIN, USER_ROLES.INTERVIEWER]}>
+                            <InterviewListScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path={ROUTES.INTERVIEW_SCHEDULE}
+                    element={(
+                        <RoleRoute allowedRoles={[USER_ROLES.HR, USER_ROLES.ADMIN]}>
+                            <ScheduleInterviewScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path={ROUTES.INTERVIEW_EDIT}
+                    element={(
+                        <RoleRoute allowedRoles={[USER_ROLES.HR, USER_ROLES.ADMIN]}>
+                            <EditInterviewScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path={ROUTES.INTERVIEW_ASSIGNED}
+                    element={(
+                        <RoleRoute allowedRoles={[USER_ROLES.INTERVIEWER]}>
+                            <AssignedInterviewsScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path={ROUTES.INTERVIEW_DETAILS}
+                    element={(
+                        <RoleRoute allowedRoles={[USER_ROLES.HR, USER_ROLES.ADMIN, USER_ROLES.INTERVIEWER]}>
+                            <InterviewDetailsScreen />
+                        </RoleRoute>
+                    )}
+                />
+                <Route
+                    path={ROUTES.INTERVIEW_FEEDBACK}
+                    element={(
+                        <RoleRoute allowedRoles={[USER_ROLES.HR, USER_ROLES.ADMIN, USER_ROLES.INTERVIEWER]}>
+                            <SubmitFeedbackScreen />
                         </RoleRoute>
                     )}
                 />

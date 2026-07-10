@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import '../styles/candidate-management.css';
-import {
-    formatCandidateDateDisplay,
-    formatCandidateDateTimeDisplay,
-    getCandidateManagementErrorMessage,
-} from '../utils/candidateManagement';
+import { formatCandidateDateDisplay, getCandidateManagementErrorMessage } from '../utils/candidateManagement';
 import { loadCandidateStatusHistory } from '../utils/pageLoaders';
 
 /**
@@ -72,7 +68,7 @@ const CandidateStatusHistoryScreen = () => {
                         <tr>
                             <th>Previous Status</th>
                             <th>New Status</th>
-                            <th>Date &amp; Time</th>
+                            <th>Date</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -80,11 +76,7 @@ const CandidateStatusHistoryScreen = () => {
                             <tr key={`${row.timestamp || index}-${index}`}>
                                 <td data-label="Previous Status">{row.previous_status || '—'}</td>
                                 <td data-label="New Status">{row.new_status || '—'}</td>
-                                <td data-label="Date & Time">
-                                    {row.new_status === 'PROFILE_CREATED'
-                                        ? formatCandidateDateDisplay(row.timestamp)
-                                        : formatCandidateDateTimeDisplay(row.timestamp)}
-                                </td>
+                                <td data-label="Date">{formatCandidateDateDisplay(row.timestamp)}</td>
                             </tr>
                         ))}
                     </tbody>

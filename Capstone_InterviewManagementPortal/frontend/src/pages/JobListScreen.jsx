@@ -5,8 +5,10 @@ import JobCard from '../components/jobs/JobCard';
 import '../styles/job-management.css';
 import { getJobManagementErrorMessage, JOB_LIST_SKELETON_COUNT, JOB_SEARCH_DEBOUNCE_MS, throttle } from '../utils/jobManagement';
 import { USER_ROLES } from '../constants/roles';
+import { ROUTES } from '../constants/routes';
 import { loadJobList } from '../utils/pageLoaders';
 import { getListPagination, getListRows, isCanceledRequest, getPaginationRange } from '../utils/listPage';
+import { getStoredUserRole } from '../utils/session';
 
 /**
  * Renders the job list page.
@@ -23,7 +25,7 @@ const JobListScreen = () => {
     const [pagination, setPagination] = useState({ page: 1, limit: 10, total_items: 0, total_pages: 1 });
     const navigate = useNavigate();
     const location = useLocation();
-    const role = localStorage.getItem('userRole');
+    const role = getStoredUserRole();
     const canManageJobs = role === USER_ROLES.HR;
     const debouncedSearchTerm = useDebouncedValue(searchTerm, JOB_SEARCH_DEBOUNCE_MS);
     const normalizedSearch = debouncedSearchTerm.trim();
@@ -83,7 +85,7 @@ const JobListScreen = () => {
                     <h1>Job Descriptions</h1>
                     <p>Review openings, manage job details, and keep hiring requirements aligned across teams.</p>
                 </div>
-                {canManageJobs ? <button onClick={() => navigate('/jobs/create')} className="btn-primary">Create Job</button> : null}
+                {canManageJobs ? <button onClick={() => navigate(ROUTES.JOB_CREATE)} className="btn-primary">Create Job</button> : null}
             </div>
 
             <div className="table-card">
