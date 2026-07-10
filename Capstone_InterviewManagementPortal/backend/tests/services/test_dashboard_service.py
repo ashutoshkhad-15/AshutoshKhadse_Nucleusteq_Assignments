@@ -9,12 +9,16 @@ from src.services.dashboard_service import DashboardService
 
 @pytest.fixture
 def dashboard_service():
-    with patch("src.services.dashboard_service.DashboardRepository") as mock_repo_class:
+    with patch("src.services.dashboard_service.DashboardRepository") as mock_repo_class, \
+         patch("src.services.dashboard_service.InterviewService") as mock_interview_class:
         repo = mock_repo_class.return_value
         repo.get_hr_dashboard_stats = AsyncMock()
         repo.get_interviewer_dashboard_stats = AsyncMock()
+        interview_service = mock_interview_class.return_value
+        interview_service.get_interview_by_id = AsyncMock()
         service = DashboardService()
         service.dashboard_repo = repo
+        service.interview_service = interview_service
         yield service
 
 

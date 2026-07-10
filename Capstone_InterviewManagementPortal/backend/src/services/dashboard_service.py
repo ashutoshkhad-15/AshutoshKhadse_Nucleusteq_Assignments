@@ -19,7 +19,6 @@ class DashboardService:
     async def get_hr_dashboard(self) -> dict:
         """Return HR dashboard statistics."""
         logger.info("Retrieving HR dashboard statistics")
-        await self.interview_service._sync_overdue_interviews()
         return await self.dashboard_repo.get_hr_dashboard_stats()
 
     async def get_admin_dashboard(self) -> dict:
@@ -29,5 +28,4 @@ class DashboardService:
     async def get_interviewer_dashboard(self, interviewer_id: str) -> dict:
         """Return interviewer dashboard statistics."""
         logger.info("Retrieving interviewer dashboard statistics")
-        await self.interview_service._sync_overdue_interviews()
         return await self.dashboard_repo.get_interviewer_dashboard_stats(interviewer_id)
