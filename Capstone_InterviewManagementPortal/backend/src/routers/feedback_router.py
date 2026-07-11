@@ -15,7 +15,7 @@ from src.utils.security import require_role
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/interviews", tags=["Feedback"])
+router = APIRouter(prefix="/interviews", tags=["Feedback"])
 
 @router.post("/{interview_id}/feedback", response_model=SuccessResponse[FeedbackResponse])
 async def submit_feedback(interview_id: str, request: FeedbackRequest, feedback_service: FeedbackService = Depends(get_feedback_service), current_user: dict = Depends(require_role([UserRole.INTERVIEWER]))):

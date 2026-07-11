@@ -90,11 +90,11 @@ async def health_check():
 
 api_router.include_router(auth_router)
 api_router.include_router(user_router)
-app.include_router(job_router)
-app.include_router(candidate_router)
-app.include_router(interview_router)
-app.include_router(feedback_router)
-app.include_router(dashboard_router)
+api_router.include_router(job_router)
+api_router.include_router(candidate_router)
+api_router.include_router(interview_router)
+api_router.include_router(feedback_router)
+api_router.include_router(dashboard_router)
 app.include_router(api_router)
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ from src.services.candidate_service import CandidateService
 from src.utils.common import build_success_response
 from src.utils.security import require_role
 
-router = APIRouter(prefix="/api/v1/candidates", tags=["Candidates"])
+router = APIRouter(prefix="/candidates", tags=["Candidates"])
 logger = logging.getLogger(__name__)
 
 

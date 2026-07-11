@@ -20,7 +20,7 @@ from src.enums.app_enums import UserRole
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/jobs", tags=["Jobs"])
+router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 @router.post("/", response_model=SuccessResponse[dict], status_code=status.HTTP_201_CREATED)
 async def create_job(

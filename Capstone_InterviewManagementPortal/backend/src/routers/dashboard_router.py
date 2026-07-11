@@ -14,7 +14,7 @@ from src.utils.security import require_role
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/interviews", tags=["Dashboard"])
+router = APIRouter(prefix="/interviews", tags=["Dashboard"])
 
 @router.get("/dashboard/hr", response_model=SuccessResponse[HrDashboardResponse])
 async def hr_dashboard(dashboard_service: DashboardService = Depends(get_dashboard_service), _current_user: dict = Depends(require_role([UserRole.HR, UserRole.ADMIN]))):
