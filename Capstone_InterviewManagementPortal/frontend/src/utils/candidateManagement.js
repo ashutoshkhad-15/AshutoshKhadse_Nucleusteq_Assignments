@@ -1,0 +1,201 @@
+import { USER_ROLES } from '../constants/roles';
+import { getStoredUserRole } from './session';
+
+export const CANDIDATE_FORM_DEFAULTS = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    mobile: '',
+    currentCompany: '',
+    totalExperience: '',
+    appliedJobId: '',
+};
+
+export const CANDIDATE_SEARCH_DEBOUNCE_MS = 500;
+
+export const TOTAL_EXPERIENCE_PATTERN = /^(?:\d+ month|\d+ months|\d+ year|\d+ years|\d+ year \d+ month|\d+ year \d+ months|\d+ years \d+ month|\d+ years \d+ months|\d+\+ years|\d+-\d+ years)$/;
+
+const NAME_PATTERN = /^(?=.*[A-Za-z])[A-Za-z]+(?: [A-Za-z]+)*$/;
+const EMAIL_PATTERN = /^(?!\.)(?!.*\.\.)[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*@(gmail\.com|outlook\.com|yahoo\.com)$/i;
+const MOBILE_PATTERN = /^\d{10}$/;
+const COMPANY_PATTERN = /^(?=.*[A-Za-z])[A-Za-z0-9][A-Za-z0-9\s&().,'/-]*[A-Za-z0-9]$/;
+
+export const mapCandidateToFormValues = (candidate = {}) => ({
+    firstName: candidate.first_name || candidate.firstName || '',
+    lastName: candidate.last_name || candidate.lastName || '',
+    email: candidate.email || '',
+    mobile: candidate.mobile || '',
+    currentCompany: candidate.current_company || candidate.currentCompany || '',
+    totalExperience: candidate.total_experience || candidate.totalExperience || '',
+    appliedJobId: candidate.applied_job_id || candidate.appliedJobId || candidate.applied_job?._id || '',
+});
+
+export const buildCandidatePayload = (values) => ({
+    firstName: values.firstName.trim(),
+    lastName: values.lastName.trim(),
+    email: values.email.trim().toLowerCase(),
+    mobile: values.mobile.trim(),
+    currentCompany: values.currentCompany.trim(),
+    totalExperience: values.totalExperience.trim(),
+    appliedJobId: values.appliedJobId,
+});
+
+const validateName = (value, label) => {
+    const normalized = typeof value === 'string' ? value.trim() : '';
+    if (!normalized) {
+        return `${label} is required.`;
+    }
+    if (normalized.length < 2 || normalized.length > 50) {
+        return `${label} must be between 2 and 50 characters.`;
+    }
+    if (!NAME_PATTERN.test(normalized)) {
+        return `${label} can contain alphabetic characters and single spaces only.`;
+    }
+    return '';
+};
+
+export const validateCandidateForm = (values) => {
+    const errors = {};
+    const payload = buildCandidatePayload(values);
+
+    const firstNameError = validateName(payload.firstName, 'First Name');
+    if (firstNameError) errors.firstName = firstNameError;
+
+    const lastNameError = validateName(payload.lastName, 'Last Name');
+    if (lastNameError) errors.lastName = lastNameError;
+
+    if (!payload.email) {
+        errors.email = 'Email is required.';
+    } else if (!EMAIL_PATTERN.test(payload.email)) {
+        errors.email = 'Email Address must be a valid gmail.com, outlook.com, or yahoo.com address using only letters, numbers, and single dots.';
+    }
+
+    if (!payload.mobile) {
+        errors.mobile = 'Mobile number is required.';
+    } else if (!MOBILE_PATTERN.test(payload.mobile)) {
+        errors.mobile = 'Mobile number must contain exactly 10 digits.';
+    }
+
+    if (!payload.currentCompany) {
+        errors.currentCompany = 'Current Company is required.';
+    } else if (payload.currentCompany.length > 120) {
+        errors.currentCompany = 'Current Company must be at most 120 characters.';
+    } else if (payload.currentCompany && !COMPANY_PATTERN.test(payload.currentCompany)) {
+        errors.currentCompany = 'Current Company must contain alphabetic characters and may include spaces and common punctuation.';
+    }
+
+    if (!payload.totalExperience) {
+        errors.totalExperience = 'Total Experience is required.';
+    } else if (!TOTAL_EXPERIENCE_PATTERN.test(payload.totalExperience)) {
+        errors.totalExperience = "Total Experience must be in one of these formats: '3 months', '1 year', '3 years', '3 year 6 months', '3+ years', or '3-5 years'.";
+    }
+
+    if (!payload.appliedJobId) {
+        errors.appliedJobId = 'Applied Job is required.';
+    }
+
+    return errors;
+};
+
+export const getCandidateManagementErrorMessage = (error, fallbackMessage) =>
+    error?.response?.data?.details?.[0]?.msg || error?.response?.data?.message || fallbackMessage;
+
+export const getCandidateAppliedJobLabel = (candidate) => candidate?.applied_job?.jobTitle || candidate?.appliedJob?.jobTitle || candidate?.applied_job?.job_title || 'Not specified';
+
+/**
+ * Return a display name for a candidate record.
+ */
+export const getCandidateDisplayName = (candidate = {}) => {
+    const firstName = candidate.first_name || candidate.firstName || '';
+    const lastName = candidate.last_name || candidate.lastName || '';
+    return `${firstName} ${lastName}`.trim() || 'Not specified';
+};
+
+export const formatCandidateDate = (value) => {
+    if (!value) return 'Not available';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleDateString();
+};
+
+export const mapJobsToOptions = (jobs = []) =>
+    jobs.map((job) => ({
+        value: job._id,
+        label: job.jobTitle || job.title || 'Untitled Job',
+        description: job.jobRole || job.location || '',
+    }));
+
+export const mapAppliedJobToOption = (job) =>
+    job
+        ? {
+            value: job._id,
+            label: job.jobTitle || 'Untitled Job',
+            description: 'Selected job',
+        }
+        : null;
+
+export const CANDIDATE_STATUS_OPTIONS = [
+    'PROFILE_CREATED',
+    'INTERVIEW_SCHEDULED',
+    'INTERVIEW_COMPLETED',
+    'SELECTED',
+    'REJECTED',
+];
+
+export const MAX_RESUME_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Extract a safe resume URL from the backend payload.
+ */
+export const getResumePdfUrl = (resume) => {
+    const base64 = resume?.resume_content_base64;
+    if (!base64) return '';
+    return `data:application/pdf;base64,${base64}`;
+};
+
+/**
+ * Normalizes the candidate status display value.
+ */
+export const formatCandidateStatus = (status) => status || 'PROFILE_CREATED';
+
+/**
+ * Format dates in DD/MM/YYYY format for candidate screens.
+ */
+export const formatCandidateDateDisplay = (value) => {
+    if (!value) return 'Not available';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Not available';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+};
+
+/**
+ * Format date-time values for status history rows.
+ */
+export const formatCandidateDateTimeDisplay = (value) => {
+    if (!value) return 'Not available';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Not available';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
+/**
+ * Return the current portal role from local storage.
+ */
+export const getCandidateCurrentRole = () => getStoredUserRole();
+
+/**
+ * Check whether the current user can edit candidate data.
+ */
+export const canEditCandidates = () => getCandidateCurrentRole() === USER_ROLES.HR;
+
+/**
+ * Check whether the current user can view candidate data.
+ */
+export const canViewCandidates = () => [USER_ROLES.ADMIN, USER_ROLES.HR, USER_ROLES.INTERVIEWER].includes(getCandidateCurrentRole());

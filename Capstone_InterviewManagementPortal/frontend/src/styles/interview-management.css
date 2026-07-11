@@ -1,0 +1,101 @@
+@import './user-management.css';
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.dashboard-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.dashboard-stat-card {
+    min-height: 120px;
+}
+
+.jm-skill-input-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.jm-skill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.jm-skill-list-spacious {
+    padding-top: 0.25rem;
+}
+
+.jm-skill-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 36px;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #f8fafc;
+}
+
+.jm-skill-remove {
+    border: 0;
+    background: transparent;
+    color: var(--danger-color);
+    cursor: pointer;
+}
+
+.jm-details-layout {
+    display: grid;
+    gap: 1rem;
+}
+
+.jm-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.jm-detail-item {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.jm-detail-label {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.jm-detail-value {
+    font-weight: 600;
+}
+
+.jm-rich-copy {
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+@media (max-width: 768px) {
+    .jm-skill-input-row {
+        flex-direction: column;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
