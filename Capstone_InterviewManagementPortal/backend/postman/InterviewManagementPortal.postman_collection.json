@@ -24,11 +24,13 @@
               "raw": "{\n  \"email\": \"admin@nucleusteq.com\",\n  \"password\": \"{{password}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
+              "raw": "{{baseUrl}}/api/v1/auth/login",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "auth",
                 "login"
               ]
@@ -50,11 +52,13 @@
               "raw": "{\n  \"email\": \"admin@nucleusteq.com\",\n  \"oldPassword\": \"{{password}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/reset-password",
+              "raw": "{{baseUrl}}/api/v1/auth/reset-password",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "auth",
                 "reset-password"
               ]
@@ -66,11 +70,13 @@
           "request": {
             "method": "POST",
             "url": {
-              "raw": "{{baseUrl}}/auth/logout",
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "auth",
                 "logout"
               ]
