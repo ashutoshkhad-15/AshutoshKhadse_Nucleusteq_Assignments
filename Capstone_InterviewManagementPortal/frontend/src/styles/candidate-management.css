@@ -1,0 +1,39 @@
+@import './user-management.css';
+
+.table-card {
+    overflow-x: auto;
+}
+
+.um-table {
+    min-width: 980px;
+}
+
+.candidate-nowrap {
+    white-space: nowrap;
+}
+
+.candidate-list-name {
+    min-width: 180px;
+    white-space: nowrap;
+}
+
+.candidate-table-actions {
+    min-width: 180px;
+    justify-content: flex-end;
+}
+
+.candidate-table-actions .btn-secondary {
+    min-width: 86px;
+}
+
+@media (max-width: 1100px) {
+    .candidate-table-actions {
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 130px;
+    }
+
+    .candidate-table-actions .btn-secondary {
+        width: 100%;
+    }
+}

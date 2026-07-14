@@ -1,0 +1,247 @@
+@import './user-management.css';
+
+.form-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.jm-skill-input-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.jm-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.jm-skill-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 32px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.jm-skill-remove {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.jm-centered-actions {
+  justify-content: center;
+}
+
+.jm-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.jm-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.jm-skeleton-card {
+  min-height: 220px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 37%, #e2e8f0 63%);
+  background-size: 400% 100%;
+  animation: jm-pulse 1.4s ease infinite;
+}
+
+.jm-job-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.jm-job-card {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.jm-job-card-title {
+  font-size: 1.05rem;
+}
+
+.jm-job-card-copy {
+  color: var(--text-light);
+}
+
+.jm-job-card-summary {
+  color: #334155;
+  line-height: 1.6;
+}
+
+.jm-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.jm-details-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+.jm-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.jm-detail-item {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.jm-detail-label {
+  color: var(--text-light);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.jm-detail-value {
+  font-weight: 600;
+}
+
+.jm-rich-copy {
+  color: #334155;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.jm-inline-banner {
+  margin: 1rem 1.25rem 0;
+}
+
+.jm-empty-state {
+  display: grid;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-light);
+}
+
+.candidate-select-shell {
+  position: relative;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.candidate-select-trigger {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.candidate-select-trigger-error {
+  border-color: #dc2626;
+}
+
+.candidate-select-menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.candidate-select-options {
+  max-height: 280px;
+  overflow: auto;
+  margin-top: 0.75rem;
+}
+
+.candidate-select-option,
+.candidate-select-empty {
+  width: 100%;
+  padding: 0.75rem 0.5rem;
+  border: 0;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  text-align: left;
+}
+
+.candidate-select-option {
+  cursor: pointer;
+}
+
+.candidate-select-option.is-selected,
+.candidate-select-option:hover {
+  background: #eff6ff;
+}
+
+.candidate-select-empty {
+  color: var(--text-light);
+}
+
+@keyframes jm-pulse {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (max-width: 900px) {
+  .jm-skeleton-grid,
+  .jm-job-card-grid,
+  .jm-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .candidate-select-menu {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .jm-job-card-grid {
+    padding: 1rem;
+  }
+
+  .jm-skill-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jm-card-actions {
+    flex-direction: column;
+  }
+}
+
